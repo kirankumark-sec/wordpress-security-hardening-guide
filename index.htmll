@@ -1,1 +1,2808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WordPress Security Hardening Guide · VAPT Remediation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080c12;
+    --bg2: #0d1320;
+    --bg3: #111827;
+    --card: #0f1929;
+    --card2: #141f33;
+    --border: #1e2d45;
+    --border2: #253650;
+    --cyan: #00d4ff;
+    --cyan2: #00a8d4;
+    --green: #00ff88;
+    --green2: #00cc6a;
+    --amber: #ffb800;
+    --red: #ff4757;
+    --purple: #a855f7;
+    --text: #e2eaf5;
+    --text2: #8fa3bf;
+    --text3: #4d6480;
+    --glow-cyan: 0 0 20px rgba(0,212,255,0.25);
+    --glow-green: 0 0 20px rgba(0,255,136,0.2);
+  }
 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0; bottom: 0;
+    width: 280px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .sidebar-logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-logo .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--cyan), var(--green));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 12px;
+    font-size: 20px;
+  }
+
+  .sidebar-logo h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+
+  .sidebar-logo p {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 2px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .nav-section-label {
+    padding: 16px 24px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 24px;
+    text-decoration: none;
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 400;
+    transition: all 0.2s;
+    border-left: 2px solid transparent;
+    cursor: pointer;
+  }
+
+  .nav-item:hover, .nav-item.active {
+    color: var(--cyan);
+    background: rgba(0,212,255,0.05);
+    border-left-color: var(--cyan);
+  }
+
+  .nav-item .nav-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    min-width: 20px;
+  }
+
+  .nav-item:hover .nav-num { color: var(--cyan2); }
+
+  .sidebar-footer {
+    margin-top: auto;
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--text3);
+  }
+
+  .badge-critical { background: rgba(255,71,87,0.15); color: var(--red); }
+  .badge-high { background: rgba(255,184,0,0.15); color: var(--amber); }
+  .badge-medium { background: rgba(168,85,247,0.12); color: var(--purple); }
+  .badge-low { background: rgba(0,255,136,0.1); color: var(--green); }
+
+  /* ── MAIN CONTENT ── */
+  .main {
+    margin-left: 280px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    background: linear-gradient(135deg, var(--bg2) 0%, #0a1628 50%, #071022 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 64px 60px 56px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    right: -100px; top: -100px;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+
+  .hero-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+  }
+
+  .hb-vapt { background: rgba(255,71,87,0.1); color: var(--red); border-color: rgba(255,71,87,0.3); }
+  .hb-owasp { background: rgba(0,212,255,0.08); color: var(--cyan); border-color: rgba(0,212,255,0.3); }
+  .hb-wp { background: rgba(0,255,136,0.08); color: var(--green); border-color: rgba(0,255,136,0.3); }
+  .hb-linux { background: rgba(168,85,247,0.1); color: var(--purple); border-color: rgba(168,85,247,0.3); }
+
+  .hero h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #ffffff 30%, var(--cyan) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-sub {
+    color: var(--text2);
+    font-size: 16px;
+    max-width: 640px;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .stat-item { text-align: center; }
+
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--cyan);
+    display: block;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  /* ── SEARCH BAR ── */
+  .search-bar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 60px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(8px);
+  }
+
+  .search-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 16px 10px 40px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    position: relative;
+  }
+
+  .search-wrap {
+    position: relative;
+    flex: 1;
+    max-width: 500px;
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 14px;
+    pointer-events: none;
+  }
+
+  .search-input:focus { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,212,255,0.08); }
+
+  .filter-btns {
+    display: flex;
+    gap: 6px;
+  }
+
+  .filter-btn {
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text2);
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover, .filter-btn.active {
+    border-color: var(--cyan);
+    color: var(--cyan);
+    background: rgba(0,212,255,0.06);
+  }
+
+  /* ── CONTENT ── */
+  .content { padding: 40px 60px 80px; }
+
+  /* ── SECTION ── */
+  .section {
+    margin-bottom: 48px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--card);
+    overflow: hidden;
+    transition: border-color 0.3s;
+    animation: fadeUp 0.4s ease both;
+  }
+
+  .section:hover { border-color: var(--border2); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    padding: 24px 28px;
+    background: var(--card2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .section-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--cyan);
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
+    min-width: 40px;
+    text-align: center;
+    margin-top: 2px;
+  }
+
+  .section-title-group { flex: 1; }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .section-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .badge {
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .chevron {
+    color: var(--text3);
+    font-size: 18px;
+    transition: transform 0.3s;
+    margin-left: auto;
+    padding-top: 4px;
+  }
+
+  .section.open .chevron { transform: rotate(180deg); }
+
+  .section-body {
+    display: none;
+    padding: 0;
+  }
+
+  .section.open .section-body { display: block; }
+
+  /* ── GRID LAYOUT FOR FIELDS ── */
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field {
+    padding: 20px 28px;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field:nth-child(even) { border-right: none; }
+  .field:last-child, .field:nth-last-child(2):nth-child(odd) { border-bottom: none; }
+
+  .field-full {
+    grid-column: 1 / -1;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .field-label span { font-size: 14px; }
+
+  .field-value {
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .field-value strong { color: var(--cyan); font-weight: 500; }
+
+  /* ── RISK BOX ── */
+  .risk-box {
+    padding: 12px 16px;
+    border-radius: 8px;
+    border-left: 3px solid;
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  .risk-critical { background: rgba(255,71,87,0.07); border-color: var(--red); color: #ffb3b8; }
+  .risk-high { background: rgba(255,184,0,0.07); border-color: var(--amber); color: #ffe499; }
+  .risk-medium { background: rgba(168,85,247,0.07); border-color: var(--purple); color: #d8aaff; }
+  .risk-low { background: rgba(0,255,136,0.06); border-color: var(--green); color: #80ffbb; }
+
+  /* ── CODE BLOCK ── */
+  .code-wrap {
+    position: relative;
+    margin: 12px 0 4px;
+  }
+
+  .code-filename {
+    background: var(--border);
+    padding: 6px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--cyan2);
+    border-radius: 6px 6px 0 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .code-filename::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--cyan);
+    border-radius: 50%;
+    box-shadow: var(--glow-cyan);
+  }
+
+  pre {
+    background: #060b14;
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: #c9d8f0;
+  }
+
+  pre.rounded {
+    border-radius: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .copy-btn {
+    position: absolute;
+    right: 10px; top: 10px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+
+  .copy-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+  /* syntax colors */
+  .kw { color: #79c0ff; }
+  .str { color: #a5d6ff; }
+  .cmt { color: #8b949e; font-style: italic; }
+  .fn { color: #d2a8ff; }
+  .num { color: #f8cc4a; }
+  .tag { color: #7ee787; }
+  .attr { color: #ffab70; }
+  .op { color: #ff7b72; }
+
+  /* ── WHO TABLE ── */
+  .who-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .who-table th {
+    background: var(--bg3);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: 1px solid var(--border);
+  }
+
+  .who-table td {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+
+  .who-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .role-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .role-sysadmin { background: rgba(168,85,247,0.12); color: #c084fc; }
+  .role-webadmin { background: rgba(0,212,255,0.08); color: var(--cyan); }
+  .role-wpdev { background: rgba(0,255,136,0.08); color: var(--green2); }
+  .role-any { background: rgba(255,184,0,0.08); color: var(--amber); }
+
+  /* ── VERIFY BLOCK ── */
+  .verify-block {
+    background: #040910;
+    border: 1px solid rgba(0,255,136,0.15);
+    border-left: 3px solid var(--green);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: #80ffbb;
+    line-height: 1.8;
+  }
+
+  /* ── VAPT CLOSURE ── */
+  .vapt-closure {
+    background: linear-gradient(135deg, rgba(0,212,255,0.05), rgba(0,255,136,0.04));
+    border: 1px solid rgba(0,212,255,0.2);
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .vapt-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .vapt-text {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+    font-style: italic;
+  }
+
+  .vapt-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--cyan);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin-bottom: 4px;
+    font-style: normal;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* ── TAGS ── */
+  .tag-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text2);
+    margin: 2px 2px 2px 0;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .toc-header {
+    padding: 20px 60px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+
+  .toc-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .toc-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--cyan);
+  }
+
+  /* ── RELOAD / RESTART PILL ── */
+  .restart-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: rgba(255,184,0,0.08);
+    border: 1px solid rgba(255,184,0,0.25);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--amber);
+    font-family: 'JetBrains Mono', monospace;
+    margin: 4px 4px 4px 0;
+  }
+
+  /* ── SCROLL TOP BTN ── */
+  #scrollTop {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    width: 42px; height: 42px;
+    background: var(--cyan);
+    border: none;
+    border-radius: 50%;
+    color: var(--bg);
+    font-size: 18px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    box-shadow: var(--glow-cyan);
+    transition: transform 0.2s;
+  }
+
+  #scrollTop:hover { transform: scale(1.1); }
+
+  /* ── HIDDEN (search) ── */
+  .section.hidden { display: none; }
+
+  /* ── PRINT ── */
+  @media print {
+    .sidebar, .search-bar, #scrollTop { display: none !important; }
+    .main { margin-left: 0; }
+    .section { break-inside: avoid; }
+    .section-body { display: block !important; }
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; }
+    .hero { padding: 40px 24px; }
+    .hero h1 { font-size: 28px; }
+    .content { padding: 24px; }
+    .search-bar { padding: 12px 24px; }
+    .field-grid { grid-template-columns: 1fr; }
+    .toc-header { padding: 16px 24px 0; }
+  }
+
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  ul.check-list { list-style: none; padding: 0; }
+  ul.check-list li { padding: 3px 0; display: flex; gap: 8px; align-items: baseline; font-size: 13.5px; }
+  ul.check-list li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">🛡️</div>
+    <h2>WP Security Hardening</h2>
+    <p>VAPT Remediation Guide</p>
+  </div>
+
+  <div class="nav-section-label">Access Control</div>
+  <a class="nav-item" onclick="jumpTo('s01')"><span class="nav-num">01</span> Restrict wp-login / wp-admin</a>
+  <a class="nav-item" onclick="jumpTo('s02')"><span class="nav-num">02</span> Disable XML-RPC</a>
+  <a class="nav-item" onclick="jumpTo('s03')"><span class="nav-num">03</span> Brute-Force Protection</a>
+  <a class="nav-item" onclick="jumpTo('s04')"><span class="nav-num">04</span> Two-Factor Authentication</a>
+
+  <div class="nav-section-label">Authentication</div>
+  <a class="nav-item" onclick="jumpTo('s05')"><span class="nav-num">05</span> Strong Password Policy</a>
+  <a class="nav-item" onclick="jumpTo('s06')"><span class="nav-num">06</span> User Enumeration (REST API)</a>
+
+  <div class="nav-section-label">WordPress Core</div>
+  <a class="nav-item" onclick="jumpTo('s07')"><span class="nav-num">07</span> Version Disclosure</a>
+  <a class="nav-item" onclick="jumpTo('s08')"><span class="nav-num">08</span> Secure wp-config.php</a>
+  <a class="nav-item" onclick="jumpTo('s09')"><span class="nav-num">09</span> Directory Listing</a>
+
+  <div class="nav-section-label">Server & Network</div>
+  <a class="nav-item" onclick="jumpTo('s10')"><span class="nav-num">10</span> File Upload Hardening</a>
+  <a class="nav-item" onclick="jumpTo('s11')"><span class="nav-num">11</span> WAF Configuration</a>
+  <a class="nav-item" onclick="jumpTo('s12')"><span class="nav-num">12</span> Security Headers</a>
+
+  <div class="nav-section-label">Monitoring</div>
+  <a class="nav-item" onclick="jumpTo('s13')"><span class="nav-num">13</span> Logging & Monitoring</a>
+  <a class="nav-item" onclick="jumpTo('s14')"><span class="nav-num">14</span> Backup Security</a>
+
+  <div class="sidebar-footer">
+    v2025.1 · OWASP Top 10 Compliant<br>
+    Last updated: April 2026
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     MAIN
+══════════════════════════════════════ -->
+<main class="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-badges">
+      <span class="hero-badge hb-vapt">VAPT Remediation</span>
+      <span class="hero-badge hb-owasp">OWASP Top 10</span>
+      <span class="hero-badge hb-wp">WordPress 6.x</span>
+      <span class="hero-badge hb-linux">Linux · Apache · Nginx</span>
+    </div>
+    <h1>WordPress Security<br>Hardening Guide</h1>
+    <p class="hero-sub">A complete, copy-paste-ready security baseline for WordPress sites on self-hosted Linux servers. Each control maps to VAPT findings and includes audit-proof closure statements.</p>
+    <div class="hero-stats">
+      <div class="stat-item"><span class="stat-num">14</span><div class="stat-label">Security Controls</div></div>
+      <div class="stat-item"><span class="stat-num">40+</span><div class="stat-label">Config Snippets</div></div>
+      <div class="stat-item"><span class="stat-num">3</span><div class="stat-label">Server Types</div></div>
+      <div class="stat-item"><span class="stat-num">100%</span><div class="stat-label">Free Tools</div></div>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-bar">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" type="text" id="searchInput" placeholder="Search controls, files, issues…" oninput="filterSections()">
+    </div>
+    <div class="filter-btns">
+      <button class="filter-btn active" onclick="filterBySeverity('all', this)">All</button>
+      <button class="filter-btn" onclick="filterBySeverity('critical', this)" style="color:#ff4757">Critical</button>
+      <button class="filter-btn" onclick="filterBySeverity('high', this)" style="color:#ffb800">High</button>
+      <button class="filter-btn" onclick="filterBySeverity('medium', this)" style="color:#a855f7">Medium</button>
+    </div>
+    <button onclick="expandAll()" style="padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:12px;cursor:pointer">Expand All</button>
+    <button onclick="collapseAll()" style="padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text2);font-size:12px;cursor:pointer">Collapse All</button>
+  </div>
+
+  <div class="content">
+
+<!-- ════════════════════════════════
+  SECTION 01 – wp-login / wp-admin
+════════════════════════════════ -->
+<div class="section open" id="s01" data-severity="critical" data-tags="login admin ip restrict brute force access control">
+  <div class="section-header" onclick="toggleSection('s01')">
+    <div class="section-num">01</div>
+    <div class="section-title-group">
+      <div class="section-title">Restrict wp-login.php &amp; wp-admin by IP</div>
+      <div class="section-meta">
+        <span class="badge badge-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(0,212,255,0.08);color:var(--cyan)">Server Level</span>
+        <span class="tag-pill">Apache</span><span class="tag-pill">Nginx</span><span class="tag-pill">.htaccess</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">WordPress admin login page and dashboard are publicly accessible, exposing them to automated brute-force, credential-stuffing, and targeted attacks.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-critical">Unauthorized admin access, site takeover, data exfiltration, ransomware deployment.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📁</span> Files &amp; Paths</div>
+        <div class="field-value">
+          <span class="tag-pill">/var/www/html/.htaccess</span>
+          <span class="tag-pill">/etc/apache2/sites-enabled/your-site.conf</span>
+          <span class="tag-pill">/etc/nginx/sites-enabled/your-site.conf</span>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Apache (.htaccess or VirtualHost)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/.htaccess</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># ─── Restrict wp-login.php ───────────────────────────────────</span>
+<span class="tag">&lt;Files wp-login.php&gt;</span>
+    Order deny,allow
+    Deny from all
+    <span class="cmt"># Replace with your office/VPN IP(s)</span>
+    Allow from <span class="str">203.0.113.10</span>
+    Allow from <span class="str">203.0.113.20</span>
+<span class="tag">&lt;/Files&gt;</span>
+
+<span class="cmt"># ─── Restrict wp-admin directory ─────────────────────────────</span>
+<span class="tag">&lt;IfModule mod_rewrite.c&gt;</span>
+    RewriteEngine On
+    RewriteCond %{REQUEST_URI} ^<span class="str">/wp-admin</span>
+    RewriteCond %{REMOTE_ADDR} !^<span class="str">203\.0\.113\.10$</span>
+    RewriteCond %{REMOTE_ADDR} !^<span class="str">203\.0\.113\.20$</span>
+    RewriteRule ^ - [F,L]
+<span class="tag">&lt;/IfModule&gt;</span>
+
+<span class="cmt"># ─── Allow admin-ajax.php (required by plugins) ──────────────</span>
+<span class="tag">&lt;Files admin-ajax.php&gt;</span>
+    Order allow,deny
+    Allow from all
+<span class="tag">&lt;/Files&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Nginx (server block)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/nginx/sites-enabled/your-site.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># ─── Restrict wp-login.php ───────────────────────────────────</span>
+location = /wp-login.php {
+    allow <span class="str">203.0.113.10</span>;
+    allow <span class="str">203.0.113.20</span>;
+    deny  all;
+    fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+}
+
+<span class="cmt"># ─── Restrict /wp-admin/ ─────────────────────────────────────</span>
+location ~ ^/wp-admin/ {
+    allow <span class="str">203.0.113.10</span>;
+    allow <span class="str">203.0.113.20</span>;
+    deny  all;
+    try_files $uri $uri/ /index.php?$args;
+    fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+}
+
+<span class="cmt"># ─── Always allow admin-ajax.php ────────────────────────────</span>
+location = /wp-admin/admin-ajax.php {
+    allow all;
+    fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-webadmin">Web Server Admin</span>
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔄</span> Service Restart</div>
+        <div class="field-value">
+          <div class="restart-pill">⟳ Apache: <code>systemctl reload apache2</code></div>
+          <div class="restart-pill">⟳ Nginx: <code>systemctl reload nginx</code></div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# From an unauthorized IP — expect HTTP 403
+$ curl -I https://your-site.com/wp-login.php
+→ HTTP/2 403
+
+# From an authorized IP — expect redirect or 200
+$ curl -I --interface 203.0.113.10 https://your-site.com/wp-login.php
+→ HTTP/2 200 or 302
+
+# Verify wp-admin also blocked
+$ curl -I https://your-site.com/wp-admin/
+→ HTTP/2 403
+
+# admin-ajax.php must remain accessible
+$ curl -I https://your-site.com/wp-admin/admin-ajax.php
+→ HTTP/2 200 or 400 (not 403)</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            Access to <em>wp-login.php</em> and the <em>/wp-admin/</em> directory has been restricted at the web server layer (Apache/Nginx) via IP allowlisting, returning HTTP 403 for all unauthenticated source addresses. The control has been verified to block external access while preserving admin-ajax.php availability for plugin functionality.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 02 – XML-RPC
+════════════════════════════════ -->
+<div class="section" id="s02" data-severity="critical" data-tags="xmlrpc xml-rpc disable attack vector">
+  <div class="section-header" onclick="toggleSection('s02')">
+    <div class="section-num">02</div>
+    <div class="section-title-group">
+      <div class="section-title">Disable XML-RPC Securely</div>
+      <div class="section-meta">
+        <span class="badge badge-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(0,212,255,0.08);color:var(--cyan)">Server + WordPress</span>
+        <span class="tag-pill">xmlrpc.php</span><span class="tag-pill">.htaccess</span><span class="tag-pill">functions.php</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">XML-RPC is enabled by default, allowing remote method invocations. Attackers abuse the <code>system.multicall</code> method to perform thousands of login attempts in a single HTTP request, bypassing traditional brute-force limits.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-critical">Credential bruteforce amplification (1 request = 500 guesses), DDoS amplification, unauthorized remote content publication.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📁</span> Files &amp; Paths</div>
+        <div class="field-value">
+          <span class="tag-pill">/var/www/html/.htaccess</span>
+          <span class="tag-pill">/etc/nginx/sites-enabled/your-site.conf</span>
+          <span class="tag-pill">/var/www/html/wp-content/themes/your-theme/functions.php</span>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Apache: Block at server level</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/.htaccess</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Block xmlrpc.php completely</span>
+<span class="tag">&lt;Files xmlrpc.php&gt;</span>
+    Order deny,allow
+    Deny from all
+<span class="tag">&lt;/Files&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Nginx</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/nginx/sites-enabled/your-site.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre>location = /xmlrpc.php {
+    deny all;
+    access_log off;
+    log_not_found off;
+    return 444;
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — WordPress layer (Defense-in-depth)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/wp-content/themes/your-theme/functions.php</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt">// Disable XML-RPC completely</span>
+<span class="fn">add_filter</span>( <span class="str">'xmlrpc_enabled'</span>, <span class="str">'__return_false'</span> );
+
+<span class="cmt">// Also remove the X-Pingback header</span>
+<span class="fn">add_filter</span>( <span class="str">'wp_headers'</span>, <span class="kw">function</span>( $headers ) {
+    <span class="fn">unset</span>( $headers[<span class="str">'X-Pingback'</span>] );
+    <span class="kw">return</span> $headers;
+} );
+
+<span class="cmt">// Disable pingbacks (additional attack vector)</span>
+<span class="fn">add_filter</span>( <span class="str">'xmlrpc_methods'</span>, <span class="kw">function</span>( $methods ) {
+    <span class="fn">unset</span>( $methods[<span class="str">'pingback.ping'</span>] );
+    <span class="fn">unset</span>( $methods[<span class="str">'pingback.extensions.getPingbacks'</span>] );
+    <span class="kw">return</span> $methods;
+} );</pre>
+          </div>
+          <p style="margin-top:8px;color:var(--text3);font-size:12px;">⚠️ Add to a child theme's functions.php or a custom must-use plugin, not core files.</p>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-webadmin">Web Server Admin</span>
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔄</span> Restart</div>
+        <div class="field-value">
+          <div class="restart-pill">⟳ Apache: <code>systemctl reload apache2</code></div>
+          <div class="restart-pill">⟳ Nginx: <code>systemctl reload nginx</code></div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Expect HTTP 403, 444, or connection reset
+$ curl -I https://your-site.com/xmlrpc.php
+→ HTTP/2 403 (Apache) or connection refused (Nginx 444)
+
+# Verify no X-Pingback header in response
+$ curl -I https://your-site.com/ | grep -i pingback
+→ (empty — no X-Pingback header present)
+
+# Send a test XML-RPC call — should fail
+$ curl -s -d '&lt;?xml version="1.0"?&gt;&lt;methodCall&gt;&lt;methodName&gt;system.listMethods&lt;/methodName&gt;&lt;/methodCall&gt;' https://your-site.com/xmlrpc.php
+→ Access denied or empty response</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            XML-RPC endpoint (<em>xmlrpc.php</em>) has been disabled at both the web server level (returning HTTP 403/444) and at the WordPress application layer via the <em>xmlrpc_enabled</em> filter. The X-Pingback response header has been suppressed. Verification confirms the endpoint is inaccessible to external requests.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 03 – Brute Force
+════════════════════════════════ -->
+<div class="section" id="s03" data-severity="critical" data-tags="brute force login attempts limit fail2ban waf">
+  <div class="section-header" onclick="toggleSection('s03')">
+    <div class="section-num">03</div>
+    <div class="section-title-group">
+      <div class="section-title">Brute-Force Protection &amp; Login Rate Limiting</div>
+      <div class="section-meta">
+        <span class="badge badge-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(168,85,247,0.1);color:var(--purple)">Server + Plugin</span>
+        <span class="tag-pill">fail2ban</span><span class="tag-pill">Nginx</span><span class="tag-pill">WP Plugin</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">WordPress imposes no native limit on authentication attempts, making it susceptible to automated credential-stuffing and password-spray attacks.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-critical">Account takeover via dictionary/brute-force attacks, server resource exhaustion, DoS conditions.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📁</span> Files &amp; Paths</div>
+        <div class="field-value">
+          <span class="tag-pill">/etc/fail2ban/jail.local</span>
+          <span class="tag-pill">/etc/fail2ban/filter.d/wordpress.conf</span>
+          <span class="tag-pill">/etc/nginx/sites-enabled/your-site.conf</span>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 1 — Nginx Rate Limiting</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/nginx/nginx.conf (http block)</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Define login rate-limit zone (10 req/min per IP)</span>
+limit_req_zone $binary_remote_addr zone=wp_login:<span class="num">10m</span> rate=<span class="num">10r/m</span>;</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-filename">/etc/nginx/sites-enabled/your-site.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre>location = /wp-login.php {
+    limit_req zone=wp_login burst=<span class="num">5</span> nodelay;
+    limit_req_status <span class="num">429</span>;
+    allow <span class="str">203.0.113.10</span>;  <span class="cmt"># your IP</span>
+    deny  all;
+    fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    include fastcgi_params;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 2 — Fail2Ban for WordPress Login (Apache &amp; Nginx)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/fail2ban/filter.d/wordpress.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre>[Definition]
+failregex = ^<HOST> .* "POST /wp-login.php
+            ^<HOST> .* "POST /xmlrpc.php
+ignoreregex =</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-filename">/etc/fail2ban/jail.local</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre>[wordpress-login]
+enabled   = true
+filter    = wordpress
+logpath   = /var/log/nginx/access.log
+            <span class="cmt"># For Apache: /var/log/apache2/access.log</span>
+maxretry  = <span class="num">5</span>
+findtime  = <span class="num">300</span>
+bantime   = <span class="num">3600</span>
+action    = iptables-multiport[name=wordpress, port="80,443"]</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔌</span> Fix 3 — Free Plugin (WP Limit Login Attempts)</div>
+        <div class="field-value">
+          <p>Install <strong>Limit Login Attempts Reloaded</strong> (free, 1M+ installs) from WordPress.org. Configure:</p>
+          <ul class="check-list" style="margin-top:8px">
+            <li>Lockout after <strong>3 failed attempts</strong></li>
+            <li>Lockout duration: <strong>20 minutes</strong></li>
+            <li>Increase to <strong>24 hours</strong> after 4 lockouts</li>
+            <li>Enable <strong>GDPR-compliant IP logging</strong></li>
+            <li>Email notification on lockout</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+          <span class="role-badge role-webadmin">Web Server Admin</span>
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔄</span> Restart</div>
+        <div class="field-value">
+          <div class="restart-pill">⟳ <code>systemctl restart fail2ban</code></div>
+          <div class="restart-pill">⟳ <code>systemctl reload nginx</code></div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Trigger rate limit — send 15 rapid POST requests
+$ for i in {1..15}; do curl -s -o /dev/null -w "%{http_code}\n" -X POST https://your-site.com/wp-login.php; done
+→ First 10: 200 or 302, then: 429
+
+# Check fail2ban status
+$ fail2ban-client status wordpress-login
+→ Shows banned IPs and statistics
+
+# Check banned IPs in iptables
+$ iptables -L f2b-wordpress -n --line-numbers
+→ Lists currently banned IP addresses</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            Brute-force protection has been implemented via Nginx rate limiting (10 req/min, burst 5) returning HTTP 429 on threshold breach, backed by Fail2Ban which enforces a 1-hour IP ban after 5 failed login attempts within 5 minutes. Application-level lockout via the Limit Login Attempts plugin provides an additional layer of defense. All three controls are active and verified.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 04 – 2FA
+════════════════════════════════ -->
+<div class="section" id="s04" data-severity="high" data-tags="2fa two factor authentication mfa otp">
+  <div class="section-header" onclick="toggleSection('s04')">
+    <div class="section-num">04</div>
+    <div class="section-title-group">
+      <div class="section-title">Enable &amp; Enforce Two-Factor Authentication (2FA)</div>
+      <div class="section-meta">
+        <span class="badge badge-high">HIGH</span>
+        <span class="badge" style="background:rgba(0,255,136,0.08);color:var(--green)">WordPress Plugin</span>
+        <span class="tag-pill">WP Two Factor</span><span class="tag-pill">functions.php</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">WordPress uses single-factor authentication by default. Compromised credentials alone are sufficient for admin access.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-high">Full admin compromise via stolen, leaked, or phished credentials. Renders password policies insufficient alone.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Install &amp; Configure Two Factor Plugin</div>
+        <div class="field-value">
+          <p style="margin-bottom:12px">Install the official <strong>Two Factor</strong> plugin by WordPress.org (free, maintained by WordPress contributors):</p>
+          <div class="code-wrap">
+            <div class="code-filename">WP CLI Installation</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Install via WP-CLI</span>
+$ wp plugin install two-factor --activate --path=/var/www/html
+
+<span class="cmt"># Verify activation</span>
+$ wp plugin status two-factor --path=/var/www/html</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Force 2FA for Admin roles (functions.php)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/wp-content/themes/your-theme/functions.php</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt">/**
+ * Force 2FA enrollment for Administrators and Editors.
+ * Redirect to profile page if 2FA is not configured.
+ */</span>
+<span class="fn">add_action</span>( <span class="str">'init'</span>, <span class="kw">function</span>() {
+    <span class="kw">if</span> ( ! <span class="fn">is_user_logged_in</span>() ) <span class="kw">return</span>;
+
+    $user = <span class="fn">wp_get_current_user</span>();
+    $required_roles = [ <span class="str">'administrator'</span>, <span class="str">'editor'</span> ];
+
+    <span class="kw">if</span> ( <span class="fn">array_intersect</span>( $required_roles, (array) $user->roles ) ) {
+        <span class="cmt">// Check if Two Factor plugin is active and 2FA is configured</span>
+        <span class="kw">if</span> ( <span class="fn">class_exists</span>( <span class="str">'Two_Factor_Core'</span> ) ) {
+            $providers = Two_Factor_Core::get_enabled_providers_for_user( $user );
+            <span class="kw">if</span> ( <span class="fn">empty</span>( $providers ) && ! <span class="fn">doing_action</span>( <span class="str">'profile_update'</span> ) ) {
+                <span class="kw">if</span> ( ! <span class="fn">is_admin</span>() || ! <span class="fn">in_array</span>( $GLOBALS[<span class="str">'pagenow'</span>], [<span class="str">'profile.php'</span>, <span class="str">'user-edit.php'</span>] ) ) {
+                    <span class="fn">wp_redirect</span>( <span class="fn">admin_url</span>( <span class="str">'profile.php#two-factor-options'</span> ) );
+                    <span class="fn">exit</span>;
+                }
+            }
+        }
+    }
+} );</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔌</span> Supported Methods</div>
+        <div class="field-value">
+          <ul class="check-list">
+            <li>TOTP (Google Authenticator, Authy)</li>
+            <li>FIDO2/WebAuthn (hardware keys)</li>
+            <li>Email-based OTP</li>
+            <li>Backup verification codes</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Log in as admin — should be prompted for 2FA after password
+# Navigate to: https://your-site.com/wp-admin/ → should redirect to 2FA prompt
+
+# Check via WP-CLI which users have 2FA enabled
+$ wp user list --role=administrator --fields=ID,user_login --path=/var/www/html
+$ wp user meta get &lt;user_id&gt; _two_factor_enabled_providers --path=/var/www/html
+→ Should list configured providers (totp, fido-u2f, etc.)</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            Multi-factor authentication (TOTP-based) has been enforced for all Administrator and Editor-role accounts using the WordPress Two Factor plugin. Users without 2FA enrollment are programmatically redirected to configure a second factor before accessing any admin functionality. FIDO2 hardware key support is available for privileged users.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 05 – Password Policy
+════════════════════════════════ -->
+<div class="section" id="s05" data-severity="high" data-tags="password policy strength entropy complexity">
+  <div class="section-header" onclick="toggleSection('s05')">
+    <div class="section-num">05</div>
+    <div class="section-title-group">
+      <div class="section-title">Strong Password Policy Enforcement</div>
+      <div class="section-meta">
+        <span class="badge badge-high">HIGH</span>
+        <span class="badge" style="background:rgba(0,255,136,0.08);color:var(--green)">WordPress Core + Plugin</span>
+        <span class="tag-pill">functions.php</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">WordPress allows weak passwords (admins can bypass the "Weak Password" warning). No minimum complexity or length enforcement exists by default.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-high">Accounts with weak passwords are vulnerable to dictionary and credential-stuffing attacks, especially if credentials are reused across services.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Custom Password Validation in functions.php</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/wp-content/themes/your-theme/functions.php</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt">/**
+ * Enforce strong password policy for Admin/Editor roles.
+ * Min 12 chars, uppercase, lowercase, number, special char.
+ */</span>
+<span class="fn">add_action</span>( <span class="str">'user_profile_update_errors'</span>, <span class="str">'enforce_strong_password'</span>, <span class="num">10</span>, <span class="num">3</span> );
+<span class="fn">add_action</span>( <span class="str">'validate_password_reset'</span>, <span class="str">'enforce_strong_password'</span>, <span class="num">10</span>, <span class="num">2</span> );
+
+<span class="kw">function</span> <span class="fn">enforce_strong_password</span>( $errors, $update = <span class="kw">null</span>, $user = <span class="kw">null</span> ) {
+    $pass1 = <span class="fn">isset</span>( $_POST[<span class="str">'pass1'</span>] ) ? <span class="fn">trim</span>( $_POST[<span class="str">'pass1'</span>] ) : <span class="str">''</span>;
+    <span class="kw">if</span> ( <span class="fn">empty</span>( $pass1 ) ) <span class="kw">return</span>;
+
+    $errors_found = [];
+    <span class="kw">if</span> ( <span class="fn">strlen</span>( $pass1 ) < <span class="num">12</span> )
+        $errors_found[] = <span class="str">'At least 12 characters'</span>;
+    <span class="kw">if</span> ( ! <span class="fn">preg_match</span>( <span class="str">'/[A-Z]/'</span>, $pass1 ) )
+        $errors_found[] = <span class="str">'One uppercase letter'</span>;
+    <span class="kw">if</span> ( ! <span class="fn">preg_match</span>( <span class="str">'/[a-z]/'</span>, $pass1 ) )
+        $errors_found[] = <span class="str">'One lowercase letter'</span>;
+    <span class="kw">if</span> ( ! <span class="fn">preg_match</span>( <span class="str">'/[0-9]/'</span>, $pass1 ) )
+        $errors_found[] = <span class="str">'One number'</span>;
+    <span class="kw">if</span> ( ! <span class="fn">preg_match</span>( <span class="str">'/[\W_]/'</span>, $pass1 ) )
+        $errors_found[] = <span class="str">'One special character (!@#$%^&*)'</span>;
+
+    <span class="kw">if</span> ( ! <span class="fn">empty</span>( $errors_found ) ) {
+        $errors->add(
+            <span class="str">'weak_password'</span>,
+            <span class="str">'Password must include: '</span> . <span class="fn">implode</span>( <span class="str">', '</span>, $errors_found ) . <span class="str">'.'</span>
+        );
+    }
+}
+
+<span class="cmt">// Prevent admins from bypassing the weak password check</span>
+<span class="fn">add_filter</span>( <span class="str">'user_profile_update_errors'</span>, <span class="kw">function</span>( $errors ) {
+    <span class="kw">if</span> ( <span class="fn">isset</span>( $_POST[<span class="str">'pw_weak'</span>] ) ) {
+        <span class="fn">unset</span>( $_POST[<span class="str">'pw_weak'</span>] );
+    }
+    <span class="kw">return</span> $errors;
+}, <span class="num">1</span> );</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value"><span class="role-badge role-wpdev">WordPress Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>📏</span> Policy Requirements</div>
+        <div class="field-value">
+          <ul class="check-list">
+            <li>Minimum 12 characters</li>
+            <li>At least 1 uppercase letter</li>
+            <li>At least 1 lowercase letter</li>
+            <li>At least 1 number</li>
+            <li>At least 1 special character</li>
+            <li>No bypass for weak passwords</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Log in to WordPress admin → Users → Edit Profile
+# Set password to "test123" → click Update Profile
+→ Should display error: "Password must include: At least 12 characters, One uppercase letter..."
+
+# Set password to "Str0ng!Pass#2025" → should succeed</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            A password complexity policy enforcing a minimum of 12 characters including uppercase, lowercase, numeric, and special characters has been implemented at the WordPress application layer. The administrator weak-password bypass mechanism has been disabled. Policy is enforced on both profile updates and password resets.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 06 – User Enumeration
+════════════════════════════════ -->
+<div class="section" id="s06" data-severity="medium" data-tags="user enumeration rest api author username disclosure">
+  <div class="section-header" onclick="toggleSection('s06')">
+    <div class="section-num">06</div>
+    <div class="section-title-group">
+      <div class="section-title">Prevent User Enumeration via REST API &amp; Author URLs</div>
+      <div class="section-meta">
+        <span class="badge badge-medium">MEDIUM</span>
+        <span class="badge" style="background:rgba(0,255,136,0.08);color:var(--green)">WordPress</span>
+        <span class="tag-pill">functions.php</span><span class="tag-pill">.htaccess</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">WordPress exposes usernames via: (a) <code>/?author=1</code> redirect, (b) REST API <code>/wp-json/wp/v2/users</code>, and (c) author archive pages. Attackers use this to enumerate valid usernames for credential attacks.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-medium">Valid username disclosure reduces brute-force effort by 50%. Combined with leaked password databases, it enables targeted credential attacks.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 1 — Block author=N enumeration (.htaccess / Nginx)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/.htaccess (Apache)</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Block author scan enumeration</span>
+<span class="tag">&lt;IfModule mod_rewrite.c&gt;</span>
+    RewriteEngine On
+    RewriteCond %{QUERY_STRING} author=\d
+    RewriteRule ^ /? [L,R=301]
+<span class="tag">&lt;/IfModule&gt;</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-filename">/etc/nginx/sites-enabled/your-site.conf (Nginx)</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Block ?author=N enumeration</span>
+if ( $query_string ~* "author=\d+" ) {
+    return 403;
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 2 — Restrict REST API user endpoint (functions.php)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/wp-content/themes/your-theme/functions.php</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt">/**
+ * Restrict /wp-json/wp/v2/users to authenticated requests only.
+ * Returns 401 for unauthenticated users.
+ */</span>
+<span class="fn">add_filter</span>( <span class="str">'rest_endpoints'</span>, <span class="kw">function</span>( $endpoints ) {
+    <span class="kw">if</span> ( <span class="fn">isset</span>( $endpoints[<span class="str">'/wp/v2/users'</span>] ) ) {
+        <span class="kw">foreach</span> ( $endpoints[<span class="str">'/wp/v2/users'</span>] <span class="kw">as</span> $key => $endpoint ) {
+            $endpoints[<span class="str">'/wp/v2/users'</span>][$key][<span class="str">'permission_callback'</span>] = <span class="kw">function</span>() {
+                <span class="kw">return</span> <span class="fn">current_user_can</span>( <span class="str">'list_users'</span> );
+            };
+        }
+    }
+    <span class="kw">if</span> ( <span class="fn">isset</span>( $endpoints[<span class="str">'/wp/v2/users/(?P&lt;id&gt;[\d]+)'</span>] ) ) {
+        <span class="kw">foreach</span> ( $endpoints[<span class="str">'/wp/v2/users/(?P&lt;id&gt;[\d]+)'</span>] <span class="kw">as</span> $key => $endpoint ) {
+            $endpoints[<span class="str">'/wp/v2/users/(?P&lt;id&gt;[\d]+)'</span>][$key][<span class="str">'permission_callback'</span>] = <span class="kw">function</span>() {
+                <span class="kw">return</span> <span class="fn">current_user_can</span>( <span class="str">'list_users'</span> );
+            };
+        }
+    }
+    <span class="kw">return</span> $endpoints;
+} );
+
+<span class="cmt">// Disable author archives to prevent enumeration via URL</span>
+<span class="fn">add_action</span>( <span class="str">'template_redirect'</span>, <span class="kw">function</span>() {
+    <span class="kw">if</span> ( <span class="fn">is_author</span>() ) {
+        <span class="fn">wp_redirect</span>( <span class="fn">home_url</span>( <span class="str">'/'</span> ), <span class="num">301</span> );
+        <span class="fn">exit</span>;
+    }
+} );</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+          <span class="role-badge role-webadmin">Web Server Admin</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔄</span> Restart</div>
+        <div class="field-value"><div class="restart-pill">⟳ <code>systemctl reload apache2 / nginx</code></div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Test author enumeration via query string — expect 403 or redirect
+$ curl -I "https://your-site.com/?author=1"
+→ HTTP/2 403 or 301 redirect to homepage
+
+# Test REST API users endpoint — expect 401 for unauthenticated
+$ curl -s https://your-site.com/wp-json/wp/v2/users | python3 -m json.tool
+→ {"code":"rest_forbidden","message":"Sorry, you are not allowed..."}
+
+# Test author archive URL — expect redirect
+$ curl -I "https://your-site.com/author/admin/"
+→ HTTP/2 301 → redirects to /</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            Username enumeration vectors have been mitigated: the <em>?author=N</em> query parameter is blocked at the web server layer, the <em>/wp-json/wp/v2/users</em> REST endpoint requires authentication (returns HTTP 401 for unauthenticated requests), and author archive pages redirect to the homepage. No usernames are publicly discoverable through these attack vectors.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 07 – Version Disclosure
+════════════════════════════════ -->
+<div class="section" id="s07" data-severity="medium" data-tags="version disclosure generator meta readme wp-includes fingerprinting">
+  <div class="section-header" onclick="toggleSection('s07')">
+    <div class="section-num">07</div>
+    <div class="section-title-group">
+      <div class="section-title">Remove WordPress Version Disclosure</div>
+      <div class="section-meta">
+        <span class="badge badge-medium">MEDIUM</span>
+        <span class="badge" style="background:rgba(0,255,136,0.08);color:var(--green)">WordPress + Server</span>
+        <span class="tag-pill">functions.php</span><span class="tag-pill">readme.html</span><span class="tag-pill">.htaccess</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">WordPress version is exposed via: HTML meta generator tag, RSS feed, <code>readme.html</code>, script/style query strings (<code>?ver=6.x</code>), and the <code>/wp-includes/</code> directory. Attackers use this for targeted exploit selection.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-medium">Version fingerprinting enables precise CVE targeting. Even a 1-day delay in patching creates a known-exploit window if the version is disclosed.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Remove version from all disclosure points (functions.php)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/wp-content/themes/your-theme/functions.php</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt">// 1. Remove version from &lt;meta name="generator"&gt;</span>
+<span class="fn">remove_action</span>( <span class="str">'wp_head'</span>, <span class="str">'wp_generator'</span> );
+
+<span class="cmt">// 2. Remove version query strings from scripts and styles</span>
+<span class="fn">add_filter</span>( <span class="str">'style_loader_src'</span>, <span class="str">'remove_wp_version_strings'</span>, <span class="num">9999</span> );
+<span class="fn">add_filter</span>( <span class="str">'script_loader_src'</span>, <span class="str">'remove_wp_version_strings'</span>, <span class="num">9999</span> );
+
+<span class="kw">function</span> <span class="fn">remove_wp_version_strings</span>( $src ) {
+    <span class="kw">if</span> ( <span class="fn">strpos</span>( $src, <span class="str">'ver='</span> ) !== <span class="kw">false</span> ) {
+        $src = <span class="fn">remove_query_arg</span>( <span class="str">'ver'</span>, $src );
+    }
+    <span class="kw">return</span> $src;
+}
+
+<span class="cmt">// 3. Remove version from RSS feeds</span>
+<span class="fn">add_filter</span>( <span class="str">'the_generator'</span>, <span class="str">'__return_empty_string'</span> );
+
+<span class="cmt">// 4. Remove WP version from login page</span>
+<span class="fn">add_filter</span>( <span class="str">'login_headerurl'</span>, <span class="kw">function</span>() { <span class="kw">return</span> <span class="fn">home_url</span>(); } );</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Block readme.html and sensitive files at server level</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/.htaccess (Apache)</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Block WordPress fingerprinting files</span>
+<span class="tag">&lt;FilesMatch "^(readme|license|licenc[s|e]|changelog)\.(html|txt|md)$"&gt;</span>
+    Order deny,allow
+    Deny from all
+<span class="tag">&lt;/FilesMatch&gt;</span>
+
+<span class="cmt"># Block wp-config.php.bak and similar</span>
+<span class="tag">&lt;FilesMatch "\.(bak|config|sql|fla|psd|ini|log|sh|inc|swp|dist)$"&gt;</span>
+    Order deny,allow
+    Deny from all
+<span class="tag">&lt;/FilesMatch&gt;</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-filename">Shell command — delete readme.html</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Delete or rename disclosure files</span>
+$ <span class="fn">rm</span> /var/www/html/readme.html
+$ <span class="fn">rm</span> /var/www/html/license.txt
+$ <span class="fn">rm</span> -f /var/www/html/wp-admin/install.php   <span class="cmt"># if already installed</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔄</span> Restart</div>
+        <div class="field-value"><div class="restart-pill">⟳ <code>systemctl reload apache2 / nginx</code></div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Check HTML source for generator meta tag
+$ curl -s https://your-site.com/ | grep -i generator
+→ (empty — no generator tag visible)
+
+# Check if version appears in script/style URLs
+$ curl -s https://your-site.com/ | grep -oP 'ver=[0-9.]+' | head
+→ (empty — no version strings in asset URLs)
+
+# readme.html should return 403
+$ curl -I https://your-site.com/readme.html
+→ HTTP/2 403
+
+# RSS feed should not include WordPress version
+$ curl -s https://your-site.com/feed/ | grep -i generator
+→ (empty or generic)</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            WordPress version disclosure has been eliminated from all known vectors: HTML meta generator tag removed, asset version query strings stripped, RSS generator feed suppressed, <em>readme.html</em> and <em>license.txt</em> files blocked (HTTP 403) or deleted, and fingerprinting file extensions blocked at the web server layer. Verification confirms no version information is publicly accessible.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 08 – wp-config.php
+════════════════════════════════ -->
+<div class="section" id="s08" data-severity="critical" data-tags="wp-config permissions secret keys salts database credentials file permissions">
+  <div class="section-header" onclick="toggleSection('s08')">
+    <div class="section-num">08</div>
+    <div class="section-title-group">
+      <div class="section-title">Secure wp-config.php (Permissions, Keys &amp; Secrets)</div>
+      <div class="section-meta">
+        <span class="badge badge-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(0,212,255,0.08);color:var(--cyan)">Server + WordPress</span>
+        <span class="tag-pill">wp-config.php</span><span class="tag-pill">.htaccess</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value"><code>wp-config.php</code> contains database credentials, secret keys, and salts. Incorrect file permissions, default keys, or web-accessible location can expose all these secrets.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-critical">Complete database compromise, session hijacking (weak salts), cryptographic downgrade, full site takeover.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 1 — Set strict file permissions</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">Shell — File permissions hardening</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Set owner to web server user (www-data on Ubuntu/Debian)</span>
+$ chown www-data:www-data /var/www/html/wp-config.php
+
+<span class="cmt"># Restrict to owner read/write only (no group, no world)</span>
+$ chmod 600 /var/www/html/wp-config.php
+
+<span class="cmt"># Move wp-config.php ONE level above web root (optional but recommended)</span>
+$ mv /var/www/html/wp-config.php /var/www/wp-config.php
+<span class="cmt"># WordPress auto-discovers it one level up — no code change needed</span>
+
+<span class="cmt"># Verify permissions</span>
+$ ls -la /var/www/wp-config.php
+→ -rw------- 1 www-data www-data</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 2 — Block direct HTTP access (.htaccess)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/.htaccess</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Block direct access to wp-config.php</span>
+<span class="tag">&lt;Files wp-config.php&gt;</span>
+    Order deny,allow
+    Deny from all
+<span class="tag">&lt;/Files&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 3 — Generate fresh cryptographic keys and salts</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">wp-config.php — Replace existing keys/salts</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Generate fresh keys from WordPress API</span>
+$ curl -s https://api.wordpress.org/secret-key/1.1/salt/
+
+<span class="cmt"># Paste the output into wp-config.php replacing lines like:</span>
+<span class="kw">define</span>( <span class="str">'AUTH_KEY'</span>,          <span class="str">'... generated value ...'</span> );
+<span class="kw">define</span>( <span class="str">'SECURE_AUTH_KEY'</span>,   <span class="str">'... generated value ...'</span> );
+<span class="kw">define</span>( <span class="str">'LOGGED_IN_KEY'</span>,     <span class="str">'... generated value ...'</span> );
+<span class="kw">define</span>( <span class="str">'NONCE_KEY'</span>,         <span class="str">'... generated value ...'</span> );
+<span class="kw">define</span>( <span class="str">'AUTH_SALT'</span>,         <span class="str">'... generated value ...'</span> );
+<span class="kw">define</span>( <span class="str">'SECURE_AUTH_SALT'</span>,  <span class="str">'... generated value ...'</span> );
+<span class="kw">define</span>( <span class="str">'LOGGED_IN_SALT'</span>,    <span class="str">'... generated value ...'</span> );
+<span class="kw">define</span>( <span class="str">'NONCE_SALT'</span>,        <span class="str">'... generated value ...'</span> );</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 4 — Hardening flags in wp-config.php</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">wp-config.php — Security flags to add</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt">// Force SSL for admin and logins</span>
+<span class="kw">define</span>( <span class="str">'FORCE_SSL_ADMIN'</span>, <span class="kw">true</span> );
+
+<span class="cmt">// Disable file editing from WP admin dashboard</span>
+<span class="kw">define</span>( <span class="str">'DISALLOW_FILE_EDIT'</span>, <span class="kw">true</span> );
+
+<span class="cmt">// Disable plugin/theme installation/updates from dashboard</span>
+<span class="kw">define</span>( <span class="str">'DISALLOW_FILE_MODS'</span>, <span class="kw">true</span> );
+
+<span class="cmt">// Set ABSPATH to prevent direct file access</span>
+<span class="kw">define</span>( <span class="str">'ABSPATH'</span>, <span class="fn">dirname</span>( __FILE__ ) . <span class="str">'/'</span> );
+
+<span class="cmt">// Limit post revisions to reduce DB bloat and attack surface</span>
+<span class="kw">define</span>( <span class="str">'WP_POST_REVISIONS'</span>, <span class="num">3</span> );
+
+<span class="cmt">// Disable debug in production (NEVER true in prod)</span>
+<span class="kw">define</span>( <span class="str">'WP_DEBUG'</span>, <span class="kw">false</span> );
+<span class="kw">define</span>( <span class="str">'WP_DEBUG_LOG'</span>, <span class="kw">false</span> );
+<span class="kw">define</span>( <span class="str">'WP_DEBUG_DISPLAY'</span>, <span class="kw">false</span> );</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="field-value">
+          <div class="verify-block">
+# Check file permissions (must be 600)
+$ stat -c "%a %n" /var/www/html/wp-config.php
+→ 600 /var/www/html/wp-config.php
+
+# Direct HTTP access must return 403
+$ curl -I https://your-site.com/wp-config.php
+→ HTTP/2 403
+
+# File editor must be disabled in WP admin
+# WP Admin → Appearance → should NOT show "Theme Editor" menu item</div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            <em>wp-config.php</em> has been secured: file permissions set to 600 (owner read/write only), direct HTTP access blocked returning HTTP 403, cryptographic keys and salts regenerated using the official WordPress API, SSL enforced for all admin sessions, and the dashboard file editor disabled. WP_DEBUG is confirmed disabled in production to prevent information disclosure.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 09 – Directory Listing
+════════════════════════════════ -->
+<div class="section" id="s09" data-severity="medium" data-tags="directory listing index autoindex options indexes browsing">
+  <div class="section-header" onclick="toggleSection('s09')">
+    <div class="section-num">09</div>
+    <div class="section-title-group">
+      <div class="section-title">Disable Directory Listing</div>
+      <div class="section-meta">
+        <span class="badge badge-medium">MEDIUM</span>
+        <span class="badge" style="background:rgba(0,212,255,0.08);color:var(--cyan)">Server Level</span>
+        <span class="tag-pill">.htaccess</span><span class="tag-pill">nginx.conf</span><span class="tag-pill">apache2.conf</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">When a directory lacks an index file, Apache/Nginx may display its full file listing, exposing plugin names, theme structures, backup files, and configuration details.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-medium">Information disclosure of file structure, plugin versions (aiding targeted CVE attacks), exposed backup files and configuration artifacts.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Apache</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/apache2/apache2.conf or /var/www/html/.htaccess</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Disable directory listing globally</span>
+<span class="tag">&lt;Directory /var/www/html&gt;</span>
+    Options -Indexes -ExecCGI
+    AllowOverride All
+    Require all granted
+<span class="tag">&lt;/Directory&gt;</span>
+
+<span class="cmt"># Alternatively via .htaccess</span>
+Options -Indexes</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Nginx</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/nginx/sites-enabled/your-site.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre>server {
+    <span class="cmt"># Disable autoindex (directory listing)</span>
+    autoindex off;
+
+    <span class="cmt"># Block direct access to wp-includes</span>
+    location ~* /wp-includes/.*.php$ {
+        deny all;
+        return 403;
+    }
+
+    <span class="cmt"># Block direct access to wp-content/uploads php files</span>
+    location ~* /wp-content/uploads/.*\.php$ {
+        deny all;
+        return 403;
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-webadmin">Web Server Admin</span>
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔄</span> Restart</div>
+        <div class="field-value"><div class="restart-pill">⟳ <code>systemctl reload apache2 / nginx</code></div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Test directory listing on uploads and plugin directories
+$ curl -I https://your-site.com/wp-content/uploads/
+→ HTTP/2 403 (not a directory listing page)
+
+$ curl -I https://your-site.com/wp-content/plugins/
+→ HTTP/2 403
+
+# Ensure no "Index of" text in response body
+$ curl -s https://your-site.com/wp-content/ | grep -i "Index of"
+→ (empty — no directory listing)</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            Directory listing (Options Indexes / autoindex) has been disabled at the web server configuration level. Requests to directories without an index file return HTTP 403. Direct PHP execution within <em>wp-includes/</em> and <em>wp-content/uploads/</em> directories has been blocked as an additional defense measure.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 10 – File Upload Hardening
+════════════════════════════════ -->
+<div class="section" id="s10" data-severity="high" data-tags="file upload webshell malware php execution mime type uploads">
+  <div class="section-header" onclick="toggleSection('s10')">
+    <div class="section-num">10</div>
+    <div class="section-title-group">
+      <div class="section-title">File Upload Hardening</div>
+      <div class="section-meta">
+        <span class="badge badge-high">HIGH</span>
+        <span class="badge" style="background:rgba(0,212,255,0.08);color:var(--cyan)">Server + WordPress</span>
+        <span class="tag-pill">.htaccess</span><span class="tag-pill">nginx.conf</span><span class="tag-pill">functions.php</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">The WordPress upload directory (<code>/wp-content/uploads/</code>) allows file uploads. If PHP execution is not disabled in this directory, attackers can upload webshells disguised as images.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-high">Remote Code Execution (RCE) via uploaded PHP webshells, leading to complete server compromise, data exfiltration, and lateral movement.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 1 — Disable PHP execution in uploads dir (Apache)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/wp-content/uploads/.htaccess (create this file)</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Disable PHP/script execution in uploads directory</span>
+<span class="tag">&lt;FilesMatch "\.(php|php3|php4|php5|php7|phtml|pl|py|jsp|asp|sh|cgi)$"&gt;</span>
+    Order deny,allow
+    Deny from all
+<span class="tag">&lt;/FilesMatch&gt;</span>
+
+<span class="tag">&lt;IfModule mod_php.c&gt;</span>
+    php_flag engine off
+<span class="tag">&lt;/IfModule&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 2 — Nginx: block PHP in uploads</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/nginx/sites-enabled/your-site.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Block PHP execution in uploads directory</span>
+location ~* /wp-content/uploads/.*\.(php|phtml|php3|php4|php5|pl|py|jsp|asp|sh)$ {
+    deny all;
+    return 403;
+}
+
+<span class="cmt"># Restrict file types served from uploads (MIME enforcement)</span>
+location ~* ^/wp-content/uploads/ {
+    location ~* \.(jpg|jpeg|png|gif|webp|svg|mp4|mp3|pdf|zip|doc|docx)$ {
+        add_header X-Content-Type-Options nosniff;
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 3 — Restrict allowed upload MIME types (functions.php)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/var/www/html/wp-content/themes/your-theme/functions.php</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt">/**
+ * Restrict uploaded file MIME types to safe list.
+ * Blocks SVG by default (XSS risk), add only if needed.
+ */</span>
+<span class="fn">add_filter</span>( <span class="str">'upload_mimes'</span>, <span class="kw">function</span>( $mimes ) {
+    <span class="cmt">// Define allowed MIME types</span>
+    $allowed = [
+        <span class="str">'jpg|jpeg|jpe'</span> => <span class="str">'image/jpeg'</span>,
+        <span class="str">'gif'</span>          => <span class="str">'image/gif'</span>,
+        <span class="str">'png'</span>          => <span class="str">'image/png'</span>,
+        <span class="str">'webp'</span>         => <span class="str">'image/webp'</span>,
+        <span class="str">'pdf'</span>          => <span class="str">'application/pdf'</span>,
+        <span class="str">'doc|docx'</span>     => <span class="str">'application/msword'</span>,
+        <span class="str">'mp4|m4v'</span>      => <span class="str">'video/mp4'</span>,
+        <span class="str">'mp3|m4a'</span>      => <span class="str">'audio/mpeg'</span>,
+    ];
+    <span class="kw">return</span> $allowed;  <span class="cmt">// Replace entire MIME list</span>
+}, <span class="num">1</span> );</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-webadmin">Web Server Admin</span>
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Upload a test PHP file via WordPress media library
+# → Should be rejected: "Sorry, this file type is not permitted"
+
+# Even if somehow uploaded, execution must be blocked
+$ curl -I https://your-site.com/wp-content/uploads/test.php
+→ HTTP/2 403
+
+# Confirm legitimate image upload works
+# → Upload a .jpg via WordPress Media → should succeed</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            PHP and script execution has been disabled in the WordPress uploads directory via server-level configuration (returning HTTP 403 for PHP requests). Allowed MIME types have been restricted at the application layer to a defined whitelist. Both server-level blocking and application-level MIME filtering are active, mitigating webshell upload and Remote Code Execution risks.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 11 – WAF
+════════════════════════════════ -->
+<div class="section" id="s11" data-severity="high" data-tags="waf web application firewall modsecurity wordfence cloudflare">
+  <div class="section-header" onclick="toggleSection('s11')">
+    <div class="section-num">11</div>
+    <div class="section-title-group">
+      <div class="section-title">Web Application Firewall (WAF) Configuration</div>
+      <div class="section-meta">
+        <span class="badge badge-high">HIGH</span>
+        <span class="badge" style="background:rgba(0,212,255,0.08);color:var(--cyan)">Server + Firewall</span>
+        <span class="tag-pill">ModSecurity</span><span class="tag-pill">Wordfence</span><span class="tag-pill">Nginx</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">Without a WAF, the application is exposed to OWASP Top 10 attacks: SQL injection, XSS, LFI, path traversal, CSRF, and automated exploit scanners.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-high">Exploitation of application-layer vulnerabilities in WordPress core, themes, or plugins resulting in data breach or RCE.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 1 — Install ModSecurity (Apache — Free, open-source WAF)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">Shell — Install ModSecurity + OWASP Core Rule Set</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Install ModSecurity for Apache</span>
+$ apt-get install libapache2-mod-security2 -y
+$ a2enmod security2
+
+<span class="cmt"># Download OWASP Core Rule Set (CRS)</span>
+$ cd /etc/modsecurity/
+$ wget https://github.com/coreruleset/coreruleset/archive/v4.0.0.tar.gz
+$ tar -xzf v4.0.0.tar.gz
+$ cp coreruleset-4.0.0/crs-setup.conf.example crs-setup.conf
+
+<span class="cmt"># Enable modsecurity.conf</span>
+$ cp /etc/modsecurity/modsecurity.conf-recommended /etc/modsecurity/modsecurity.conf
+
+<span class="cmt"># Switch from DetectionOnly to enforcement mode</span>
+$ sed -i 's/SecRuleEngine DetectionOnly/SecRuleEngine On/' /etc/modsecurity/modsecurity.conf
+
+$ systemctl restart apache2</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 2 — Wordfence Security Plugin (Free, Recommended for WP)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">WP-CLI Installation</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Install Wordfence (free tier has excellent WAF)</span>
+$ wp plugin install wordfence --activate --path=/var/www/html</pre>
+          </div>
+          <p style="margin-top:10px;color:var(--text2);font-size:13px;">Wordfence free tier provides:</p>
+          <ul class="check-list" style="margin-top:8px">
+            <li>WordPress-specific WAF rules (updated 30-day delay on free)</li>
+            <li>Malware scanner for files, themes, and plugins</li>
+            <li>Live traffic monitoring</li>
+            <li>IP reputation blocking</li>
+            <li>Login security (rate limiting, CAPTCHA)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 3 — Nginx: Manual WAF rules for common attacks</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/nginx/sites-enabled/your-site.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Block common attack patterns in query strings</span>
+set $block_sql_injections 0;
+if ( $query_string ~* "union.*select.*\(" ) { set $block_sql_injections 1; }
+if ( $query_string ~* "concat.*\(.*\)" )    { set $block_sql_injections 1; }
+if ( $block_sql_injections = 1 ) { return 403; }
+
+<span class="cmt"># Block XSS attempts</span>
+set $block_xss 0;
+if ( $query_string ~* "&lt;script&gt;" )          { set $block_xss 1; }
+if ( $query_string ~* "javascript:" )       { set $block_xss 1; }
+if ( $block_xss = 1 )                       { return 403; }
+
+<span class="cmt"># Block common vulnerability scanners</span>
+if ( $http_user_agent ~* (nikto|sqlmap|nmap|masscan|zgrab) ) {
+    return 403;
+}
+
+<span class="cmt"># Block requests with no User-Agent</span>
+if ( $http_user_agent = "" ) {
+    return 403;
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+          <span class="role-badge role-webadmin">Web Server Admin</span>
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Test SQLi blocking
+$ curl -I "https://your-site.com/?id=1+UNION+SELECT+1,2,3"
+→ HTTP/2 403
+
+# Test XSS blocking
+$ curl -I "https://your-site.com/?q=&lt;script&gt;alert(1)&lt;/script&gt;"
+→ HTTP/2 403
+
+# Verify ModSecurity is active
+$ apachectl -M | grep security
+→ security2_module (shared)
+
+# Check Wordfence WAF status in WP Admin → Wordfence → Firewall</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            A Web Application Firewall has been deployed at both the server layer (ModSecurity with OWASP CRS v4 in enforcement mode) and the WordPress application layer (Wordfence Security plugin). SQL injection, XSS, and path traversal patterns are actively blocked. Known vulnerability scanner User-Agents are rejected. WAF efficacy verified via controlled injection test payloads returning HTTP 403.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 12 – Security Headers
+════════════════════════════════ -->
+<div class="section" id="s12" data-severity="high" data-tags="security headers csp hsts x-frame clickjacking cors content security policy">
+  <div class="section-header" onclick="toggleSection('s12')">
+    <div class="section-num">12</div>
+    <div class="section-title-group">
+      <div class="section-title">Security Headers (HTTP Response Headers)</div>
+      <div class="section-meta">
+        <span class="badge badge-high">HIGH</span>
+        <span class="badge" style="background:rgba(0,212,255,0.08);color:var(--cyan)">Server Level</span>
+        <span class="tag-pill">Apache</span><span class="tag-pill">Nginx</span><span class="tag-pill">HSTS</span><span class="tag-pill">CSP</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">Missing HTTP security headers leave the site vulnerable to clickjacking, MIME-sniffing attacks, cross-site scripting (via content injection), and SSL stripping.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-high">XSS via content injection, clickjacking, session hijacking via HTTP downgrade, MIME confusion attacks, information leakage via Referer headers.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Apache (VirtualHost or .htaccess)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/apache2/sites-enabled/your-site.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="tag">&lt;IfModule mod_headers.c&gt;</span>
+    <span class="cmt"># Prevent clickjacking</span>
+    Header always set X-Frame-Options <span class="str">"SAMEORIGIN"</span>
+
+    <span class="cmt"># Prevent MIME type sniffing</span>
+    Header always set X-Content-Type-Options <span class="str">"nosniff"</span>
+
+    <span class="cmt"># XSS filter (legacy browsers)</span>
+    Header always set X-XSS-Protection <span class="str">"1; mode=block"</span>
+
+    <span class="cmt"># HTTP Strict Transport Security (HSTS) — 1 year</span>
+    Header always set Strict-Transport-Security <span class="str">"max-age=31536000; includeSubDomains; preload"</span>
+
+    <span class="cmt"># Referrer Policy — don't leak URL to third-parties</span>
+    Header always set Referrer-Policy <span class="str">"strict-origin-when-cross-origin"</span>
+
+    <span class="cmt"># Permissions Policy — disable unused browser features</span>
+    Header always set Permissions-Policy <span class="str">"geolocation=(), microphone=(), camera=(), payment=()"</span>
+
+    <span class="cmt"># Content Security Policy (adjust domains as needed)</span>
+    Header always set Content-Security-Policy <span class="str">"default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';"</span>
+
+    <span class="cmt"># Remove server version disclosure</span>
+    Header always unset X-Powered-By
+    Header always unset Server
+<span class="tag">&lt;/IfModule&gt;</span>
+
+<span class="cmt"># Also disable server signature in apache2.conf</span>
+ServerTokens Prod
+ServerSignature Off</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix — Nginx</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/nginx/sites-enabled/your-site.conf (server block)</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Security headers</span>
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-XSS-Protection "1; mode=block" always;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self';" always;
+
+<span class="cmt"># Hide Nginx version and server tokens</span>
+server_tokens off;
+
+<span class="cmt"># Remove X-Powered-By (set in php.ini or here)</span>
+fastcgi_hide_header X-Powered-By;</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-filename">/etc/php/8.2/fpm/php.ini — also hide PHP</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre>expose_php = Off</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-webadmin">Web Server Admin</span>
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔄</span> Restart</div>
+        <div class="field-value">
+          <div class="restart-pill">⟳ <code>systemctl reload apache2</code></div>
+          <div class="restart-pill">⟳ <code>systemctl reload nginx php8.2-fpm</code></div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Check all security headers in response
+$ curl -I https://your-site.com/ 2>&1 | grep -E '(Strict|X-Frame|X-Content|Content-Security|Referrer|Permissions|X-XSS)'
+→ strict-transport-security: max-age=31536000; includeSubDomains; preload
+→ x-frame-options: SAMEORIGIN
+→ x-content-type-options: nosniff
+→ content-security-policy: default-src 'self'; ...
+→ referrer-policy: strict-origin-when-cross-origin
+
+# Online verification — use securityheaders.com
+$ curl -s "https://securityheaders.com/?q=https://your-site.com" | grep -i grade
+→ Grade: A
+
+# Verify server header removed
+$ curl -I https://your-site.com/ | grep -iE '(server|x-powered-by)'
+→ (empty or "server: nginx" without version)</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            All recommended HTTP security response headers have been implemented: HSTS (max-age 1 year with includeSubDomains), X-Frame-Options (SAMEORIGIN), X-Content-Type-Options (nosniff), Content-Security-Policy, Referrer-Policy, and Permissions-Policy. Server version tokens have been suppressed. Configuration verified via curl and securityheaders.com achieving a Grade A rating.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 13 – Logging & Monitoring
+════════════════════════════════ -->
+<div class="section" id="s13" data-severity="medium" data-tags="logging monitoring auditd syslog access log intrusion detection ids">
+  <div class="section-header" onclick="toggleSection('s13')">
+    <div class="section-num">13</div>
+    <div class="section-title-group">
+      <div class="section-title">Logging &amp; Monitoring</div>
+      <div class="section-meta">
+        <span class="badge badge-medium">MEDIUM</span>
+        <span class="badge" style="background:rgba(168,85,247,0.1);color:var(--purple)">Server + Plugin</span>
+        <span class="tag-pill">auditd</span><span class="tag-pill">fail2ban</span><span class="tag-pill">WP Syslog</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">Without proper logging, attacks go undetected and post-incident forensics are impossible. Default WordPress logging is minimal. Server access logs may not capture security-relevant events.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-medium">Inability to detect ongoing attacks, delayed incident response, failure to meet audit and compliance requirements (ISO 27001, CERT-In guidelines).</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 1 — Nginx access log with custom format (captures attack patterns)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/nginx/nginx.conf</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Enhanced log format with User-Agent and request time</span>
+log_format security_combined
+    <span class="str">'$remote_addr - $remote_user [$time_local] '</span>
+    <span class="str">'"$request" $status $body_bytes_sent '</span>
+    <span class="str">'"$http_referer" "$http_user_agent" '</span>
+    <span class="str">'$request_time $upstream_response_time'</span>;
+
+access_log /var/log/nginx/access.log security_combined;
+error_log  /var/log/nginx/error.log warn;</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 2 — Auditd: track wp-config.php access</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">Shell — Install auditd and add rules</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Install auditd</span>
+$ apt-get install auditd -y
+
+<span class="cmt"># Watch critical WordPress files for read/write</span>
+$ auditctl -w /var/www/html/wp-config.php -p rwa -k wp-config-access
+$ auditctl -w /var/www/html/wp-content/uploads -p w -k uploads-write
+$ auditctl -w /var/www/html/.htaccess -p rwa -k htaccess-access
+
+<span class="cmt"># Make rules persistent</span>
+$ echo '-w /var/www/html/wp-config.php -p rwa -k wp-config-access' >> /etc/audit/rules.d/wordpress.rules
+$ echo '-w /var/www/html/wp-content/uploads -p w -k uploads-write' >> /etc/audit/rules.d/wordpress.rules
+$ echo '-w /var/www/html/.htaccess -p rwa -k htaccess-access' >> /etc/audit/rules.d/wordpress.rules
+
+$ systemctl restart auditd</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 3 — WP Activity Log Plugin (free, #1 WP audit log)</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">WP-CLI Installation</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Install WP Activity Log (formerly WP Security Audit Log)</span>
+$ wp plugin install wp-security-audit-log --activate --path=/var/www/html</pre>
+          </div>
+          <p style="margin-top:10px;color:var(--text2);font-size:13px;">Tracks: logins, failed logins, user changes, plugin installs, file edits, settings changes, content modifications.</p>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 4 — Log rotation and retention</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/etc/logrotate.d/wordpress-nginx</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre>/var/log/nginx/access.log /var/log/nginx/error.log {
+    daily
+    rotate <span class="num">90</span>         <span class="cmt"># Keep 90 days</span>
+    compress
+    delaycompress
+    missingok
+    notifempty
+    sharedscripts
+    postrotate
+        nginx -s reopen
+    endscript
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Verify access logging is active
+$ tail -f /var/log/nginx/access.log
+→ Should show live requests with full User-Agent and timing
+
+# Test auditd is capturing wp-config.php access
+$ cat /var/www/html/wp-config.php > /dev/null
+$ ausearch -k wp-config-access | tail -5
+→ Should show audit entry for the read
+
+# Verify log rotation config
+$ logrotate -d /etc/logrotate.d/wordpress-nginx
+→ Should show rotation plan without errors</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            Comprehensive logging is enabled at the web server layer (Nginx enhanced log format), OS kernel layer (auditd watching critical WordPress files), and WordPress application layer (WP Activity Log plugin). Log retention is configured for 90 days with compressed rotation. Audit trail covers authentication events, file modifications, and plugin/settings changes, satisfying forensic evidence requirements.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SECTION 14 – Backup Security
+════════════════════════════════ -->
+<div class="section" id="s14" data-severity="medium" data-tags="backup restore encrypted offsite wordpress database files retention">
+  <div class="section-header" onclick="toggleSection('s14')">
+    <div class="section-num">14</div>
+    <div class="section-title-group">
+      <div class="section-title">Backup Security Essentials</div>
+      <div class="section-meta">
+        <span class="badge badge-medium">MEDIUM</span>
+        <span class="badge" style="background:rgba(0,255,136,0.08);color:var(--green)">Server + Plugin</span>
+        <span class="tag-pill">UpdraftPlus</span><span class="tag-pill">mysqldump</span><span class="tag-pill">gpg</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="section-body">
+    <div class="field-grid">
+      <div class="field">
+        <div class="field-label"><span>⚠️</span> Issue</div>
+        <div class="field-value">Backups stored in the web root are publicly downloadable. Unencrypted backups containing database credentials and user data violate data protection principles. Missing backups prevent recovery from ransomware or corruption.</div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>🔥</span> Risk</div>
+        <div class="field-value"><div class="risk-box risk-medium">Backup files exposed via directory browsing leak full database dumps. No backup = no recovery from attack. Unencrypted backups violate DPDP Act / IT Act compliance.</div></div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 1 — Automated encrypted backup script</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">/usr/local/bin/wp-backup.sh (create this script)</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre>#!/bin/bash
+<span class="cmt"># WordPress Secure Backup Script</span>
+<span class="cmt"># Run via cron: 0 2 * * * /usr/local/bin/wp-backup.sh</span>
+
+SITE_DIR=<span class="str">"/var/www/html"</span>
+BACKUP_DIR=<span class="str">"/var/backups/wordpress"</span>  <span class="cmt"># OUTSIDE web root</span>
+DATE=$(date +%Y%m%d_%H%M%S)
+DB_NAME=<span class="str">"wordpress_db"</span>
+DB_USER=<span class="str">"wp_user"</span>
+DB_PASS=<span class="str">"your_db_password"</span>
+GPG_RECIPIENT=<span class="str">"backup@yourdomain.com"</span>
+RETENTION_DAYS=<span class="num">30</span>
+
+<span class="cmt"># Create backup directory (not web-accessible)</span>
+mkdir -p $BACKUP_DIR
+
+<span class="cmt"># 1. Database backup</span>
+mysqldump -u $DB_USER -p$DB_PASS $DB_NAME | \
+    gzip | \
+    gpg --recipient $GPG_RECIPIENT --encrypt \
+    > $BACKUP_DIR/db_${DATE}.sql.gz.gpg
+
+<span class="cmt"># 2. Files backup (exclude cache, tmp files)</span>
+tar -czf - \
+    --exclude="$SITE_DIR/wp-content/cache" \
+    --exclude="$SITE_DIR/wp-content/uploads/cache" \
+    $SITE_DIR | \
+    gpg --recipient $GPG_RECIPIENT --encrypt \
+    > $BACKUP_DIR/files_${DATE}.tar.gz.gpg
+
+<span class="cmt"># 3. Set strict permissions on backups</span>
+chmod 600 $BACKUP_DIR/*.gpg
+chown root:root $BACKUP_DIR/*.gpg
+
+<span class="cmt"># 4. Remove old backups beyond retention period</span>
+find $BACKUP_DIR -name "*.gpg" -mtime +$RETENTION_DAYS -delete
+
+echo "Backup completed: $DATE" >> /var/log/wp-backup.log</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-filename">Shell — Make executable and add to cron</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Make script executable</span>
+$ chmod +x /usr/local/bin/wp-backup.sh
+
+<span class="cmt"># Add to crontab — run at 2 AM daily</span>
+$ (crontab -l 2>/dev/null; echo "0 2 * * * /usr/local/bin/wp-backup.sh") | crontab -
+
+<span class="cmt"># Block web access to backup directory (precaution)</span>
+$ echo "Deny from all" > /var/backups/wordpress/.htaccess</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>🔧</span> Fix 2 — UpdraftPlus (Free Plugin) for managed backups</div>
+        <div class="field-value">
+          <div class="code-wrap">
+            <div class="code-filename">WP-CLI Installation</div>
+            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+            <pre><span class="cmt"># Install UpdraftPlus (free tier supports remote storage)</span>
+$ wp plugin install updraftplus --activate --path=/var/www/html</pre>
+          </div>
+          <p style="margin-top:10px;color:var(--text2);font-size:13px;margin-bottom:8px">Configure in WP Admin → Settings → UpdraftPlus Backups:</p>
+          <ul class="check-list">
+            <li>Schedule: Daily database, Weekly files</li>
+            <li>Remote storage: Google Drive, S3, Dropbox, SFTP (free)</li>
+            <li>Retain: 7 daily + 4 weekly + 3 monthly copies</li>
+            <li>Include database, plugins, themes, uploads</li>
+            <li>Email report to admin on completion</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>👥</span> Responsible</div>
+        <div class="field-value">
+          <span class="role-badge role-sysadmin">Linux/System Admin</span>
+          <span class="role-badge role-wpdev">WordPress Developer</span>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label"><span>📋</span> Backup Security Checklist</div>
+        <div class="field-value">
+          <ul class="check-list">
+            <li>Backups stored <strong>outside</strong> web root</li>
+            <li>Backups <strong>encrypted</strong> with GPG</li>
+            <li>Remote/offsite copy (3-2-1 rule)</li>
+            <li>File permissions 600 (root only)</li>
+            <li>Retention policy (30+ days)</li>
+            <li>Restore tested quarterly</li>
+            <li>Backup logs monitored</li>
+          </ul>
+        </div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>✅</span> Verification</div>
+        <div class="verify-block">
+# Verify backup runs and produces encrypted files
+$ /usr/local/bin/wp-backup.sh
+$ ls -la /var/backups/wordpress/
+→ -rw------- 1 root root ... db_20250421_020001.sql.gz.gpg
+
+# Confirm backups are NOT accessible via web
+$ curl -I https://your-site.com/../backups/wordpress/
+→ HTTP/2 403 or 404
+
+# Test decryption of backup (restore test)
+$ gpg --decrypt /var/backups/wordpress/db_20250421_020001.sql.gz.gpg | gunzip | head -5
+→ Should show SQL dump headers
+
+# Check cron is scheduled
+$ crontab -l | grep wp-backup
+→ 0 2 * * * /usr/local/bin/wp-backup.sh</div>
+      </div>
+      <div class="field-full">
+        <div class="field-label"><span>📋</span> VAPT Closure Statement</div>
+        <div class="vapt-closure">
+          <div class="vapt-icon">🔒</div>
+          <div class="vapt-text">
+            <div class="vapt-label">Audit Closure</div>
+            Automated daily encrypted backups have been implemented via a GPG-encrypted cron script storing files outside the web root with 600 permissions. Backups are replicated to a remote storage destination (3-2-1 rule). Backup files are confirmed inaccessible via HTTP. A 30-day retention policy is enforced with automated cleanup. Restore procedure has been tested and documented.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
+  SUMMARY TABLE
+════════════════════════════════ -->
+<div style="margin-top:48px;background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
+  <div style="padding:24px 28px;background:var(--card2);border-bottom:1px solid var(--border)">
+    <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--text)">📊 Security Controls Summary</h2>
+    <p style="color:var(--text2);font-size:13px;margin-top:4px">Master checklist for VAPT remediation tracking</p>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="who-table" style="width:100%">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Control</th>
+          <th>Severity</th>
+          <th>Layer</th>
+          <th>Responsible</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>Restrict wp-login / wp-admin by IP</td><td><span class="badge badge-critical">CRITICAL</span></td><td>Server</td><td><span class="role-badge role-webadmin">Web Admin</span></td><td>☐ Open</td></tr>
+        <tr><td>02</td><td>Disable XML-RPC</td><td><span class="badge badge-critical">CRITICAL</span></td><td>Server + WP</td><td><span class="role-badge role-webadmin">Web Admin</span> <span class="role-badge role-wpdev">WP Dev</span></td><td>☐ Open</td></tr>
+        <tr><td>03</td><td>Brute-Force Protection (Fail2Ban + Rate Limit)</td><td><span class="badge badge-critical">CRITICAL</span></td><td>Server + Plugin</td><td><span class="role-badge role-sysadmin">Sys Admin</span></td><td>☐ Open</td></tr>
+        <tr><td>04</td><td>Two-Factor Authentication (2FA)</td><td><span class="badge badge-high">HIGH</span></td><td>WordPress</td><td><span class="role-badge role-wpdev">WP Dev</span></td><td>☐ Open</td></tr>
+        <tr><td>05</td><td>Strong Password Policy</td><td><span class="badge badge-high">HIGH</span></td><td>WordPress</td><td><span class="role-badge role-wpdev">WP Dev</span></td><td>☐ Open</td></tr>
+        <tr><td>06</td><td>Prevent User Enumeration (REST API)</td><td><span class="badge badge-medium">MEDIUM</span></td><td>WordPress + Server</td><td><span class="role-badge role-wpdev">WP Dev</span></td><td>☐ Open</td></tr>
+        <tr><td>07</td><td>Remove Version Disclosure</td><td><span class="badge badge-medium">MEDIUM</span></td><td>WordPress + Server</td><td><span class="role-badge role-wpdev">WP Dev</span></td><td>☐ Open</td></tr>
+        <tr><td>08</td><td>Secure wp-config.php</td><td><span class="badge badge-critical">CRITICAL</span></td><td>Server + WordPress</td><td><span class="role-badge role-sysadmin">Sys Admin</span></td><td>☐ Open</td></tr>
+        <tr><td>09</td><td>Disable Directory Listing</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Server</td><td><span class="role-badge role-webadmin">Web Admin</span></td><td>☐ Open</td></tr>
+        <tr><td>10</td><td>File Upload Hardening</td><td><span class="badge badge-high">HIGH</span></td><td>Server + WordPress</td><td><span class="role-badge role-webadmin">Web Admin</span></td><td>☐ Open</td></tr>
+        <tr><td>11</td><td>WAF (ModSecurity + Wordfence)</td><td><span class="badge badge-high">HIGH</span></td><td>Server + Plugin</td><td><span class="role-badge role-sysadmin">Sys Admin</span></td><td>☐ Open</td></tr>
+        <tr><td>12</td><td>Security Headers (HSTS, CSP, etc.)</td><td><span class="badge badge-high">HIGH</span></td><td>Server</td><td><span class="role-badge role-webadmin">Web Admin</span></td><td>☐ Open</td></tr>
+        <tr><td>13</td><td>Logging &amp; Monitoring (auditd + WP Activity Log)</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Server + Plugin</td><td><span class="role-badge role-sysadmin">Sys Admin</span></td><td>☐ Open</td></tr>
+        <tr><td>14</td><td>Backup Security (Encrypted + Offsite)</td><td><span class="badge badge-medium">MEDIUM</span></td><td>Server + Plugin</td><td><span class="role-badge role-sysadmin">Sys Admin</span></td><td>☐ Open</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:20px 28px;border-top:1px solid var(--border);display:flex;gap:24px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;background:var(--red);border-radius:3px;display:inline-block"></span><span style="font-size:12px;color:var(--text2)">Critical: 4 controls</span></div>
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;background:var(--amber);border-radius:3px;display:inline-block"></span><span style="font-size:12px;color:var(--text2)">High: 5 controls</span></div>
+    <div style="display:flex;align-items:center;gap:8px"><span style="width:12px;height:12px;background:var(--purple);border-radius:3px;display:inline-block"></span><span style="font-size:12px;color:var(--text2)">Medium: 5 controls</span></div>
+    <div style="margin-left:auto;font-size:12px;color:var(--text3)">Generated: April 2026 · OWASP WordPress Security Guide</div>
+  </div>
+</div>
+
+  </div><!-- /content -->
+</main>
+
+<button id="scrollTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// ── Toggle Sections ──
+function toggleSection(id) {
+  const s = document.getElementById(id);
+  s.classList.toggle('open');
+}
+
+// ── Jump to Section ──
+function jumpTo(id) {
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.add('open');
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+// ── Expand / Collapse All ──
+function expandAll() {
+  document.querySelectorAll('.section').forEach(s => s.classList.add('open'));
+}
+function collapseAll() {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('open'));
+}
+
+// ── Search ──
+function filterSections() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.section').forEach(s => {
+    const text = (s.textContent + ' ' + (s.dataset.tags || '')).toLowerCase();
+    s.classList.toggle('hidden', q.length > 1 && !text.includes(q));
+  });
+}
+
+// ── Filter by Severity ──
+let activeSeverity = 'all';
+function filterBySeverity(severity, btn) {
+  activeSeverity = severity;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s => {
+    if (severity === 'all') { s.classList.remove('hidden'); }
+    else { s.classList.toggle('hidden', s.dataset.severity !== severity); }
+  });
+}
+
+// ── Copy Code ──
+function copyCode(btn) {
+  const pre = btn.closest('.code-wrap').querySelector('pre');
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Scroll Top Button ──
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scrollTop');
+  btn.style.display = window.scrollY > 400 ? 'flex' : 'none';
+});
+
+// ── Active Nav on Scroll ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      const navItem = document.querySelector(`.nav-item[onclick="jumpTo('${id}')"]`);
+      if (navItem) navItem.classList.add('active');
+    }
+  });
+}, { threshold: 0.2 });
+
+document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+// ── Animate sections on load ──
+document.querySelectorAll('.section').forEach((s, i) => {
+  s.style.animationDelay = (i * 0.04) + 's';
+});
+</script>
+</body>
+</html>
