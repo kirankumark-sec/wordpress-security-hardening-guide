@@ -7,70 +7,111 @@
 
     <style>
         body {
+            margin: 0;
             font-family: Arial, sans-serif;
             background-color: #0f172a;
             color: #ffffff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
+        }
+
+        header {
+            padding: 30px;
+            text-align: center;
+            background-color: #020617;
+        }
+
+        header h1 {
             margin: 0;
         }
 
+        header p {
+            color: #94a3b8;
+            margin-top: 8px;
+        }
+
         .container {
-            text-align: center;
-            background-color: #111827;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
             padding: 40px;
+            max-width: 1000px;
+            margin: auto;
+        }
+
+        .card {
+            background-color: #111827;
+            padding: 25px;
             border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
         }
 
-        h1 {
-            margin-bottom: 30px;
+        .card h2 {
+            margin-top: 0;
         }
 
-        .btn {
-            display: block;
-            width: 280px;
-            margin: 15px auto;
-            padding: 15px;
-            font-size: 16px;
-            color: #ffffff;
+        .card p {
+            color: #9ca3af;
+            font-size: 14px;
+        }
+
+        .card a {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 10px 16px;
             background-color: #2563eb;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+            color: #ffffff;
             text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
         }
 
-        .btn:hover {
+        .card a:hover {
             background-color: #1d4ed8;
         }
 
         footer {
-            margin-top: 25px;
+            text-align: center;
+            padding: 15px;
             font-size: 12px;
-            color: #9ca3af;
+            color: #94a3b8;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
+<header>
     <h1>🔐 Security Hardening Guides</h1>
+    <p>Practical security best practices for applications and platforms</p>
+</header>
 
-    <a class="btn" href="wordpress-security-hardening-guide.html">
-        WordPress Security Hardening
-    </a>
+<div class="container">
 
-    <a class="btn" href="Node.js Security Hardening Guide.html">
-        Node.js Security Hardening
-    </a>
+    <!-- WordPress -->
+    <div class="card">
+        <h2>WordPress Security Hardening</h2>
+        <p>Best practices to secure WordPress installations, plugins, and admin access.</p>
+        <a href="wordpress-security-hardening-guide.html">View Guide</a>
+    </div>
 
-    <footer>
-        Maintained by Kiran Kumar K
-    </footer>
+    <!-- Node.js -->
+    <div class="card">
+        <h2>Node.js Security Hardening</h2>
+        <p>Security recommendations for Node.js applications and runtime environments.</p>
+        <a href="Node.js Security Hardening Guide.html">View Guide</a>
+    </div>
+
+    <!-- Future Guides -->
+    <!--
+    <div class="card">
+        <h2>Linux Server Hardening</h2>
+        <p>Coming soon</p>
+        <aiv>
+    -->
+
 </div>
+
+<footer>
+    Maintained by Kiran Kumar K | Security Hardening Repository
+</footer>
 
 </body>
 </html>
