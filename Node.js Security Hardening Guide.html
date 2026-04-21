@@ -1,0 +1,2563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Node.js Security Hardening Guide · VAPT Remediation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,400&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #0a0800;
+  --bg2:      #100e00;
+  --bg3:      #161200;
+  --card:     #120f02;
+  --card2:    #181400;
+  --border:   #2a2200;
+  --border2:  #3a3000;
+  --amber:    #f5a623;
+  --amber2:   #e09010;
+  --amber3:   #ffc84a;
+  --green:    #39ff85;
+  --green2:   #00d060;
+  --red:      #ff5533;
+  --blue:     #38bfff;
+  --purple:   #cc88ff;
+  --text:     #f0e8d0;
+  --text2:    #a09070;
+  --text3:    #504030;
+  --glow-a:   0 0 24px rgba(245,166,35,0.3);
+  --glow-g:   0 0 18px rgba(57,255,133,0.2);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'IBM Plex Sans',sans-serif;
+  font-size:14.5px;
+  line-height:1.72;
+  overflow-x:hidden;
+}
+
+/* ── SCANLINE TEXTURE ── */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(245,166,35,0.012) 2px,
+    rgba(245,166,35,0.012) 4px
+  );
+  pointer-events:none;z-index:0;
+}
+/* ── DOT GRID ── */
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background-image:radial-gradient(rgba(245,166,35,0.06) 1px, transparent 1px);
+  background-size:28px 28px;
+  pointer-events:none;z-index:0;
+}
+
+/* ══════════ SIDEBAR ══════════ */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:268px;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  overflow-y:auto;z-index:100;
+  display:flex;flex-direction:column;
+}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+.sb-logo{
+  padding:24px 20px 18px;
+  border-bottom:1px solid var(--border);
+}
+.sb-icon{
+  width:44px;height:44px;
+  background:linear-gradient(135deg,var(--amber),#ff8c00);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-bottom:12px;
+  box-shadow:var(--glow-a);
+}
+.sb-logo h2{
+  font-family:'Oxanium',sans-serif;
+  font-size:13.5px;font-weight:700;
+  color:var(--text);letter-spacing:.5px;
+}
+.sb-logo p{font-size:10.5px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1.2px}
+
+.sb-section-label{
+  padding:14px 20px 5px;
+  font-size:9.5px;font-weight:600;
+  color:var(--text3);text-transform:uppercase;letter-spacing:1.6px;
+  font-family:'Fira Code',monospace;
+}
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 20px;
+  color:var(--text2);font-size:12.5px;font-weight:400;
+  cursor:pointer;border-left:2px solid transparent;
+  transition:all .2s;
+}
+.nav-item:hover,.nav-item.active{
+  color:var(--amber3);background:rgba(245,166,35,0.05);
+  border-left-color:var(--amber);
+}
+.nav-num{
+  font-family:'Fira Code',monospace;font-size:10.5px;
+  color:var(--text3);min-width:22px;
+}
+.nav-item:hover .nav-num,.nav-item.active .nav-num{color:var(--amber2)}
+
+.sb-footer{
+  margin-top:auto;padding:14px 20px;
+  border-top:1px solid var(--border);
+  font-size:10.5px;color:var(--text3);
+  font-family:'Fira Code',monospace;
+  line-height:1.8;
+}
+
+/* ══════════ MAIN ══════════ */
+.main{margin-left:268px;position:relative;z-index:1}
+
+/* ── HERO ── */
+.hero{
+  position:relative;overflow:hidden;
+  padding:60px 56px 52px;
+  background:linear-gradient(160deg,#150e00 0%,#0d0900 60%,#080500 100%);
+  border-bottom:1px solid var(--border);
+}
+.hero-glow{
+  position:absolute;right:-80px;top:-120px;
+  width:480px;height:480px;
+  background:radial-gradient(circle,rgba(245,166,35,0.08) 0%,transparent 65%);
+  pointer-events:none;
+}
+.hero-glow2{
+  position:absolute;left:200px;bottom:-60px;
+  width:300px;height:300px;
+  background:radial-gradient(circle,rgba(57,255,133,0.04) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-eyebrow{
+  display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;
+}
+.eyebrow-tag{
+  padding:3px 11px;border-radius:4px;
+  font-family:'Fira Code',monospace;font-size:10.5px;font-weight:500;
+  border:1px solid;letter-spacing:.4px;
+}
+.et-vapt{background:rgba(255,85,51,0.1);color:var(--red);border-color:rgba(255,85,51,0.3)}
+.et-owasp{background:rgba(245,166,35,0.08);color:var(--amber);border-color:rgba(245,166,35,0.3)}
+.et-node{background:rgba(57,255,133,0.07);color:var(--green);border-color:rgba(57,255,133,0.3)}
+.et-linux{background:rgba(56,191,255,0.08);color:var(--blue);border-color:rgba(56,191,255,0.3)}
+
+.hero h1{
+  font-family:'Oxanium',sans-serif;
+  font-size:44px;font-weight:800;
+  line-height:1.08;margin-bottom:14px;
+  background:linear-gradient(135deg,#ffe8a0 20%,var(--amber) 65%,#ff8c00 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{color:var(--text2);font-size:15px;max-width:600px;margin-bottom:30px;line-height:1.65}
+
+.hero-stats{display:flex;gap:36px;flex-wrap:wrap}
+.stat-item{position:relative}
+.stat-num{
+  font-family:'Oxanium',sans-serif;font-size:30px;font-weight:800;
+  color:var(--amber3);display:block;line-height:1;
+}
+.stat-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+
+/* ── TOP BAR ── */
+.topbar{
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:13px 56px;
+  display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(10px);
+}
+.search-wrap{position:relative;flex:1;max-width:460px}
+.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.search-input{
+  width:100%;background:var(--bg3);border:1px solid var(--border);
+  border-radius:6px;padding:9px 14px 9px 36px;
+  color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;outline:none;
+  transition:border-color .2s;
+}
+.search-input::placeholder{color:var(--text3)}
+.search-input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,166,35,0.08)}
+.filter-btns{display:flex;gap:5px}
+.fbtn{
+  padding:6px 13px;border-radius:5px;font-size:11.5px;font-weight:500;
+  cursor:pointer;border:1px solid var(--border);background:var(--bg3);
+  color:var(--text2);transition:all .2s;font-family:'IBM Plex Sans',sans-serif;
+}
+.fbtn:hover,.fbtn.active{border-color:var(--amber);color:var(--amber);background:rgba(245,166,35,0.06)}
+.ctrl-btn{
+  padding:6px 11px;border-radius:5px;font-size:11.5px;
+  cursor:pointer;border:1px solid var(--border);background:var(--bg3);
+  color:var(--text2);transition:all .2s;font-family:'IBM Plex Sans',sans-serif;
+}
+.ctrl-btn:hover{border-color:var(--border2);color:var(--text)}
+
+/* ── CONTENT ── */
+.content{padding:36px 56px 80px}
+
+/* ── SECTION CARD ── */
+.section{
+  margin-bottom:44px;border:1px solid var(--border);
+  border-radius:14px;background:var(--card);
+  overflow:hidden;transition:border-color .25s;
+  animation:slideUp .35s ease both;
+}
+.section:hover{border-color:var(--border2)}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+.sec-header{
+  padding:22px 26px;background:var(--card2);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-start;gap:14px;
+  cursor:pointer;user-select:none;
+}
+.sec-num{
+  font-family:'Fira Code',monospace;font-size:11.5px;font-weight:600;
+  color:var(--amber);background:rgba(245,166,35,0.08);
+  border:1px solid rgba(245,166,35,0.2);
+  padding:4px 8px;border-radius:5px;
+  min-width:38px;text-align:center;margin-top:1px;
+  flex-shrink:0;
+}
+.sec-title-group{flex:1}
+.sec-title{
+  font-family:'Oxanium',sans-serif;font-size:17px;font-weight:700;
+  color:var(--text);margin-bottom:5px;
+}
+.sec-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+.badge{
+  padding:2px 9px;border-radius:20px;
+  font-size:10.5px;font-weight:600;
+  font-family:'Fira Code',monospace;
+}
+.b-critical{background:rgba(255,85,51,0.12);color:var(--red)}
+.b-high{background:rgba(245,166,35,0.12);color:var(--amber)}
+.b-medium{background:rgba(204,136,255,0.1);color:var(--purple)}
+.b-low{background:rgba(57,255,133,0.08);color:var(--green)}
+
+.tag-p{
+  display:inline-block;padding:2px 8px;
+  background:var(--bg3);border:1px solid var(--border2);
+  border-radius:4px;font-family:'Fira Code',monospace;
+  font-size:10.5px;color:var(--text2);margin:2px 2px 2px 0;
+}
+
+.chevron{color:var(--text3);font-size:17px;transition:transform .28s;margin-left:auto;padding-top:2px}
+.section.open .chevron{transform:rotate(180deg)}
+.sec-body{display:none}
+.section.open .sec-body{display:block}
+
+/* ── FIELD GRID ── */
+.fg{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border-bottom:1px solid var(--border);
+}
+.field{padding:18px 26px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.field:nth-child(even){border-right:none}
+.ff{grid-column:1/-1;padding:18px 26px;border-bottom:1px solid var(--border)}
+.ff:last-child,.field:last-child,.field:nth-last-child(2):nth-child(odd){border-bottom:none}
+
+.fl{
+  font-size:10.5px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:1.3px;
+  margin-bottom:7px;display:flex;align-items:center;gap:6px;
+  font-family:'Fira Code',monospace;
+}
+.fv{color:var(--text);font-size:13.5px;line-height:1.65}
+.fv strong{color:var(--amber3);font-weight:500}
+.fv code{
+  font-family:'Fira Code',monospace;font-size:12px;
+  background:rgba(245,166,35,0.08);
+  padding:1px 5px;border-radius:3px;color:var(--amber3);
+}
+
+/* ── RISK BOX ── */
+.risk-box{
+  padding:11px 15px;border-radius:7px;border-left:3px solid;
+  font-size:13px;line-height:1.6;
+}
+.r-critical{background:rgba(255,85,51,0.07);border-color:var(--red);color:#ffb3a0}
+.r-high{background:rgba(245,166,35,0.07);border-color:var(--amber);color:#ffdd88}
+.r-medium{background:rgba(204,136,255,0.07);border-color:var(--purple);color:#ddb3ff}
+.r-low{background:rgba(57,255,133,0.06);border-color:var(--green);color:#80ffbb}
+
+/* ── CODE BLOCK ── */
+.code-wrap{position:relative;margin:10px 0 4px}
+.code-fn{
+  background:#1a1400;padding:5px 15px;
+  font-family:'Fira Code',monospace;font-size:10.5px;color:var(--amber2);
+  border:1px solid var(--border);border-bottom:none;
+  border-radius:6px 6px 0 0;
+  display:flex;align-items:center;gap:8px;
+}
+.code-fn::before{
+  content:'';width:7px;height:7px;background:var(--amber);
+  border-radius:50%;box-shadow:var(--glow-a);
+}
+pre{
+  background:#060500;border:1px solid var(--border);
+  border-top:none;border-radius:0 0 7px 7px;
+  padding:16px 18px;overflow-x:auto;
+  font-family:'Fira Code',monospace;font-size:12px;line-height:1.75;
+  color:#d4c8a8;
+}
+pre.rd{border-radius:7px;border-top:1px solid var(--border)}
+.copy-btn{
+  position:absolute;right:9px;top:9px;
+  background:var(--bg3);border:1px solid var(--border2);
+  color:var(--text2);padding:4px 9px;border-radius:4px;
+  font-size:10.5px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;
+  transition:all .2s;
+}
+.copy-btn:hover{border-color:var(--amber);color:var(--amber)}
+.copy-btn.copied{border-color:var(--green);color:var(--green)}
+
+/* syntax highlight */
+.kw{color:#f5a623}
+.str{color:#a5d6ff}
+.cmt{color:#6a5a40;font-style:italic}
+.fn{color:#cc88ff}
+.num{color:#39ff85}
+.tag{color:#7ee787}
+.op{color:#ff7b72}
+.cls{color:#ffd580}
+.req{color:#f5a623}
+
+/* ── VERIFY ── */
+.vblock{
+  background:#040300;border:1px solid rgba(57,255,133,0.15);
+  border-left:3px solid var(--green);border-radius:0 7px 7px 0;
+  padding:13px 17px;font-family:'Fira Code',monospace;
+  font-size:11.5px;color:#80ffbb;line-height:1.85;
+}
+
+/* ── VAPT CLOSURE ── */
+.vapt{
+  background:linear-gradient(135deg,rgba(245,166,35,0.05),rgba(57,255,133,0.03));
+  border:1px solid rgba(245,166,35,0.2);border-radius:8px;
+  padding:15px 19px;display:flex;gap:12px;align-items:flex-start;
+}
+.vapt-ico{font-size:19px;flex-shrink:0;margin-top:1px}
+.vapt-txt{font-size:12.5px;color:var(--text2);line-height:1.65;font-style:italic}
+.vapt-lbl{
+  font-size:9.5px;font-weight:700;color:var(--amber);
+  text-transform:uppercase;letter-spacing:1.5px;
+  margin-bottom:4px;font-style:normal;font-family:'Fira Code',monospace;
+}
+
+/* ── WHO TABLE ── */
+.who-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.who-tbl th{
+  background:var(--bg3);padding:9px 13px;text-align:left;
+  font-size:10.5px;color:var(--text3);font-weight:600;
+  text-transform:uppercase;letter-spacing:1px;
+  border:1px solid var(--border);font-family:'Fira Code',monospace;
+}
+.who-tbl td{padding:9px 13px;border:1px solid var(--border);color:var(--text);vertical-align:top}
+.who-tbl tr:hover td{background:rgba(255,255,255,0.015)}
+.role-badge{
+  display:inline-block;padding:2px 7px;border-radius:3px;
+  font-size:10.5px;font-weight:500;font-family:'Fira Code',monospace;
+  margin:2px 2px 2px 0;
+}
+.r-sys{background:rgba(56,191,255,0.1);color:var(--blue)}
+.r-dev{background:rgba(57,255,133,0.08);color:var(--green2)}
+.r-web{background:rgba(245,166,35,0.08);color:var(--amber)}
+.r-any{background:rgba(204,136,255,0.1);color:var(--purple)}
+
+/* ── RESTART PILL ── */
+.rpill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 9px;background:rgba(245,166,35,0.07);
+  border:1px solid rgba(245,166,35,0.22);border-radius:20px;
+  font-size:11.5px;color:var(--amber);font-family:'Fira Code',monospace;
+  margin:3px 4px 3px 0;
+}
+
+/* ── CHECK LIST ── */
+ul.cl{list-style:none;padding:0}
+ul.cl li{padding:3px 0;display:flex;gap:7px;align-items:baseline;font-size:13px}
+ul.cl li::before{content:'▸';color:var(--amber);font-weight:700;flex-shrink:0}
+
+/* ── SCROLL TOP ── */
+#goTop{
+  position:fixed;bottom:28px;right:28px;
+  width:40px;height:40px;background:var(--amber);
+  border:none;border-radius:50%;color:var(--bg);
+  font-size:17px;cursor:pointer;display:none;
+  align-items:center;justify-content:center;z-index:200;
+  box-shadow:var(--glow-a);transition:transform .2s;
+}
+#goTop:hover{transform:scale(1.12)}
+
+.section.hidden{display:none}
+
+/* ── PRINT ── */
+@media print{
+  .sidebar,.topbar,#goTop{display:none!important}
+  .main{margin-left:0}
+  .sec-body{display:block!important}
+  .section{break-inside:avoid}
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:860px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .hero{padding:36px 20px}
+  .hero h1{font-size:28px}
+  .content{padding:20px}
+  .topbar{padding:10px 20px}
+  .fg{grid-template-columns:1fr}
+}
+
+a{color:var(--amber);text-decoration:none}
+a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-icon">⬡</div>
+    <h2>Node.js Security Hardening</h2>
+    <p>VAPT Remediation Guide</p>
+  </div>
+
+  <div class="sb-section-label">// Headers & Network</div>
+  <div class="nav-item" onclick="jumpTo('s01')"><span class="nav-num">01</span>Helmet.js — Security Headers</div>
+  <div class="nav-item" onclick="jumpTo('s02')"><span class="nav-num">02</span>Rate Limiting & DDoS</div>
+  <div class="nav-item" onclick="jumpTo('s03')"><span class="nav-num">03</span>CORS Configuration</div>
+  <div class="nav-item" onclick="jumpTo('s04')"><span class="nav-num">04</span>HTTPS & TLS via Nginx</div>
+
+  <div class="sb-section-label">// Auth & Sessions</div>
+  <div class="nav-item" onclick="jumpTo('s05')"><span class="nav-num">05</span>JWT Security</div>
+  <div class="nav-item" onclick="jumpTo('s06')"><span class="nav-num">06</span>Session & Cookie Security</div>
+  <div class="nav-item" onclick="jumpTo('s07')"><span class="nav-num">07</span>CSRF Protection</div>
+
+  <div class="sb-section-label">// Input & Data</div>
+  <div class="nav-item" onclick="jumpTo('s08')"><span class="nav-num">08</span>Input Validation & Sanitization</div>
+  <div class="nav-item" onclick="jumpTo('s09')"><span class="nav-num">09</span>SQL / NoSQL Injection</div>
+  <div class="nav-item" onclick="jumpTo('s10')"><span class="nav-num">10</span>File Upload Security</div>
+
+  <div class="sb-section-label">// Runtime & Secrets</div>
+  <div class="nav-item" onclick="jumpTo('s11')"><span class="nav-num">11</span>Environment Variables & Secrets</div>
+  <div class="nav-item" onclick="jumpTo('s12')"><span class="nav-num">12</span>Dependency Security</div>
+  <div class="nav-item" onclick="jumpTo('s13')"><span class="nav-num">13</span>Error Handling & Info Disclosure</div>
+  <div class="nav-item" onclick="jumpTo('s14')"><span class="nav-num">14</span>Process Security & PM2</div>
+
+  <div class="sb-section-label">// Observability</div>
+  <div class="nav-item" onclick="jumpTo('s15')"><span class="nav-num">15</span>Logging & Monitoring</div>
+  <div class="nav-item" onclick="jumpTo('s16')"><span class="nav-num">16</span>Security Audit & Backup</div>
+
+  <div class="sb-footer">
+    v2025.1 · OWASP Node.js Cheatsheet<br>
+    Express · Fastify · Nginx · Linux<br>
+    Updated: April 2026
+  </div>
+</nav>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-glow"></div><div class="hero-glow2"></div>
+  <div class="hero-eyebrow">
+    <span class="eyebrow-tag et-vapt">VAPT Remediation</span>
+    <span class="eyebrow-tag et-owasp">OWASP Top 10</span>
+    <span class="eyebrow-tag et-node">Node.js / Express</span>
+    <span class="eyebrow-tag et-linux">Linux · Nginx · PM2</span>
+  </div>
+  <h1>Node.js Security<br>Hardening Guide</h1>
+  <p class="hero-sub">A complete, copy-paste-ready security baseline for Node.js / Express applications hosted on Linux. Every control maps to VAPT findings and includes professional audit-closure statements.</p>
+  <div class="hero-stats">
+    <div class="stat-item"><span class="stat-num">16</span><div class="stat-label">Security Controls</div></div>
+    <div class="stat-item"><span class="stat-num">50+</span><div class="stat-label">Code Snippets</div></div>
+    <div class="stat-item"><span class="stat-num">100%</span><div class="stat-label">Free / OSS Tools</div></div>
+    <div class="stat-item"><span class="stat-num">A+</span><div class="stat-label">Security Grade</div></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="search-wrap">
+    <span class="s-icon">⌕</span>
+    <input class="search-input" id="searchInput" type="text" placeholder="Search controls, packages, files…" oninput="filterSecs()">
+  </div>
+  <div class="filter-btns">
+    <button class="fbtn active" onclick="filterSev('all',this)">All</button>
+    <button class="fbtn" onclick="filterSev('critical',this)" style="color:var(--red)">Critical</button>
+    <button class="fbtn" onclick="filterSev('high',this)" style="color:var(--amber)">High</button>
+    <button class="fbtn" onclick="filterSev('medium',this)" style="color:var(--purple)">Medium</button>
+  </div>
+  <button class="ctrl-btn" onclick="expandAll()">▼ All</button>
+  <button class="ctrl-btn" onclick="collapseAll()">▲ All</button>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════════════════════════════
+  01 — HELMET.JS
+═══════════════════════════════════════ -->
+<div class="section open" id="s01" data-severity="high" data-tags="helmet security headers csp hsts x-frame xss content security policy http">
+  <div class="sec-header" onclick="tog('s01')">
+    <div class="sec-num">01</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Helmet.js — HTTP Security Headers</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Middleware</span>
+        <span class="tag-p">helmet</span><span class="tag-p">app.js</span><span class="tag-p">Express</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Node.js/Express does not set any security-related HTTP response headers by default. Missing headers expose the application to clickjacking, MIME-sniffing, XSS, and protocol downgrade attacks.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Clickjacking attacks, XSS via content-type confusion, MIME sniffing, SSL stripping via missing HSTS, and information leakage via <code>X-Powered-By: Express</code>.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📁 Files & Paths</div>
+        <div class="fv">
+          <span class="tag-p">/var/www/app/app.js</span>
+          <span class="tag-p">/var/www/app/src/middleware/security.js</span>
+          <span class="tag-p">package.json</span>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Install & Configure Helmet.js</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal — Install helmet</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre>$ npm install helmet</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn">/var/www/app/app.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">const</span> express = <span class="fn">require</span>(<span class="str">'express'</span>);
+<span class="kw">const</span> helmet  = <span class="fn">require</span>(<span class="str">'helmet'</span>);
+<span class="kw">const</span> app     = <span class="fn">express</span>();
+
+<span class="cmt">// ─── Remove Express fingerprint ──────────────────────────────</span>
+app.<span class="fn">disable</span>(<span class="str">'x-powered-by'</span>);
+
+<span class="cmt">// ─── Helmet: full security header suite ──────────────────────</span>
+app.<span class="fn">use</span>(<span class="fn">helmet</span>({
+  <span class="cmt">// HTTP Strict Transport Security — 1 year</span>
+  hsts: {
+    maxAge: <span class="num">31536000</span>,
+    includeSubDomains: <span class="kw">true</span>,
+    preload: <span class="kw">true</span>,
+  },
+  <span class="cmt">// Content Security Policy (adjust domains for your app)</span>
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  [<span class="str">"'self'"</span>],
+      scriptSrc:   [<span class="str">"'self'"</span>, <span class="str">"'unsafe-inline'"</span>],  <span class="cmt">// tighten in prod</span>
+      styleSrc:    [<span class="str">"'self'"</span>, <span class="str">"'unsafe-inline'"</span>],
+      imgSrc:      [<span class="str">"'self'"</span>, <span class="str">'data:'</span>, <span class="str">'https:'</span>],
+      connectSrc:  [<span class="str">"'self'"</span>],
+      fontSrc:     [<span class="str">"'self'"</span>, <span class="str">'https://fonts.gstatic.com'</span>],
+      frameAncestors: [<span class="str">"'self'"</span>],      <span class="cmt">// prevents clickjacking</span>
+      baseUri:     [<span class="str">"'self'"</span>],
+      formAction:  [<span class="str">"'self'"</span>],
+    },
+  },
+  <span class="cmt">// Prevent MIME type sniffing</span>
+  noSniff: <span class="kw">true</span>,
+  <span class="cmt">// Prevent IE from opening downloads in site context</span>
+  ieNoOpen: <span class="kw">true</span>,
+  <span class="cmt">// Disable caching for sensitive routes</span>
+  noCache: <span class="kw">false</span>,
+  <span class="cmt">// Referrer policy</span>
+  referrerPolicy: { policy: <span class="str">'strict-origin-when-cross-origin'</span> },
+  <span class="cmt">// Disable browser features</span>
+  permittedCrossDomainPolicies: <span class="kw">false</span>,
+  crossOriginEmbedderPolicy: <span class="kw">false</span>,
+}));
+
+<span class="cmt">// ─── Disable cache on sensitive auth routes ───────────────────</span>
+app.<span class="fn">use</span>(<span class="str">'/api/auth'</span>, (req, res, next) => {
+  res.<span class="fn">setHeader</span>(<span class="str">'Cache-Control'</span>, <span class="str">'no-store, no-cache, must-revalidate'</span>);
+  res.<span class="fn">setHeader</span>(<span class="str">'Pragma'</span>, <span class="str">'no-cache'</span>);
+  <span class="fn">next</span>();
+});</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔄 Restart</div>
+        <div class="fv"><div class="rpill">⟳ pm2 restart app</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+$ curl -I https://your-app.com/ 2>&1 | grep -iE '(strict|x-frame|x-content|content-security|referrer|x-powered)'
+→ strict-transport-security: max-age=31536000; includeSubDomains; preload
+→ x-frame-options: SAMEORIGIN
+→ x-content-type-options: nosniff
+→ content-security-policy: default-src 'self'; ...
+→ referrer-policy: strict-origin-when-cross-origin
+→ (x-powered-by: should NOT appear)
+
+# Online grade check
+$ curl -s "https://securityheaders.com/?q=https://your-app.com" | grep grade
+→ Grade: A</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Helmet.js middleware has been integrated as the first middleware in the Express request pipeline, enforcing HSTS (max-age 1 year), Content-Security-Policy, X-Content-Type-Options (nosniff), Referrer-Policy (strict-origin-when-cross-origin), and X-Frame-Options (SAMEORIGIN). The <em>X-Powered-By: Express</em> header has been suppressed. All headers verified present via curl. Securityheaders.com reports Grade A.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  02 — RATE LIMITING
+═══════════════════════════════════════ -->
+<div class="section" id="s02" data-severity="critical" data-tags="rate limiting brute force ddos express-rate-limit nginx throttle login api">
+  <div class="sec-header" onclick="tog('s02')">
+    <div class="sec-num">02</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Rate Limiting &amp; DDoS Protection</div>
+      <div class="sec-meta">
+        <span class="badge b-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(56,191,255,0.08);color:var(--blue)">App + Server</span>
+        <span class="tag-p">express-rate-limit</span><span class="tag-p">nginx.conf</span><span class="tag-p">slow-down</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Express APIs have no built-in request throttling. Login, registration, and password-reset endpoints are vulnerable to automated brute-force and credential-stuffing attacks.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Account takeover via brute-force, API abuse, server resource exhaustion (DoS), and financial impact from metered third-party API calls.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📁 Files & Paths</div>
+        <div class="fv">
+          <span class="tag-p">/var/www/app/src/middleware/rateLimit.js</span>
+          <span class="tag-p">/var/www/app/app.js</span>
+          <span class="tag-p">/etc/nginx/sites-enabled/your-app.conf</span>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 1 — express-rate-limit (Application layer)</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre>$ npm install express-rate-limit express-slow-down</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/middleware/rateLimit.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">const</span> rateLimit = <span class="fn">require</span>(<span class="str">'express-rate-limit'</span>);
+<span class="kw">const</span> slowDown  = <span class="fn">require</span>(<span class="str">'express-slow-down'</span>);
+
+<span class="cmt">// ─── General API limiter: 100 req / 15 min per IP ────────────</span>
+<span class="kw">const</span> apiLimiter = <span class="fn">rateLimit</span>({
+  windowMs: <span class="num">15</span> * <span class="num">60</span> * <span class="num">1000</span>,   <span class="cmt">// 15 minutes</span>
+  max:      <span class="num">100</span>,
+  standardHeaders: <span class="kw">true</span>,
+  legacyHeaders:   <span class="kw">false</span>,
+  message: { error: <span class="str">'Too many requests. Try again later.'</span> },
+  skipSuccessfulRequests: <span class="kw">false</span>,
+});
+
+<span class="cmt">// ─── Auth limiter: 5 attempts / 15 min (strict) ──────────────</span>
+<span class="kw">const</span> authLimiter = <span class="fn">rateLimit</span>({
+  windowMs: <span class="num">15</span> * <span class="num">60</span> * <span class="num">1000</span>,
+  max:      <span class="num">5</span>,
+  standardHeaders: <span class="kw">true</span>,
+  legacyHeaders:   <span class="kw">false</span>,
+  message: { error: <span class="str">'Too many login attempts. Wait 15 minutes.'</span> },
+  skipSuccessfulRequests: <span class="kw">true</span>,   <span class="cmt">// don't penalise successful logins</span>
+});
+
+<span class="cmt">// ─── Speed limiter: slow-down after 50 requests ──────────────</span>
+<span class="kw">const</span> speedLimiter = <span class="fn">slowDown</span>({
+  windowMs:        <span class="num">15</span> * <span class="num">60</span> * <span class="num">1000</span>,
+  delayAfter:      <span class="num">50</span>,
+  delayMs:         (hits) => hits * <span class="num">100</span>,   <span class="cmt">// +100ms per hit</span>
+});
+
+module.exports = { apiLimiter, authLimiter, speedLimiter };</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/app.js — Apply limiters</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">const</span> { apiLimiter, authLimiter, speedLimiter } = <span class="fn">require</span>(<span class="str">'./src/middleware/rateLimit'</span>);
+
+<span class="cmt">// Global API rate limit</span>
+app.<span class="fn">use</span>(<span class="str">'/api/'</span>, apiLimiter);
+app.<span class="fn">use</span>(<span class="str">'/api/'</span>, speedLimiter);
+
+<span class="cmt">// Strict auth endpoint limits</span>
+app.<span class="fn">use</span>(<span class="str">'/api/auth/login'</span>,    authLimiter);
+app.<span class="fn">use</span>(<span class="str">'/api/auth/register'</span>, authLimiter);
+app.<span class="fn">use</span>(<span class="str">'/api/auth/reset'</span>,    authLimiter);</pre>
+          </div>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 2 — Nginx connection & request limiting</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">/etc/nginx/nginx.conf (http block)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="cmt"># Rate limit zones</span>
+limit_req_zone  $binary_remote_addr zone=api_zone:<span class="num">10m</span> rate=<span class="num">30r/s</span>;
+limit_req_zone  $binary_remote_addr zone=login_zone:<span class="num">10m</span> rate=<span class="num">3r/m</span>;
+limit_conn_zone $binary_remote_addr zone=conn_zone:<span class="num">10m</span>;</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/etc/nginx/sites-enabled/your-app.conf</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">location /api/ {
+    limit_req  zone=api_zone burst=<span class="num">60</span> nodelay;
+    limit_conn conn_zone <span class="num">20</span>;
+    limit_req_status  <span class="num">429</span>;
+    limit_conn_status <span class="num">429</span>;
+    proxy_pass http://127.0.0.1:<span class="num">3000</span>;
+    proxy_set_header Host            $host;
+    proxy_set_header X-Real-IP       $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}
+
+location /api/auth/ {
+    limit_req  zone=login_zone burst=<span class="num">5</span> nodelay;
+    limit_req_status <span class="num">429</span>;
+    proxy_pass http://127.0.0.1:<span class="num">3000</span>;
+    include proxy_params;
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span><span class="role-badge r-web">Web/Nginx Admin</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔄 Restart</div>
+        <div class="fv"><div class="rpill">⟳ pm2 restart app</div><div class="rpill">⟳ systemctl reload nginx</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Trigger API rate limit (100+ rapid requests)
+$ for i in {1..110}; do curl -s -o /dev/null -w "%{http_code}\n" https://your-app.com/api/endpoint; done
+→ First 100: 200, remaining: 429
+
+# Trigger login limit (6 attempts)
+$ for i in {1..7}; do curl -s -o /dev/null -w "%{http_code}\n" -X POST -d '{"email":"x","password":"y"}' https://your-app.com/api/auth/login; done
+→ First 5: 401, remaining: 429
+
+# Check RateLimit headers in response
+$ curl -I https://your-app.com/api/health | grep -i ratelimit
+→ RateLimit-Limit: 100
+→ RateLimit-Remaining: 99</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>API rate limiting enforced at both the application layer (express-rate-limit: 100 req/15 min general; 5 req/15 min on auth endpoints) and Nginx upstream (30 req/s with burst, 3 req/min on login). Rate-limit response headers are set per RFC 6585. Verification confirms HTTP 429 on threshold breach at both layers. Progressive slowdown is applied before hard limits via express-slow-down.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  03 — CORS
+═══════════════════════════════════════ -->
+<div class="section" id="s03" data-severity="high" data-tags="cors cross origin resource sharing whitelist origins headers preflight">
+  <div class="sec-header" onclick="tog('s03')">
+    <div class="sec-num">03</div>
+    <div class="sec-title-group">
+      <div class="sec-title">CORS Configuration</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Middleware</span>
+        <span class="tag-p">cors</span><span class="tag-p">app.js</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Using wildcard CORS (<code>Access-Control-Allow-Origin: *</code>) or accepting all origins allows any website to make authenticated cross-origin requests to your API using the victim's credentials.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Cross-Site Request Forgery (CSRF) via CORS bypass, data exfiltration from authenticated sessions, and session riding attacks from malicious third-party sites.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Strict Origin Whitelist</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre>$ npm install cors</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/middleware/cors.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">const</span> cors = <span class="fn">require</span>(<span class="str">'cors'</span>);
+
+<span class="cmt">// ─── Strict origin allowlist ──────────────────────────────────</span>
+<span class="kw">const</span> ALLOWED_ORIGINS = [
+  <span class="str">'https://your-app.com'</span>,
+  <span class="str">'https://www.your-app.com'</span>,
+  <span class="str">'https://admin.your-app.com'</span>,
+  <span class="cmt">// Dev only — NEVER in production:</span>
+  ...(process.env.NODE_ENV === <span class="str">'development'</span> ? [<span class="str">'http://localhost:3000'</span>] : []),
+];
+
+<span class="kw">const</span> corsOptions = {
+  origin: (origin, callback) => {
+    <span class="cmt">// Allow requests with no origin (server-to-server / curl)</span>
+    <span class="kw">if</span> (!origin) <span class="kw">return</span> <span class="fn">callback</span>(<span class="kw">null</span>, <span class="kw">true</span>);
+    <span class="kw">if</span> (ALLOWED_ORIGINS.<span class="fn">includes</span>(origin)) {
+      <span class="kw">return</span> <span class="fn">callback</span>(<span class="kw">null</span>, <span class="kw">true</span>);
+    }
+    <span class="fn">callback</span>(<span class="kw">new</span> <span class="cls">Error</span>(<span class="str">`CORS blocked: ${origin}`</span>));
+  },
+  credentials: <span class="kw">true</span>,    <span class="cmt">// allow cookies in cross-origin requests</span>
+  methods: [<span class="str">'GET'</span>, <span class="str">'POST'</span>, <span class="str">'PUT'</span>, <span class="str">'DELETE'</span>, <span class="str">'PATCH'</span>],
+  allowedHeaders: [<span class="str">'Content-Type'</span>, <span class="str">'Authorization'</span>, <span class="str">'X-Request-ID'</span>],
+  exposedHeaders: [<span class="str">'X-Request-ID'</span>],
+  maxAge: <span class="num">86400</span>,         <span class="cmt">// cache preflight for 24 hours</span>
+  optionsSuccessStatus: <span class="num">200</span>,
+};
+
+module.exports = <span class="fn">cors</span>(corsOptions);</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/app.js — Apply CORS before routes</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">const</span> corsMiddleware = <span class="fn">require</span>(<span class="str">'./src/middleware/cors'</span>);
+<span class="cmt">// Handle OPTIONS preflight first</span>
+app.<span class="fn">options</span>(<span class="str">'*'</span>, corsMiddleware);
+<span class="cmt">// Apply to all routes</span>
+app.<span class="fn">use</span>(corsMiddleware);</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Allowed origin — should succeed
+$ curl -H "Origin: https://your-app.com" -I https://your-app.com/api/data
+→ access-control-allow-origin: https://your-app.com
+
+# Disallowed origin — must be blocked
+$ curl -H "Origin: https://evil.com" -I https://your-app.com/api/data
+→ access-control-allow-origin: (absent — request blocked)
+
+# Wildcard must NOT appear
+$ curl -I https://your-app.com/api/ | grep 'access-control-allow-origin'
+→ must NOT contain '*'</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>CORS policy has been replaced with an explicit domain allowlist. Wildcard origin (<em>Access-Control-Allow-Origin: *</em>) has been eliminated. Preflight caching (86400s), restricted HTTP methods, and controlled exposed headers are configured. Credentials mode is enabled only for verified origins. Verification confirms unapproved origins receive no CORS headers.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  04 — HTTPS / TLS / NGINX REVERSE PROXY
+═══════════════════════════════════════ -->
+<div class="section" id="s04" data-severity="critical" data-tags="https tls ssl nginx reverse proxy certificate letsencrypt certbot cipher">
+  <div class="sec-header" onclick="tog('s04')">
+    <div class="sec-num">04</div>
+    <div class="sec-title-group">
+      <div class="sec-title">HTTPS / TLS &amp; Nginx Reverse Proxy Hardening</div>
+      <div class="sec-meta">
+        <span class="badge b-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(56,191,255,0.08);color:var(--blue)">Server Level</span>
+        <span class="tag-p">nginx.conf</span><span class="tag-p">certbot</span><span class="tag-p">TLSv1.3</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Node.js should never be exposed directly to the internet. Running without TLS or with weak cipher suites (TLSv1.0/1.1, RC4, 3DES) exposes data in transit to interception and downgrade attacks.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Session token interception, credential theft via MITM, POODLE/BEAST/CRIME attacks on legacy TLS, direct Node.js process exposure bypassing firewall rules.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 1 — Certbot Free TLS Certificate</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal — Issue Let's Encrypt certificate</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="cmt"># Install certbot</span>
+$ apt-get install certbot python3-certbot-nginx -y
+
+<span class="cmt"># Issue certificate (replaces Nginx config automatically)</span>
+$ certbot --nginx -d your-app.com -d www.your-app.com \
+  --email admin@your-app.com --agree-tos --no-eff-email
+
+<span class="cmt"># Auto-renewal (already set up by certbot, verify it)</span>
+$ systemctl status certbot.timer
+$ certbot renew --dry-run</pre>
+          </div>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 2 — Hardened Nginx Reverse Proxy Config</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">/etc/nginx/sites-enabled/your-app.conf</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ─── HTTP → HTTPS redirect ───────────────────────────────────</span>
+server {
+    listen 80;
+    server_name your-app.com www.your-app.com;
+    return 301 https://$host$request_uri;
+}
+
+<span class="cmt"># ─── HTTPS / Reverse Proxy ───────────────────────────────────</span>
+server {
+    listen 443 ssl http2;
+    server_name your-app.com www.your-app.com;
+
+    <span class="cmt"># TLS certificate</span>
+    ssl_certificate     /etc/letsencrypt/live/your-app.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-app.com/privkey.pem;
+    ssl_trusted_certificate /etc/letsencrypt/live/your-app.com/chain.pem;
+
+    <span class="cmt"># TLS protocol — only TLSv1.2 and TLSv1.3</span>
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    <span class="cmt"># Strong ciphers only (disable weak: RC4, 3DES, CBC)</span>
+    ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305';
+    ssl_prefer_server_ciphers off;
+
+    <span class="cmt"># Session resumption</span>
+    ssl_session_cache   shared:SSL:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    <span class="cmt"># OCSP stapling</span>
+    ssl_stapling        on;
+    ssl_stapling_verify on;
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+
+    <span class="cmt"># HSTS header</span>
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+
+    <span class="cmt"># Hide Nginx version</span>
+    server_tokens off;
+
+    <span class="cmt"># ─── Proxy to Node.js ──────────────────────────────────</span>
+    location / {
+        proxy_pass         http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header   Upgrade $http_upgrade;
+        proxy_set_header   Connection 'upgrade';
+        proxy_set_header   Host $host;
+        proxy_set_header   X-Real-IP $remote_addr;
+        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        <span class="cmt"># Security: prevent request smuggling</span>
+        proxy_read_timeout  60s;
+        proxy_connect_timeout 10s;
+        client_max_body_size 10m;
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 3 — Block direct Node.js port access via firewall</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal — ufw firewall rules</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Allow only HTTP/HTTPS and SSH</span>
+$ ufw allow 22/tcp   <span class="cmt"># SSH</span>
+$ ufw allow 80/tcp   <span class="cmt"># HTTP (redirects to HTTPS)</span>
+$ ufw allow 443/tcp  <span class="cmt"># HTTPS</span>
+
+<span class="cmt"># Block direct Node.js port (3000) from outside</span>
+$ ufw deny 3000
+$ ufw enable
+
+<span class="cmt"># Verify Node only listens on localhost</span>
+$ ss -tlnp | grep node
+→ LISTEN 0 128 127.0.0.1:3000  (NOT 0.0.0.0:3000)</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/app.js — Bind to localhost only</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// Always bind to localhost — never 0.0.0.0 in production</span>
+<span class="kw">const</span> PORT = process.env.PORT || <span class="num">3000</span>;
+<span class="kw">const</span> HOST = <span class="str">'127.0.0.1'</span>;   <span class="cmt">// CRITICAL: not '0.0.0.0'</span>
+app.<span class="fn">listen</span>(PORT, HOST, () => {
+  console.<span class="fn">log</span>(<span class="str">`Server on ${HOST}:${PORT}`</span>);
+});</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-sys">Linux/System Admin</span><span class="role-badge r-web">Nginx Admin</span><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔄 Restart</div>
+        <div class="fv"><div class="rpill">⟳ systemctl reload nginx</div><div class="rpill">⟳ pm2 restart app</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# TLS grade check (expect A+)
+$ curl -s "https://api.ssllabs.com/api/v3/analyze?host=your-app.com&startNew=on" | python3 -m json.tool | grep grade
+→ "grade": "A+"
+
+# HTTP must redirect to HTTPS
+$ curl -I http://your-app.com/
+→ HTTP/1.1 301 Moved Permanently → Location: https://your-app.com/
+
+# Node.js port 3000 must NOT be reachable from outside
+$ curl -I http://your-app.com:3000/
+→ Connection refused (or timeout)
+
+# Verify TLS version
+$ openssl s_client -connect your-app.com:443 -tls1 2>&1 | grep "handshake failure"
+→ handshake failure (TLS 1.0 rejected)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Node.js is bound to localhost (127.0.0.1) and proxied through a hardened Nginx configuration supporting only TLSv1.2/1.3 with strong ECDHE cipher suites. Let's Encrypt certificate is issued with auto-renewal. OCSP stapling is enabled. Direct access to port 3000 is blocked by ufw. SSL Labs reports Grade A+. HTTP traffic is unconditionally redirected to HTTPS.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  05 — JWT SECURITY
+═══════════════════════════════════════ -->
+<div class="section" id="s05" data-severity="critical" data-tags="jwt json web token secret key algorithm RS256 HS256 none algorithm bypass expiry">
+  <div class="sec-header" onclick="tog('s05')">
+    <div class="sec-num">05</div>
+    <div class="sec-title-group">
+      <div class="sec-title">JWT Security Best Practices</div>
+      <div class="sec-meta">
+        <span class="badge b-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="tag-p">jsonwebtoken</span><span class="tag-p">RS256</span><span class="tag-p">auth.js</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Common JWT flaws: weak HS256 secret, <code>alg: none</code> bypass, no expiry, tokens stored in localStorage (XSS-vulnerable), missing signature verification, and no token revocation strategy.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Token forgery via algorithm confusion, unlimited token lifetime enabling session persistence after logout, XSS token theft, and complete authentication bypass via <code>alg:none</code> attack.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Secure JWT Implementation</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install jsonwebtoken</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/utils/jwt.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> jwt = <span class="fn">require</span>(<span class="str">'jsonwebtoken'</span>);
+
+<span class="cmt">// ─── Use RS256 (asymmetric) — NOT HS256 with shared secret ───</span>
+<span class="cmt">// Generate keys: openssl genrsa -out private.key 2048</span>
+<span class="cmt">//               openssl rsa -in private.key -pubout -out public.key</span>
+<span class="kw">const</span> PRIVATE_KEY = process.env.JWT_PRIVATE_KEY;
+<span class="kw">const</span> PUBLIC_KEY  = process.env.JWT_PUBLIC_KEY;
+
+<span class="kw">const</span> TOKEN_OPTS = {
+  algorithm: <span class="str">'RS256'</span>,         <span class="cmt">// NEVER 'HS256' with weak secrets</span>
+  expiresIn:  <span class="str">'15m'</span>,          <span class="cmt">// Short-lived access tokens</span>
+  issuer:    <span class="str">'your-app.com'</span>,
+  audience:  <span class="str">'your-app.com'</span>,
+};
+<span class="kw">const</span> REFRESH_OPTS = { ...TOKEN_OPTS, expiresIn: <span class="str">'7d'</span> };
+
+<span class="kw">function</span> <span class="fn">signAccessToken</span>(payload) {
+  <span class="kw">return</span> jwt.<span class="fn">sign</span>(payload, PRIVATE_KEY, TOKEN_OPTS);
+}
+
+<span class="kw">function</span> <span class="fn">verifyToken</span>(token) {
+  <span class="cmt">// CRITICAL: always specify algorithms — prevents 'none' bypass</span>
+  <span class="kw">return</span> jwt.<span class="fn">verify</span>(token, PUBLIC_KEY, {
+    algorithms: [<span class="str">'RS256'</span>],    <span class="cmt">// whitelist ONLY RS256</span>
+    issuer:    <span class="str">'your-app.com'</span>,
+    audience:  <span class="str">'your-app.com'</span>,
+  });
+}
+
+module.exports = { signAccessToken, verifyToken };</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/middleware/auth.js — Secure token transport (httpOnly cookie)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ─── Store JWT in httpOnly cookie (not localStorage!) ────────</span>
+res.<span class="fn">cookie</span>(<span class="str">'accessToken'</span>, token, {
+  httpOnly: <span class="kw">true</span>,     <span class="cmt">// Not accessible via JS — blocks XSS theft</span>
+  secure:   <span class="kw">true</span>,     <span class="cmt">// HTTPS only</span>
+  sameSite: <span class="str">'strict'</span>, <span class="cmt">// CSRF protection</span>
+  maxAge:   <span class="num">15</span> * <span class="num">60</span> * <span class="num">1000</span>,  <span class="cmt">// 15 minutes</span>
+  path:     <span class="str">'/'</span>,
+});
+
+<span class="cmt">// ─── Token blacklist for revocation (use Redis in prod) ───────</span>
+<span class="kw">const</span> tokenBlacklist = <span class="kw">new</span> <span class="cls">Set</span>();
+
+<span class="kw">async function</span> <span class="fn">revokeToken</span>(token) {
+  tokenBlacklist.<span class="fn">add</span>(token);   <span class="cmt">// Redis: SET token 1 EX 900</span>
+}
+
+<span class="kw">async function</span> <span class="fn">isRevoked</span>(token) {
+  <span class="kw">return</span> tokenBlacklist.<span class="fn">has</span>(token); <span class="cmt">// Redis: EXISTS token</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔒 Key Security Checklist</div>
+        <div class="fv">
+          <ul class="cl">
+            <li>Use RS256 (asymmetric) not HS256</li>
+            <li>Access token expiry ≤ 15 minutes</li>
+            <li>Refresh token rotation on use</li>
+            <li>Store in httpOnly cookie, not localStorage</li>
+            <li>Whitelist algorithm in <code>verify()</code></li>
+            <li>Validate issuer and audience claims</li>
+            <li>Implement token revocation (Redis)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Tamper with JWT — change payload without re-signing
+$ TOKEN="eyJ..." # your valid token
+# Modify payload in middle segment, verify rejection
+$ curl -H "Cookie: accessToken=eyJhbGciOiJub25lIn0.TAMPERED." https://your-app.com/api/profile
+→ 401 Unauthorized
+
+# Confirm token is httpOnly (not in document.cookie)
+# In browser DevTools console:
+> document.cookie
+→ "" (empty — httpOnly cookie not visible to JS)
+
+# Check 'none' algorithm bypass is blocked
+$ node -e "const jwt=require('jsonwebtoken'); try { jwt.verify('eyJhbGciOiJub25lIn0.eyJ1c2VyIjoiYWRtaW4ifQ.', 'any', {algorithms:['RS256']}); } catch(e) { console.log('BLOCKED:', e.message); }"
+→ BLOCKED: invalid algorithm</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>JWT implementation has been hardened: RS256 asymmetric signing replaces HS256, algorithm whitelist in <em>jwt.verify()</em> prevents the <em>alg:none</em> bypass, access tokens expire in 15 minutes, tokens are stored in httpOnly/Secure/SameSite=Strict cookies preventing XSS theft, and issuer/audience claims are validated. A token revocation mechanism via in-memory Set (production: Redis) handles explicit logout.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  06 — SESSION & COOKIE SECURITY
+═══════════════════════════════════════ -->
+<div class="section" id="s06" data-severity="high" data-tags="session cookie secure httponly samesite express-session secret store redis fixation">
+  <div class="sec-header" onclick="tog('s06')">
+    <div class="sec-num">06</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Session &amp; Cookie Security</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="tag-p">express-session</span><span class="tag-p">connect-redis</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Default express-session stores sessions in-memory (lost on restart, not scalable), uses a weak default secret, and does not set Secure/HttpOnly/SameSite cookie attributes. Session fixation attacks are possible.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Session hijacking via cookie theft, session fixation attacks, XSS-based session token exfiltration, and CSRF attacks via missing SameSite attribute.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Hardened express-session with Redis store</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install express-session connect-redis redis</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/middleware/session.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> session    = <span class="fn">require</span>(<span class="str">'express-session'</span>);
+<span class="kw">const</span> RedisStore = <span class="fn">require</span>(<span class="str">'connect-redis'</span>);
+<span class="kw">const</span> { createClient } = <span class="fn">require</span>(<span class="str">'redis'</span>);
+
+<span class="kw">const</span> redisClient = <span class="fn">createClient</span>({ url: process.env.REDIS_URL });
+redisClient.<span class="fn">connect</span>();
+
+module.exports = <span class="fn">session</span>({
+  store:  <span class="kw">new</span> <span class="cls">RedisStore</span>({ client: redisClient }),
+  secret: process.env.SESSION_SECRET,  <span class="cmt">// ≥ 64-char random string</span>
+  name:   <span class="str">'__Host-sid'</span>,               <span class="cmt">// __Host- prefix: HTTPS-only, no domain</span>
+  resave: <span class="kw">false</span>,
+  saveUninitialized: <span class="kw">false</span>,
+  rolling: <span class="kw">true</span>,                       <span class="cmt">// reset expiry on activity</span>
+  cookie: {
+    httpOnly: <span class="kw">true</span>,
+    secure:   process.env.NODE_ENV === <span class="str">'production'</span>,
+    sameSite: <span class="str">'strict'</span>,
+    maxAge:   <span class="num">30</span> * <span class="num">60</span> * <span class="num">1000</span>,          <span class="cmt">// 30 minutes</span>
+    path:     <span class="str">'/'</span>,
+  },
+  genid: () => <span class="fn">require</span>(<span class="str">'crypto'</span>).<span class="fn">randomBytes</span>(<span class="num">32</span>).<span class="fn">toString</span>(<span class="str">'hex'</span>),
+});
+
+<span class="cmt">// ─── Regenerate session ID on privilege escalation ────────────</span>
+<span class="cmt">// Call this after successful login to prevent session fixation:</span>
+<span class="cmt">// req.session.regenerate(err => { ... set user data ... })</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span><span class="role-badge r-sys">Linux Admin (Redis)</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Check Set-Cookie header attributes
+$ curl -I -X POST https://your-app.com/api/auth/login -d '{"email":"test@test.com","password":"pass"}'
+→ set-cookie: __Host-sid=...; Path=/; HttpOnly; Secure; SameSite=Strict
+
+# Confirm session not accessible via JS
+# In browser console: document.cookie → should NOT contain __Host-sid</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Session management hardened: in-memory store replaced with Redis for persistence and horizontal scalability. Cookie attributes set to HttpOnly, Secure, SameSite=Strict. Session name uses <em>__Host-</em> prefix enforcing HTTPS-only scope. Session ID regenerated on login to prevent fixation. 30-minute idle timeout enforced with rolling expiry.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  07 — CSRF PROTECTION
+═══════════════════════════════════════ -->
+<div class="section" id="s07" data-severity="high" data-tags="csrf cross site request forgery csurf double submit token samesite cookie">
+  <div class="sec-header" onclick="tog('s07')">
+    <div class="sec-num">07</div>
+    <div class="sec-title-group">
+      <div class="sec-title">CSRF Protection</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="tag-p">csrf-csrf</span><span class="tag-p">double-submit</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">State-changing API endpoints (POST, PUT, DELETE) without CSRF protection can be abused by malicious sites to perform actions on behalf of authenticated users by exploiting their active session cookies.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Unauthorized account changes, password/email modification, financial transactions, and data deletion performed by attackers using victim's authenticated session.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Double-Submit CSRF Token Pattern</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install csrf-csrf</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/middleware/csrf.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> { doubleCsrf } = <span class="fn">require</span>(<span class="str">'csrf-csrf'</span>);
+
+<span class="kw">const</span> { generateToken, doubleCsrfProtection } = <span class="fn">doubleCsrf</span>({
+  getSecret: () => process.env.CSRF_SECRET,
+  cookieName: <span class="str">'__Host-psifi.x-csrf-token'</span>,
+  cookieOptions: {
+    sameSite:  <span class="str">'strict'</span>,
+    path:      <span class="str">'/'</span>,
+    secure:    <span class="kw">true</span>,
+    httpOnly:  <span class="kw">true</span>,
+  },
+  size:           <span class="num">64</span>,    <span class="cmt">// token length in bytes</span>
+  ignoredMethods: [<span class="str">'GET'</span>, <span class="str">'HEAD'</span>, <span class="str">'OPTIONS'</span>],
+  getTokenFromRequest: (req) =>
+    req.headers[<span class="str">'x-csrf-token'</span>] || req.body?._csrf,
+});
+
+module.exports = { generateToken, doubleCsrfProtection };</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/app.js — Apply CSRF middleware</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> { generateToken, doubleCsrfProtection } = <span class="fn">require</span>(<span class="str">'./src/middleware/csrf'</span>);
+
+<span class="cmt">// Apply CSRF protection to all state-changing routes</span>
+app.<span class="fn">use</span>(<span class="str">'/api'</span>, doubleCsrfProtection);
+
+<span class="cmt">// Expose CSRF token to frontend (GET endpoint)</span>
+app.<span class="fn">get</span>(<span class="str">'/api/csrf-token'</span>, (req, res) => {
+  res.<span class="fn">json</span>({ csrfToken: <span class="fn">generateToken</span>(req, res) });
+});</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# POST without CSRF token — must be rejected
+$ curl -s -X POST https://your-app.com/api/user/update -H "Cookie: __Host-sid=valid" -d '{"email":"new@email.com"}'
+→ 403 Forbidden: "invalid csrf token"
+
+# POST with valid CSRF token — must succeed
+$ TOKEN=$(curl -s https://your-app.com/api/csrf-token | python3 -c "import sys,json; print(json.load(sys.stdin)['csrfToken'])")
+$ curl -s -X POST https://your-app.com/api/user/update -H "x-csrf-token: $TOKEN" -H "Cookie: ..."
+→ 200 OK</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>CSRF protection implemented via the double-submit cookie pattern using the <em>csrf-csrf</em> package. All state-changing API endpoints (POST, PUT, DELETE, PATCH) require a valid CSRF token in the <em>X-CSRF-Token</em> header. Tokens are scoped to <em>__Host-</em> prefixed cookies (HTTPS-only). Cross-origin requests without valid tokens receive HTTP 403. SameSite=Strict cookies provide an additional layer of protection.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  08 — INPUT VALIDATION & SANITIZATION
+═══════════════════════════════════════ -->
+<div class="section" id="s08" data-severity="critical" data-tags="input validation sanitization xss express-validator joi zod dompurify prototype pollution">
+  <div class="sec-header" onclick="tog('s08')">
+    <div class="sec-num">08</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Input Validation &amp; Sanitization</div>
+      <div class="sec-meta">
+        <span class="badge b-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="tag-p">express-validator</span><span class="tag-p">zod</span><span class="tag-p">hpp</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Accepting user input without validation and sanitization enables XSS, injection attacks (SQL, NoSQL, LDAP, command), prototype pollution, and parameter pollution attacks.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Stored/reflected XSS, SQL/NoSQL injection, server-side template injection, command injection, parameter pollution leading to business logic bypass.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 1 — express-validator for route-level validation</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install express-validator hpp</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/validators/auth.validator.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> { body, validationResult } = <span class="fn">require</span>(<span class="str">'express-validator'</span>);
+
+<span class="cmt">// ─── Login validation rules ───────────────────────────────────</span>
+<span class="kw">const</span> loginRules = [
+  body(<span class="str">'email'</span>)
+    .<span class="fn">isEmail</span>().<span class="fn">normalizeEmail</span>()
+    .<span class="fn">withMessage</span>(<span class="str">'Valid email required'</span>),
+
+  body(<span class="str">'password'</span>)
+    .<span class="fn">isLength</span>({ min: <span class="num">8</span>, max: <span class="num">128</span> })
+    .<span class="fn">trim</span>()
+    .<span class="fn">withMessage</span>(<span class="str">'Password must be 8-128 characters'</span>),
+];
+
+<span class="cmt">// ─── Validation result handler ────────────────────────────────</span>
+<span class="kw">const</span> validate = (req, res, next) => {
+  <span class="kw">const</span> errors = <span class="fn">validationResult</span>(req);
+  <span class="kw">if</span> (!errors.<span class="fn">isEmpty</span>()) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">422</span>).<span class="fn">json</span>({
+      error: <span class="str">'Validation failed'</span>,
+      details: errors.<span class="fn">array</span>({ onlyFirstError: <span class="kw">true</span> }),
+    });
+  }
+  <span class="fn">next</span>();
+};
+
+module.exports = { loginRules, validate };</pre>
+          </div>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 2 — Global middleware: HPP & Prototype Pollution</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">/var/www/app/app.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> hpp = <span class="fn">require</span>(<span class="str">'hpp'</span>);
+
+<span class="cmt">// Prevent HTTP Parameter Pollution (foo=bar&foo=baz exploits)</span>
+app.<span class="fn">use</span>(<span class="fn">hpp</span>());
+
+<span class="cmt">// Limit JSON body size to prevent DoS via large payloads</span>
+app.<span class="fn">use</span>(express.<span class="fn">json</span>({ limit: <span class="str">'10kb'</span> }));
+app.<span class="fn">use</span>(express.<span class="fn">urlencoded</span>({ extended: <span class="kw">false</span>, limit: <span class="str">'10kb'</span> }));
+
+<span class="cmt">// Prevent prototype pollution from JSON input</span>
+app.<span class="fn">use</span>((req, res, next) => {
+  <span class="kw">if</span> (req.body && <span class="kw">typeof</span> req.body === <span class="str">'object'</span>) {
+    <span class="kw">const</span> dangerous = [<span class="str">'__proto__'</span>, <span class="str">'constructor'</span>, <span class="str">'prototype'</span>];
+    <span class="kw">const</span> <span class="fn">sanitize</span> = (obj) => {
+      dangerous.<span class="fn">forEach</span>(key => { <span class="kw">delete</span> obj[key]; });
+      <span class="cls">Object</span>.<span class="fn">values</span>(obj).<span class="fn">forEach</span>(v => v && <span class="kw">typeof</span> v === <span class="str">'object'</span> && <span class="fn">sanitize</span>(v));
+    };
+    <span class="fn">sanitize</span>(req.body);
+  }
+  <span class="fn">next</span>();
+});</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Test XSS payload rejection
+$ curl -s -X POST https://your-app.com/api/auth/login -H "Content-Type: application/json" -d '{"email":"&lt;script&gt;alert(1)&lt;/script&gt;","password":"short"}'
+→ {"error":"Validation failed","details":[{"msg":"Valid email required",...}]}
+
+# Test large payload rejection (DoS protection)
+$ python3 -c "import requests; r=requests.post('https://your-app.com/api/', json={'x':'A'*100000}); print(r.status_code)"
+→ 413 Payload Too Large
+
+# Test prototype pollution blocked
+$ curl -s -X POST https://your-app.com/api/data -H "Content-Type: application/json" -d '{"__proto__":{"admin":true}}'
+→ 422 Validation Failed or harmless (proto stripped)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Input validation is enforced at the route level via express-validator with field-level rules (email normalization, length limits, type checks). Request body size is capped at 10kb. HTTP Parameter Pollution is mitigated via the hpp middleware. Prototype pollution vectors (<em>__proto__</em>, <em>constructor</em>, <em>prototype</em> keys) are stripped from all incoming JSON payloads by a dedicated sanitization middleware.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  09 — SQL / NoSQL INJECTION
+═══════════════════════════════════════ -->
+<div class="section" id="s09" data-severity="critical" data-tags="sql injection nosql mongodb mongoose parameterized query prepared statement">
+  <div class="sec-header" onclick="tog('s09')">
+    <div class="sec-num">09</div>
+    <div class="sec-title-group">
+      <div class="sec-title">SQL &amp; NoSQL Injection Prevention</div>
+      <div class="sec-meta">
+        <span class="badge b-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="tag-p">pg / mysql2</span><span class="tag-p">mongoose</span><span class="tag-p">express-mongo-sanitize</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">String concatenation in database queries allows injection attacks. MongoDB is vulnerable to operator injection via <code>$where</code>, <code>$gt</code>, <code>$regex</code> in user-supplied JSON input.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Full database compromise, authentication bypass (<code>' OR '1'='1</code>), data exfiltration, record deletion, and privilege escalation via injected operators.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 1 — Parameterized Queries (PostgreSQL / MySQL)</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">/var/www/app/src/db/queries.js — CORRECT vs WRONG</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ✗ NEVER: string concatenation — VULNERABLE TO SQLi</span>
+<span class="op">const</span> query = <span class="str">`SELECT * FROM users WHERE email = '${req.body.email}'`</span>;
+
+<span class="cmt">// ✓ ALWAYS: parameterized queries</span>
+<span class="cmt">// PostgreSQL (pg)</span>
+<span class="kw">const</span> { rows } = <span class="kw">await</span> pool.<span class="fn">query</span>(
+  <span class="str">'SELECT * FROM users WHERE email = $1 AND active = $2'</span>,
+  [req.body.email, <span class="kw">true</span>]
+);
+
+<span class="cmt">// MySQL (mysql2)</span>
+<span class="kw">const</span> [rows] = <span class="kw">await</span> pool.<span class="fn">execute</span>(
+  <span class="str">'SELECT * FROM users WHERE email = ? AND active = ?'</span>,
+  [req.body.email, <span class="num">1</span>]
+);
+
+<span class="cmt">// ORM (Prisma) — always safe, never raw string input</span>
+<span class="kw">const</span> user = <span class="kw">await</span> prisma.user.<span class="fn">findFirst</span>({
+  where: { email: req.body.email, active: <span class="kw">true</span> }
+});</pre>
+          </div>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 2 — MongoDB / Mongoose Injection Prevention</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install express-mongo-sanitize</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/app.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> mongoSanitize = <span class="fn">require</span>(<span class="str">'express-mongo-sanitize'</span>);
+
+<span class="cmt">// Strip MongoDB operators ($, .) from req.body, req.query, req.params</span>
+app.<span class="fn">use</span>(<span class="fn">mongoSanitize</span>({
+  replaceWith: <span class="str">'_'</span>,   <span class="cmt">// replace dangerous chars</span>
+  onSanitize: ({ req, key }) => {
+    console.<span class="fn">warn</span>(<span class="str">`NOSQL INJECTION ATTEMPT: key=${key} ip=${req.ip}`</span>);
+  }
+}));
+
+<span class="cmt">// ─── Mongoose: NEVER use $where or raw string queries ─────────</span>
+<span class="cmt">// VULNERABLE:</span>
+<span class="op">User.find</span>({ <span class="str">'$where'</span>: <span class="str">'this.credits > 0'</span> }); <span class="cmt">// allows JS exec</span>
+
+<span class="cmt">// SAFE: use field-level operators, never $where</span>
+<span class="fn">User.find</span>({ credits: { <span class="str">$gt</span>: <span class="num">0</span> } });</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Test SQL injection attempt (PostgreSQL)
+$ curl -s -X POST https://your-app.com/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin'\''--","password":"anything"}'
+→ 422 Validation failed or 401 Unauthorized (never 200)
+
+# Test NoSQL operator injection (MongoDB)
+$ curl -s -X POST https://your-app.com/api/auth/login -H "Content-Type: application/json" -d '{"email":{"$gt":""},"password":{"$gt":""}}'
+→ 401 Unauthorized (operators stripped by mongoSanitize)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>SQL injection is prevented via parameterized queries (pg/mysql2 parameterized APIs / Prisma ORM) — no string concatenation in database queries. NoSQL injection is mitigated by express-mongo-sanitize, which strips MongoDB operators from all request inputs, and by disabling <em>$where</em> queries in Mongoose. Injection attempts are logged with IP address for forensic tracking.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  10 — FILE UPLOAD SECURITY
+═══════════════════════════════════════ -->
+<div class="section" id="s10" data-severity="high" data-tags="file upload multer mime type webshell virus scan size limit storage path traversal">
+  <div class="sec-header" onclick="tog('s10')">
+    <div class="sec-num">10</div>
+    <div class="sec-title-group">
+      <div class="sec-title">File Upload Security</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="tag-p">multer</span><span class="tag-p">file-type</span><span class="tag-p">uuid</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Unrestricted file uploads allow attackers to upload executable scripts (webshells), oversized files (DoS), and files with directory traversal paths in their name, leading to server compromise.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Remote Code Execution via uploaded webshells, DoS via multi-GB uploads, path traversal overwriting system files, and malware distribution via hosted files.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Hardened Multer with real MIME type validation</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install multer file-type uuid</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/middleware/upload.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> multer   = <span class="fn">require</span>(<span class="str">'multer'</span>);
+<span class="kw">const</span> { fileTypeFromBuffer } = <span class="fn">require</span>(<span class="str">'file-type'</span>);
+<span class="kw">const</span> { v4: uuidv4 } = <span class="fn">require</span>(<span class="str">'uuid'</span>);
+<span class="kw">const</span> path = <span class="fn">require</span>(<span class="str">'path'</span>);
+<span class="kw">const</span> fs   = <span class="fn">require</span>(<span class="str">'fs'</span>);
+
+<span class="cmt">// Allowed real MIME types (checked from file magic bytes)</span>
+<span class="kw">const</span> ALLOWED_TYPES = <span class="kw">new</span> <span class="cls">Set</span>([<span class="str">'image/jpeg'</span>, <span class="str">'image/png'</span>, <span class="str">'image/webp'</span>, <span class="str">'image/gif'</span>, <span class="str">'application/pdf'</span>]);
+<span class="kw">const</span> MAX_SIZE = <span class="num">5</span> * <span class="num">1024</span> * <span class="num">1024</span>;  <span class="cmt">// 5 MB</span>
+<span class="cmt">// Upload to a directory OUTSIDE web root</span>
+<span class="kw">const</span> UPLOAD_DIR = <span class="str">'/var/uploads/app'</span>;
+
+<span class="kw">const</span> storage = multer.<span class="fn">diskStorage</span>({
+  destination: (req, file, cb) => {
+    <span class="fn">cb</span>(<span class="kw">null</span>, UPLOAD_DIR);
+  },
+  filename: (req, file, cb) => {
+    <span class="cmt">// UUID filename: prevents path traversal & overwrites</span>
+    <span class="kw">const</span> ext = [<span class="str">'.jpg'</span>, <span class="str">'.jpeg'</span>, <span class="str">'.png'</span>, <span class="str">'.webp'</span>, <span class="str">'.gif'</span>, <span class="str">'.pdf'</span>];
+    <span class="kw">const</span> fileExt = <span class="fn">path.extname</span>(file.originalname).<span class="fn">toLowerCase</span>();
+    <span class="kw">if</span> (!ext.<span class="fn">includes</span>(fileExt)) <span class="kw">return</span> <span class="fn">cb</span>(<span class="kw">new</span> <span class="cls">Error</span>(<span class="str">'Invalid extension'</span>));
+    <span class="fn">cb</span>(<span class="kw">null</span>, <span class="fn">uuidv4</span>() + fileExt);
+  },
+});
+
+<span class="kw">const</span> upload = <span class="fn">multer</span>({
+  storage,
+  limits: { fileSize: MAX_SIZE, files: <span class="num">1</span> },
+  fileFilter: (req, file, cb) => {
+    <span class="cmt">// Check MIME from Content-Type header (first pass)</span>
+    <span class="kw">if</span> (!ALLOWED_TYPES.<span class="fn">has</span>(file.mimetype)) {
+      <span class="kw">return</span> <span class="fn">cb</span>(<span class="kw">new</span> <span class="cls">Error</span>(<span class="str">'File type not allowed'</span>));
+    }
+    <span class="fn">cb</span>(<span class="kw">null</span>, <span class="kw">true</span>);
+  },
+});
+
+<span class="cmt">// ─── Post-upload: verify REAL type via magic bytes ────────────</span>
+<span class="kw">const</span> verifyFileType = <span class="kw">async</span> (req, res, next) => {
+  <span class="kw">if</span> (!req.file) <span class="kw">return</span> <span class="fn">next</span>();
+  <span class="kw">const</span> buffer = fs.<span class="fn">readFileSync</span>(req.file.path);
+  <span class="kw">const</span> detected = <span class="kw">await</span> <span class="fn">fileTypeFromBuffer</span>(buffer);
+  <span class="kw">if</span> (!detected || !ALLOWED_TYPES.<span class="fn">has</span>(detected.mime)) {
+    fs.<span class="fn">unlinkSync</span>(req.file.path);  <span class="cmt">// delete malicious file</span>
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">422</span>).<span class="fn">json</span>({ error: <span class="str">'File content does not match type'</span> });
+  }
+  <span class="fn">next</span>();
+};
+
+module.exports = { upload, verifyFileType };</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span><span class="role-badge r-sys">Linux Admin</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Upload a PHP file disguised as .jpg
+$ curl -s -X POST https://your-app.com/api/upload \
+  -F "file=@webshell.php;type=image/jpeg"
+→ 422: "File content does not match type"
+
+# Upload a legitimate image — should succeed
+$ curl -s -X POST https://your-app.com/api/upload -F "file=@photo.jpg"
+→ 200: {"filename": "550e8400-e29b-41d4-a716-446655440000.jpg"}
+
+# Verify uploads directory is outside web root
+$ curl -I https://your-app.com/../var/uploads/
+→ 403 or 404 (never serves files from upload dir directly)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>File upload hardened via Multer with a 5MB size limit, extension allowlist, and Content-Type MIME validation. Post-upload, real file type is verified from file magic bytes using the <em>file-type</em> library — files whose content mismatches their declared type are rejected and deleted. Filenames are replaced with UUIDs to prevent path traversal. Uploads are stored outside the web root in <em>/var/uploads/app</em> with no direct HTTP access.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  11 — ENVIRONMENT VARIABLES & SECRETS
+═══════════════════════════════════════ -->
+<div class="section" id="s11" data-severity="critical" data-tags="environment variables secrets dotenv .env config keys database credentials hardcoded">
+  <div class="sec-header" onclick="tog('s11')">
+    <div class="sec-num">11</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Environment Variables &amp; Secrets Management</div>
+      <div class="sec-meta">
+        <span class="badge b-critical">CRITICAL</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App + Server</span>
+        <span class="tag-p">.env</span><span class="tag-p">dotenv-safe</span><span class="tag-p">.gitignore</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Hardcoded secrets in source code, <code>.env</code> files committed to Git, secrets in environment variable dumps via error pages, and missing validation of required env vars at startup.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Database credential exposure via Git history, API key leakage enabling cloud resource abuse, production secrets committed to public repositories (irreversible).</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — dotenv-safe with validation & .gitignore</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install dotenv-safe</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/.env.example (commit this — no values)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Required environment variables — NO VALUES HERE</span>
+NODE_ENV=
+PORT=
+DATABASE_URL=
+SESSION_SECRET=
+JWT_PRIVATE_KEY=
+JWT_PUBLIC_KEY=
+CSRF_SECRET=
+REDIS_URL=
+ALLOWED_ORIGINS=</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/.env (NEVER commit — local/server only)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Actual values — keep outside Git history</span>
+NODE_ENV=production
+PORT=3000
+DATABASE_URL=postgresql://user:STRONGPASS@127.0.0.1:5432/appdb
+SESSION_SECRET=<span class="num">64-char-random-hex-here</span>
+JWT_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n..."
+JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n..."
+CSRF_SECRET=<span class="num">64-char-random-hex-here</span>
+REDIS_URL=redis://127.0.0.1:6379</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/.gitignore</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># CRITICAL — Never commit these</span>
+.env
+.env.local
+.env.production
+*.key
+*.pem
+node_modules/
+logs/</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/app.js — Load with validation</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// dotenv-safe: throws if any .env.example variable is missing</span>
+<span class="fn">require</span>(<span class="str">'dotenv-safe'</span>).<span class="fn">config</span>({
+  path:    <span class="str">'.env'</span>,
+  example: <span class="str">'.env.example'</span>,
+  allowEmptyValues: <span class="kw">false</span>,   <span class="cmt">// reject empty required vars</span>
+});
+
+<span class="cmt">// Set strict file permissions on .env</span>
+<span class="cmt">// Run: chmod 600 /var/www/app/.env && chown node:node /var/www/app/.env</span>
+
+<span class="cmt">// Audit: ensure no secrets in error responses</span>
+<span class="kw">if</span> (process.env.NODE_ENV === <span class="str">'production'</span>) {
+  <span class="cmt">// Never print process.env in logs</span>
+  console.<span class="fn">log</span> = () => {};  <span class="cmt">// silence in prod if using structured logging</span>
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span><span class="role-badge r-sys">Linux Admin</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Verify .env is NOT in Git history
+$ git log --all --full-history -- .env
+→ (empty — no commits found)
+
+# Verify .env not accessible via web
+$ curl -I https://your-app.com/.env
+→ 403 or 404
+
+# Check file permissions
+$ stat -c "%a %U %n" /var/www/app/.env
+→ 600 node /var/www/app/.env
+
+# Scan for hardcoded secrets in codebase
+$ npm install -g trufflehog
+$ trufflehog filesystem /var/www/app/src/ --only-verified
+→ (no secrets found)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All secrets (database credentials, JWT keys, session secrets) are managed via environment variables loaded by dotenv-safe, which validates all required variables at startup. The <em>.env</em> file is excluded from version control via <em>.gitignore</em>, has file permissions 600, and is confirmed absent from Git history. TruffleHog scan confirms no hardcoded secrets in the source tree. The <em>.env</em> file is not accessible via HTTP (returns 403).</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  12 — DEPENDENCY SECURITY
+═══════════════════════════════════════ -->
+<div class="section" id="s12" data-severity="high" data-tags="npm audit dependencies vulnerability snyk outdated packages supply chain cve">
+  <div class="sec-header" onclick="tog('s12')">
+    <div class="sec-num">12</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Dependency Security &amp; Supply Chain</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">DevSecOps</span>
+        <span class="tag-p">npm audit</span><span class="tag-p">snyk</span><span class="tag-p">package-lock.json</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Node.js applications have hundreds of transitive dependencies. Known CVEs in packages like <code>lodash</code>, <code>express</code>, <code>axios</code>, or dev dependencies leak to production. Malicious packages via typosquatting/dependency confusion cause supply-chain attacks.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">RCE via vulnerable dependencies (e.g. Log4Shell-style), data exfiltration via malicious packages, prototype pollution via lodash CVEs, and ReDoS via vulnerable regex in packages.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Automated security audit pipeline</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal — Audit and fix</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Run built-in npm security audit</span>
+$ npm audit
+$ npm audit --audit-level=high     <span class="cmt"># fail CI on high/critical</span>
+
+<span class="cmt"># Auto-fix non-breaking vulnerabilities</span>
+$ npm audit fix
+
+<span class="cmt"># Fix breaking changes (review before applying)</span>
+$ npm audit fix --force
+
+<span class="cmt"># Install Snyk CLI (free OSS tier, more detail than npm audit)</span>
+$ npm install -g snyk
+$ snyk auth
+$ snyk test                         <span class="cmt"># scan for vulnerabilities</span>
+$ snyk monitor                      <span class="cmt"># continuous monitoring</span>
+
+<span class="cmt"># Check for outdated packages</span>
+$ npm outdated
+
+<span class="cmt"># Use exact versions — pin dependencies (no ^ or ~ in prod)</span>
+$ npm install --save-exact express helmet
+
+<span class="cmt"># Lock file integrity check</span>
+$ npm ci --ignore-scripts           <span class="cmt"># use package-lock.json exactly</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/package.json — Security best practices</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">{
+  <span class="str">"scripts"</span>: {
+    <span class="str">"audit:ci"</span>: <span class="str">"npm audit --audit-level=high"</span>,
+    <span class="str">"start:prod"</span>: <span class="str">"node --disable-proto=throw app.js"</span>
+  },
+  <span class="str">"engines"</span>: {
+    <span class="str">"node"</span>: <span class="str">">=20.0.0"</span>   <span class="cmt">// Pin to LTS Node version</span>
+  }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/.npmrc — Disable pre/post install scripts in prod</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Prevent malicious postinstall scripts from running</span>
+ignore-scripts=true
+audit=true
+fund=false</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span><span class="role-badge r-sys">DevOps/SysAdmin</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Run audit — zero high/critical should remain
+$ npm audit --audit-level=high
+→ found 0 vulnerabilities
+
+# Verify Node version is LTS
+$ node --version
+→ v20.x.x (Active LTS)
+
+# Confirm no ignored scripts running on install
+$ cat .npmrc | grep ignore-scripts
+→ ignore-scripts=true
+
+# Confirm package-lock.json is committed (reproducible builds)
+$ git status package-lock.json
+→ (tracked in Git)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Dependency security is maintained via <em>npm audit</em> (integrated into CI pipeline at high severity threshold) and Snyk continuous monitoring. All production dependencies are pinned to exact versions. <em>ignore-scripts=true</em> in .npmrc prevents postinstall script abuse. The application runs on Node.js LTS. <em>package-lock.json</em> is committed for reproducible builds. Current audit result: 0 high or critical vulnerabilities.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  13 — ERROR HANDLING & INFO DISCLOSURE
+═══════════════════════════════════════ -->
+<div class="section" id="s13" data-severity="medium" data-tags="error handling stack trace information disclosure debug production mode express error">
+  <div class="sec-header" onclick="tog('s13')">
+    <div class="sec-num">13</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Error Handling &amp; Information Disclosure Prevention</div>
+      <div class="sec-meta">
+        <span class="badge b-medium">MEDIUM</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="tag-p">errorHandler.js</span><span class="tag-p">NODE_ENV</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Default Express error handler returns full stack traces to the client in production, exposing file paths, library versions, internal logic, and database query details to attackers.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-medium">Internal path disclosure, framework/library fingerprinting, database schema leakage via error messages, and enumeration of internal services via detailed error responses.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Production Error Handler</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">/var/www/app/src/middleware/errorHandler.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> logger = <span class="fn">require</span>(<span class="str">'../utils/logger'</span>);
+
+<span class="cmt">/**
+ * Centralized error handler — MUST be last middleware registered.
+ * Never leaks stack traces or internal details in production.
+ */</span>
+module.exports = (err, req, res, next) => {
+  <span class="kw">const</span> isProd = process.env.NODE_ENV === <span class="str">'production'</span>;
+
+  <span class="cmt">// Always log the full error server-side (for forensics)</span>
+  logger.<span class="fn">error</span>({
+    message:    err.message,
+    stack:      err.stack,
+    method:     req.method,
+    url:        req.originalUrl,
+    ip:         req.ip,
+    userAgent:  req.headers[<span class="str">'user-agent'</span>],
+    userId:     req.user?.id,
+    requestId:  req.headers[<span class="str">'x-request-id'</span>],
+  });
+
+  <span class="cmt">// Operational vs programmer errors</span>
+  <span class="kw">const</span> statusCode = err.statusCode || err.status || <span class="num">500</span>;
+  <span class="kw">const</span> isOperational = err.isOperational === <span class="kw">true</span>;
+
+  <span class="cmt">// Production: generic message only</span>
+  <span class="kw">if</span> (isProd) {
+    res.<span class="fn">status</span>(statusCode).<span class="fn">json</span>({
+      error:     isOperational ? err.message : <span class="str">'An unexpected error occurred'</span>,
+      requestId: req.headers[<span class="str">'x-request-id'</span>] || <span class="str">'N/A'</span>,
+    });
+  } <span class="kw">else</span> {
+    <span class="cmt">// Development: full details</span>
+    res.<span class="fn">status</span>(statusCode).<span class="fn">json</span>({
+      error:   err.message,
+      stack:   err.stack,
+      details: err.details,
+    });
+  }
+};
+
+<span class="cmt">// ─── Unhandled promise rejections & exceptions ────────────────</span>
+process.<span class="fn">on</span>(<span class="str">'unhandledRejection'</span>, (reason) => {
+  logger.<span class="fn">error</span>(<span class="str">'Unhandled Rejection:'</span>, reason);
+  <span class="cmt">// In production, PM2 will restart the process</span>
+  process.<span class="fn">exit</span>(<span class="num">1</span>);
+});
+process.<span class="fn">on</span>(<span class="str">'uncaughtException'</span>, (err) => {
+  logger.<span class="fn">error</span>(<span class="str">'Uncaught Exception:'</span>, err);
+  process.<span class="fn">exit</span>(<span class="num">1</span>);
+});</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/app.js — Register as LAST middleware</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ... all routes above ...</span>
+<span class="cmt">// Error handler MUST be the last app.use() call</span>
+app.<span class="fn">use</span>(<span class="fn">require</span>(<span class="str">'./src/middleware/errorHandler'</span>));</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Trigger a 500 error in production — must not show stack
+$ curl -s https://your-app.com/api/trigger-error | python3 -m json.tool
+→ {"error":"An unexpected error occurred","requestId":"abc-123"}
+→ NO stack trace, NO file paths, NO library names
+
+# Check server logs for full error (must be there for forensics)
+$ tail -5 /var/log/app/error.log
+→ {"level":"error","message":"...","stack":"Error: ...\n    at /var/www/app/..."}</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>A centralized error handler is registered as the final Express middleware. In production (<em>NODE_ENV=production</em>), all 5xx errors return a generic message with a request correlation ID. Stack traces, file paths, and library details are stripped from responses. Full error details are logged server-side with request metadata for incident response. Unhandled rejections and uncaught exceptions terminate the process for PM2-managed restart.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  14 — PROCESS SECURITY & PM2
+═══════════════════════════════════════ -->
+<div class="section" id="s14" data-severity="high" data-tags="pm2 process manager privilege separation non-root user systemd cluster mode">
+  <div class="sec-header" onclick="tog('s14')">
+    <div class="sec-num">14</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Process Security &amp; PM2 Hardening</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="badge" style="background:rgba(56,191,255,0.08);color:var(--blue)">Server Level</span>
+        <span class="tag-p">PM2</span><span class="tag-p">systemd</span><span class="tag-p">non-root</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Running Node.js as root means any RCE vulnerability gives attackers full system control. No process manager means crashes leave the app down. No cluster mode wastes CPU and creates single-points-of-failure.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Root-level code execution via app RCE vulnerabilities, persistent downtime from unhandled crashes, and single-process DoS vulnerability under load.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Dedicated non-root user + PM2</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal — Create dedicated app user</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Create a locked-down user for the Node.js process</span>
+$ useradd --system --no-create-home --shell /usr/sbin/nologin nodeapp
+$ chown -R nodeapp:nodeapp /var/www/app
+$ chmod -R 750 /var/www/app
+$ chmod 600 /var/www/app/.env
+
+<span class="cmt"># Install PM2 globally</span>
+$ npm install -g pm2
+
+<span class="cmt"># Start app as nodeapp user</span>
+$ sudo -u nodeapp pm2 start ecosystem.config.js
+$ pm2 save
+$ pm2 startup systemd -u nodeapp --hp /home/nodeapp</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/ecosystem.config.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">module.exports = {
+  apps: [{
+    name:         <span class="str">'your-app'</span>,
+    script:       <span class="str">'./app.js'</span>,
+    instances:    <span class="str">'max'</span>,            <span class="cmt">// cluster mode — 1 per CPU core</span>
+    exec_mode:    <span class="str">'cluster'</span>,
+    user:         <span class="str">'nodeapp'</span>,         <span class="cmt">// non-root user</span>
+    env_production: {
+      NODE_ENV:        <span class="str">'production'</span>,
+      PORT:            <span class="num">3000</span>,
+      NODE_OPTIONS:    <span class="str">'--disable-proto=throw'</span>,  <span class="cmt">// block prototype pollution</span>
+    },
+    max_memory_restart: <span class="str">'512M'</span>,      <span class="cmt">// auto-restart on memory leak</span>
+    autorestart:   <span class="kw">true</span>,
+    watch:         <span class="kw">false</span>,             <span class="cmt">// NEVER true in production</span>
+    merge_logs:    <span class="kw">true</span>,
+    log_file:      <span class="str">'/var/log/app/combined.log'</span>,
+    error_file:    <span class="str">'/var/log/app/error.log'</span>,
+    out_file:      <span class="str">'/var/log/app/out.log'</span>,
+    log_date_format: <span class="str">'YYYY-MM-DD HH:mm:ss Z'</span>,
+  }]
+};</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-sys">Linux/System Admin</span><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Verify Node.js process runs as non-root
+$ ps aux | grep node
+→ nodeapp ... node app.js (NOT root)
+
+# Verify PM2 cluster mode is active
+$ pm2 list
+→ your-app | cluster | online × N (N = CPU cores)
+
+# Verify prototype pollution is blocked at runtime
+$ node --disable-proto=throw -e "({})['__proto__']['test'] = 1"
+→ TypeError: Object.setPrototypeOf is not allowed (or similar)
+
+# Test auto-restart (kill a worker)
+$ kill -9 $(pgrep -f 'your-app' | head -1)
+→ PM2 automatically respawns the worker within seconds</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Node.js process runs as a dedicated system user <em>nodeapp</em> with nologin shell and no home directory, preventing privilege escalation via RCE. PM2 manages the process in cluster mode (one worker per CPU core) with auto-restart on crash or OOM. <em>--disable-proto=throw</em> Node flag blocks prototype pollution at the runtime level. Application directory permissions are 750 with .env at 600.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  15 — LOGGING & MONITORING
+═══════════════════════════════════════ -->
+<div class="section" id="s15" data-severity="medium" data-tags="winston morgan logging monitoring structured logs audit trail access log request id tracing">
+  <div class="sec-header" onclick="tog('s15')">
+    <div class="sec-num">15</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Structured Logging &amp; Security Monitoring</div>
+      <div class="sec-meta">
+        <span class="badge b-medium">MEDIUM</span>
+        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App + Server</span>
+        <span class="tag-p">winston</span><span class="tag-p">morgan</span><span class="tag-p">request-id</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Using <code>console.log()</code> in production produces unstructured, unsearchable output with no timestamps, severity levels, or request correlation. Security events like auth failures and injection attempts go unlogged.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-medium">Inability to detect ongoing attacks, failed forensic investigation post-breach, violation of audit log requirements (ISO 27001, CERT-In IT Act 2000 Section 43A, 72A).</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Winston structured logger + Morgan HTTP logs</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install winston morgan uuid</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/src/utils/logger.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> winston = <span class="fn">require</span>(<span class="str">'winston'</span>);
+
+<span class="kw">const</span> logger = winston.<span class="fn">createLogger</span>({
+  level: process.env.LOG_LEVEL || <span class="str">'info'</span>,
+  format: winston.format.<span class="fn">combine</span>(
+    winston.format.<span class="fn">timestamp</span>(),
+    winston.format.<span class="fn">errors</span>({ stack: <span class="kw">true</span> }),
+    winston.format.<span class="fn">json</span>()           <span class="cmt">// machine-parseable JSON logs</span>
+  ),
+  defaultMeta: { service: <span class="str">'your-app'</span> },
+  transports: [
+    <span class="kw">new</span> winston.transports.<span class="cls">File</span>({
+      filename: <span class="str">'/var/log/app/error.log'</span>,
+      level:    <span class="str">'error'</span>,
+      maxsize:  <span class="num">10</span> * <span class="num">1024</span> * <span class="num">1024</span>,   <span class="cmt">// 10MB per file</span>
+      maxFiles: <span class="num">30</span>,                   <span class="cmt">// 30 day retention</span>
+      tailable: <span class="kw">true</span>,
+    }),
+    <span class="kw">new</span> winston.transports.<span class="cls">File</span>({
+      filename: <span class="str">'/var/log/app/combined.log'</span>,
+      maxsize:  <span class="num">50</span> * <span class="num">1024</span> * <span class="num">1024</span>,
+      maxFiles: <span class="num">30</span>,
+    }),
+  ],
+});
+
+<span class="cmt">// Console output in development only</span>
+<span class="kw">if</span> (process.env.NODE_ENV !== <span class="str">'production'</span>) {
+  logger.<span class="fn">add</span>(<span class="kw">new</span> winston.transports.<span class="cls">Console</span>({
+    format: winston.format.<span class="fn">simple</span>(),
+  }));
+}
+
+module.exports = logger;</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/var/www/app/app.js — Add security event logging</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> morgan = <span class="fn">require</span>(<span class="str">'morgan'</span>);
+<span class="kw">const</span> { v4: uuid } = <span class="fn">require</span>(<span class="str">'uuid'</span>);
+<span class="kw">const</span> logger = <span class="fn">require</span>(<span class="str">'./src/utils/logger'</span>);
+
+<span class="cmt">// Request ID for correlation</span>
+app.<span class="fn">use</span>((req, res, next) => {
+  req.id = uuid();
+  res.<span class="fn">setHeader</span>(<span class="str">'X-Request-ID'</span>, req.id);
+  <span class="fn">next</span>();
+});
+
+<span class="cmt">// HTTP access log via Morgan → Winston</span>
+app.<span class="fn">use</span>(<span class="fn">morgan</span>(<span class="str">':method :url :status :res[content-length] - :response-time ms :req[x-forwarded-for]'</span>, {
+  stream: { write: (msg) => logger.<span class="fn">info</span>(msg.<span class="fn">trim</span>()) },
+  skip:   (req, res) => res.statusCode < <span class="num">400</span>,  <span class="cmt">// log errors only in prod</span>
+}));
+
+<span class="cmt">// ─── Security event logger helper ────────────────────────────</span>
+<span class="kw">const</span> secLog = (event, req, extra = {}) => {
+  logger.<span class="fn">warn</span>({ event, ip: req.ip, ua: req.headers[<span class="str">'user-agent'</span>], requestId: req.id, ...extra });
+};
+
+<span class="cmt">// Usage: secLog('LOGIN_FAILED', req, { email: req.body.email });</span>
+<span class="cmt">// Usage: secLog('RATE_LIMITED', req);</span>
+<span class="cmt">// Usage: secLog('CSRF_VIOLATION', req);</span>
+module.exports.secLog = secLog;</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dev">Node.js Developer</span><span class="role-badge r-sys">Linux Admin</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Verify JSON structured logs are being written
+$ tail -3 /var/log/app/combined.log | python3 -m json.tool
+→ {"level":"info","message":"GET /api/health 200 ...","timestamp":"2026-04-21..."}
+
+# Trigger login failure — should appear in logs
+$ curl -X POST https://your-app.com/api/auth/login -d '{"email":"x","password":"bad"}'
+$ grep "LOGIN_FAILED" /var/log/app/combined.log | tail -1
+→ {"event":"LOGIN_FAILED","ip":"...","email":"x","timestamp":"..."}
+
+# Verify X-Request-ID in responses
+$ curl -I https://your-app.com/api/health | grep -i x-request-id
+→ x-request-id: 550e8400-e29b-41d4-a716-446655440000</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Structured JSON logging via Winston is implemented with 30-day file rotation and 10MB/50MB size limits. Every request carries a UUID correlation header (<em>X-Request-ID</em>). Security events (login failures, rate limiting, CSRF violations, injection attempts) are explicitly logged with IP, User-Agent, and request ID for forensic traceability. Logs are stored in <em>/var/log/app/</em> outside the application directory with restricted permissions.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  16 — SECURITY AUDIT & BACKUP
+═══════════════════════════════════════ -->
+<div class="section" id="s16" data-severity="medium" data-tags="backup restore security audit checklist periodic review penetration testing cron encrypted">
+  <div class="sec-header" onclick="tog('s16')">
+    <div class="sec-num">16</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Security Audit Schedule &amp; Backup Strategy</div>
+      <div class="sec-meta">
+        <span class="badge b-medium">MEDIUM</span>
+        <span class="badge" style="background:rgba(56,191,255,0.08);color:var(--blue)">Server + DevSecOps</span>
+        <span class="tag-p">cron</span><span class="tag-p">pg_dump</span><span class="tag-p">gpg</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Without scheduled audits, new vulnerabilities in dependencies go undetected. Unencrypted backups or backups stored inside the web root expose full database dumps. No backup means no recovery from ransomware or human error.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-medium">Undetected vulnerability windows (Zero-day dwell time), complete data loss without backups, and credential exposure via publicly accessible backup files.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 1 — Automated encrypted database backup</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">/usr/local/bin/nodeapp-backup.sh</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">#!/bin/bash
+<span class="cmt"># Node.js App Encrypted Backup — runs at 3 AM daily</span>
+<span class="cmt"># Cron: 0 3 * * * /usr/local/bin/nodeapp-backup.sh</span>
+
+BACKUP_DIR=<span class="str">"/var/backups/nodeapp"</span>
+DATE=$(date +%Y%m%d_%H%M%S)
+DB_URL=<span class="str">"$DATABASE_URL"</span>
+GPG_ID=<span class="str">"backup@your-app.com"</span>
+KEEP_DAYS=<span class="num">30</span>
+
+mkdir -p $BACKUP_DIR
+chmod 700 $BACKUP_DIR
+
+<span class="cmt"># PostgreSQL dump → gzip → GPG encrypt</span>
+pg_dump $DB_URL | \
+  gzip | \
+  gpg --recipient $GPG_ID --encrypt \
+  > $BACKUP_DIR/db_${DATE}.sql.gz.gpg
+
+<span class="cmt"># App source backup (exclude node_modules, logs, .env)</span>
+tar -czf - \
+  --exclude=/var/www/app/node_modules \
+  --exclude=/var/www/app/logs \
+  --exclude=/var/www/app/.env \
+  /var/www/app | \
+  gpg --recipient $GPG_ID --encrypt \
+  > $BACKUP_DIR/app_${DATE}.tar.gz.gpg
+
+<span class="cmt"># Set strict permissions</span>
+chmod 600 $BACKUP_DIR/*.gpg
+chown root:root $BACKUP_DIR/*.gpg
+
+<span class="cmt"># Remove old backups</span>
+find $BACKUP_DIR -name "*.gpg" -mtime +$KEEP_DAYS -delete
+
+echo "$(date): Backup OK" >> /var/log/nodeapp-backup.log</pre>
+          </div>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 2 — Security Audit Schedule (cron)</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Crontab — Periodic security checks</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Run daily npm audit at 6 AM — email results if vulnerabilities found</span>
+0 6 * * * cd /var/www/app && npm audit --audit-level=high 2>&1 | mail -s "npm-audit $(date +%F)" sec@your-app.com
+
+<span class="cmt"># Weekly: check for outdated packages</span>
+0 8 * * 1 cd /var/www/app && npm outdated >> /var/log/nodeapp-outdated.log 2>&1
+
+<span class="cmt"># Monthly: run Snyk full scan</span>
+0 7 1 * * cd /var/www/app && npx snyk test --all-projects >> /var/log/snyk-scan.log 2>&1
+
+<span class="cmt"># Daily: backup</span>
+0 3 * * * /usr/local/bin/nodeapp-backup.sh
+
+<span class="cmt"># Weekly: verify TLS certificate expiry (alert if < 30 days)</span>
+0 9 * * 1 echo | openssl s_client -connect your-app.com:443 2>/dev/null | openssl x509 -noout -dates | grep notAfter</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-sys">Linux/System Admin</span><span class="role-badge r-dev">Node.js Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Test backup script runs successfully
+$ /usr/local/bin/nodeapp-backup.sh
+$ ls -lh /var/backups/nodeapp/
+→ -rw------- 1 root root 12M ... db_20260421_030001.sql.gz.gpg
+
+# Backup decrypt test (restore drill)
+$ gpg --decrypt /var/backups/nodeapp/db_20260421_030001.sql.gz.gpg | gunzip | head -5
+→ -- PostgreSQL database dump...
+
+# Confirm backup not web-accessible
+$ curl -I https://your-app.com/../var/backups/
+→ 403 / 404</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Automated daily GPG-encrypted database and application backups are configured via cron, stored in <em>/var/backups/nodeapp/</em> (permissions 700/600) outside the web root. A 30-day retention policy is enforced with automatic pruning. Restore procedure has been tested and confirmed operational. Automated daily npm audit, weekly outdated-package check, and monthly Snyk scan are scheduled. TLS certificate expiry is monitored weekly.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+  SUMMARY TABLE
+═══════════════════════════════════════ -->
+<div style="margin-top:44px;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+  <div style="padding:22px 26px;background:var(--card2);border-bottom:1px solid var(--border)">
+    <h2 style="font-family:'Oxanium',sans-serif;font-size:19px;font-weight:700;color:var(--text)">⬡ Security Controls Master Checklist</h2>
+    <p style="color:var(--text2);font-size:12.5px;margin-top:4px">Track remediation status for VAPT report closure</p>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="who-tbl" style="width:100%">
+      <thead>
+        <tr>
+          <th>#</th><th>Control</th><th>Severity</th><th>Layer</th><th>Key Package / Tool</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>Helmet.js — Security Headers</td><td><span class="badge b-high">HIGH</span></td><td>App</td><td><span class="tag-p">helmet</span></td><td>☐ Open</td></tr>
+        <tr><td>02</td><td>Rate Limiting &amp; DDoS Protection</td><td><span class="badge b-critical">CRITICAL</span></td><td>App + Server</td><td><span class="tag-p">express-rate-limit</span></td><td>☐ Open</td></tr>
+        <tr><td>03</td><td>CORS Configuration</td><td><span class="badge b-high">HIGH</span></td><td>App</td><td><span class="tag-p">cors</span></td><td>☐ Open</td></tr>
+        <tr><td>04</td><td>HTTPS / TLS &amp; Nginx Reverse Proxy</td><td><span class="badge b-critical">CRITICAL</span></td><td>Server</td><td><span class="tag-p">certbot</span> <span class="tag-p">nginx</span></td><td>☐ Open</td></tr>
+        <tr><td>05</td><td>JWT Security (RS256, alg whitelist)</td><td><span class="badge b-critical">CRITICAL</span></td><td>App</td><td><span class="tag-p">jsonwebtoken</span></td><td>☐ Open</td></tr>
+        <tr><td>06</td><td>Session &amp; Cookie Security</td><td><span class="badge b-high">HIGH</span></td><td>App</td><td><span class="tag-p">express-session</span> <span class="tag-p">redis</span></td><td>☐ Open</td></tr>
+        <tr><td>07</td><td>CSRF Protection</td><td><span class="badge b-high">HIGH</span></td><td>App</td><td><span class="tag-p">csrf-csrf</span></td><td>☐ Open</td></tr>
+        <tr><td>08</td><td>Input Validation &amp; Sanitization</td><td><span class="badge b-critical">CRITICAL</span></td><td>App</td><td><span class="tag-p">express-validator</span> <span class="tag-p">hpp</span></td><td>☐ Open</td></tr>
+        <tr><td>09</td><td>SQL / NoSQL Injection Prevention</td><td><span class="badge b-critical">CRITICAL</span></td><td>App</td><td><span class="tag-p">parameterized queries</span></td><td>☐ Open</td></tr>
+        <tr><td>10</td><td>File Upload Security</td><td><span class="badge b-high">HIGH</span></td><td>App</td><td><span class="tag-p">multer</span> <span class="tag-p">file-type</span></td><td>☐ Open</td></tr>
+        <tr><td>11</td><td>Environment Variables &amp; Secrets</td><td><span class="badge b-critical">CRITICAL</span></td><td>App + Server</td><td><span class="tag-p">dotenv-safe</span></td><td>☐ Open</td></tr>
+        <tr><td>12</td><td>Dependency Security &amp; Supply Chain</td><td><span class="badge b-high">HIGH</span></td><td>DevSecOps</td><td><span class="tag-p">npm audit</span> <span class="tag-p">snyk</span></td><td>☐ Open</td></tr>
+        <tr><td>13</td><td>Error Handling &amp; Info Disclosure</td><td><span class="badge b-medium">MEDIUM</span></td><td>App</td><td><span class="tag-p">errorHandler.js</span></td><td>☐ Open</td></tr>
+        <tr><td>14</td><td>Process Security &amp; PM2 Hardening</td><td><span class="badge b-high">HIGH</span></td><td>Server</td><td><span class="tag-p">pm2</span> <span class="tag-p">non-root</span></td><td>☐ Open</td></tr>
+        <tr><td>15</td><td>Structured Logging &amp; Monitoring</td><td><span class="badge b-medium">MEDIUM</span></td><td>App + Server</td><td><span class="tag-p">winston</span> <span class="tag-p">morgan</span></td><td>☐ Open</td></tr>
+        <tr><td>16</td><td>Security Audit &amp; Backup Strategy</td><td><span class="badge b-medium">MEDIUM</span></td><td>Server + DevOps</td><td><span class="tag-p">cron</span> <span class="tag-p">gpg</span></td><td>☐ Open</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:18px 26px;border-top:1px solid var(--border);display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--red);border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:var(--text2)">Critical: 5 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--amber);border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:var(--text2)">High: 8 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--purple);border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:var(--text2)">Medium: 3 controls</span></div>
+    <div style="margin-left:auto;font-size:11px;color:var(--text3);font-family:'Fira Code',monospace">OWASP Node.js Security Cheatsheet · April 2026</div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</main>
+
+<button id="goTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+function tog(id){document.getElementById(id).classList.toggle('open')}
+function jumpTo(id){const el=document.getElementById(id);if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'start'})}}
+function expandAll(){document.querySelectorAll('.section').forEach(s=>s.classList.add('open'))}
+function collapseAll(){document.querySelectorAll('.section').forEach(s=>s.classList.remove('open'))}
+function filterSecs(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.section').forEach(s=>{
+    const t=(s.textContent+' '+(s.dataset.tags||'')).toLowerCase();
+    s.classList.toggle('hidden',q.length>1&&!t.includes(q));
+  });
+}
+function filterSev(sev,btn){
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>{
+    s.classList.toggle('hidden',sev!=='all'&&s.dataset.severity!==sev);
+  });
+}
+function cp(btn){
+  const pre=btn.closest('.code-wrap').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ Copied';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2000);
+  });
+}
+window.addEventListener('scroll',()=>{
+  document.getElementById('goTop').style.display=window.scrollY>400?'flex':'none';
+});
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id=e.target.id;
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      const ni=document.querySelector(`.nav-item[onclick="jumpTo('${id}')"]`);
+      if(ni)ni.classList.add('active');
+    }
+  });
+},{threshold:.15});
+document.querySelectorAll('.section').forEach((s,i)=>{
+  s.style.animationDelay=(i*.035)+'s';
+  obs.observe(s);
+});
+</script>
+</body>
+</html>
