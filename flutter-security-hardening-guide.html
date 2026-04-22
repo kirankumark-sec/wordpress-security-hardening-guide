@@ -1,0 +1,2466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flutter Security Hardening Guide · VAPT Remediation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@300;400;600;700;800;900&family=Nunito:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Sidebar — deep navy */
+  --navy:       #07111d;
+  --navy2:      #0d1e2e;
+  --navy3:      #162840;
+  --navy-bdr:   #1e3550;
+  --navy-bdr2:  #2a4a6e;
+
+  /* Main — light */
+  --bg:         #f0f4f9;
+  --bg2:        #ffffff;
+  --bg3:        #e8eef6;
+  --card:       #ffffff;
+  --border:     #dde5f0;
+  --border2:    #c5d2e6;
+
+  /* Text */
+  --ink:        #0d1b2a;
+  --ink2:       #334e6a;
+  --ink3:       #6b87a4;
+  --ink4:       #a8bece;
+
+  /* Accents */
+  --teal:       #00c9a7;
+  --teal2:      #00a88c;
+  --teal-bg:    #e6faf7;
+  --coral:      #ff5757;
+  --coral2:     #d43f3f;
+  --coral-bg:   #fff0f0;
+  --violet:     #7b5ea7;
+  --violet-bg:  #f3eeff;
+  --gold:       #e6920a;
+  --gold-bg:    #fff8e6;
+  --blue:       #1a73e8;
+  --blue-bg:    #e8f0fe;
+  --rose:       #e83e8c;
+  --rose-bg:    #fce8f3;
+
+  --shadow-sm:  0 1px 3px rgba(7,17,29,.08);
+  --shadow-md:  0 4px 16px rgba(7,17,29,.10);
+  --shadow-lg:  0 8px 32px rgba(7,17,29,.14);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Nunito',sans-serif;
+  font-size:14.5px;
+  line-height:1.72;
+  overflow-x:hidden;
+}
+
+/* ── DIAGONAL STRIPE TEXTURE on bg ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(
+    -45deg,
+    transparent,transparent 28px,
+    rgba(0,201,167,.028) 28px,rgba(0,201,167,.028) 29px
+  );
+  pointer-events:none;z-index:0;
+}
+
+/* ══════════════ SIDEBAR ══════════════ */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:280px;
+  background:var(--navy);
+  overflow-y:auto;z-index:100;
+  display:flex;flex-direction:column;
+  border-right:1px solid var(--navy-bdr);
+}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--navy-bdr2);border-radius:2px}
+
+/* Teal accent line at top */
+.sb-topline{
+  height:3px;
+  background:linear-gradient(90deg,var(--teal),#00eacc,var(--teal));
+}
+
+.sb-logo{padding:22px 20px 18px;border-bottom:1px solid var(--navy-bdr)}
+.sb-logomark{
+  width:46px;height:46px;
+  background:linear-gradient(135deg,var(--teal),#00eacc);
+  border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;margin-bottom:12px;
+  box-shadow:0 4px 18px rgba(0,201,167,.35);
+}
+.sb-logo h2{
+  font-family:'Unbounded',sans-serif;font-size:12.5px;font-weight:700;
+  color:#e8f4ff;letter-spacing:.3px;line-height:1.4;
+}
+.sb-logo p{font-size:10px;color:var(--navy-bdr2);margin-top:4px;text-transform:uppercase;letter-spacing:1.5px}
+
+.sb-cat{
+  padding:16px 20px 4px;font-size:9px;font-weight:700;
+  color:var(--navy-bdr2);text-transform:uppercase;letter-spacing:2px;
+  font-family:'Unbounded',sans-serif;
+}
+
+.nav-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 20px;color:#7a9bb8;font-size:12px;
+  cursor:pointer;transition:all .18s;
+  border-left:3px solid transparent;
+  font-family:'Nunito',sans-serif;font-weight:500;
+}
+.nav-item:hover,.nav-item.active{
+  color:var(--teal);background:rgba(0,201,167,.06);
+  border-left-color:var(--teal);
+}
+.nav-num{
+  font-family:'JetBrains Mono',monospace;font-size:9.5px;
+  color:var(--navy-bdr2);min-width:20px;
+}
+.nav-item:hover .nav-num,.nav-item.active .nav-num{color:var(--teal2)}
+
+/* coloured dot per category */
+.nd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+.sb-footer{
+  margin-top:auto;padding:14px 20px;
+  border-top:1px solid var(--navy-bdr);
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--navy-bdr2);line-height:1.9;
+}
+.sb-version{
+  display:inline-block;padding:2px 8px;
+  background:rgba(0,201,167,.12);border:1px solid rgba(0,201,167,.25);
+  border-radius:4px;color:var(--teal);
+  font-size:9.5px;margin-bottom:6px;
+}
+
+/* ══════════════ MAIN ══════════════ */
+.main{margin-left:280px;position:relative;z-index:1}
+
+/* ── HERO ── */
+.hero{
+  position:relative;overflow:hidden;
+  padding:56px 60px 50px;
+  background:var(--navy);
+  color:#e8f4ff;
+}
+
+/* Hero hex pattern */
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='100'%3E%3Cpath d='M28 66L0 50V18L28 2l28 16v32L28 66zm0-8l20-11.5V29.5L28 18 8 29.5v17L28 58z' fill='%2300c9a7' fill-opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events:none;
+}
+
+/* Big diamond deco */
+.hero-deco{
+  position:absolute;right:-20px;top:50%;transform:translateY(-50%) rotate(45deg);
+  width:260px;height:260px;
+  background:linear-gradient(135deg,rgba(0,201,167,.07),rgba(0,234,204,.04));
+  border:1px solid rgba(0,201,167,.12);
+  pointer-events:none;
+}
+.hero-deco2{
+  position:absolute;right:120px;top:30%;transform:rotate(45deg);
+  width:80px;height:80px;
+  background:rgba(0,201,167,.05);
+  border:1px solid rgba(0,201,167,.1);
+  pointer-events:none;
+}
+
+.hero-eyebrow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.etag{
+  padding:3px 11px;border-radius:4px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;
+  border:1px solid;letter-spacing:.4px;
+}
+.et-vapt{background:rgba(255,87,87,.1);color:#ff8f8f;border-color:rgba(255,87,87,.3)}
+.et-owasp{background:rgba(0,201,167,.1);color:var(--teal);border-color:rgba(0,201,167,.3)}
+.et-flutter{background:rgba(26,115,232,.1);color:#7ab4ff;border-color:rgba(26,115,232,.3)}
+.et-dart{background:rgba(230,146,10,.1);color:#ffc96b;border-color:rgba(230,146,10,.3)}
+
+.hero h1{
+  font-family:'Unbounded',sans-serif;
+  font-size:40px;font-weight:800;
+  line-height:1.1;margin-bottom:14px;
+  letter-spacing:-1px;
+  background:linear-gradient(135deg,#ffffff 20%,#a0eee2 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.hero-sub{color:#7a9bb8;font-size:15px;max-width:600px;margin-bottom:32px;line-height:1.68}
+
+/* Stats as pill row */
+.hero-stats{
+  display:flex;gap:3px;flex-wrap:wrap;
+}
+.stat-pill{
+  padding:10px 22px;
+  background:rgba(0,201,167,.08);
+  border:1px solid rgba(0,201,167,.18);
+  border-radius:8px;
+  text-align:center;
+}
+.stat-num{
+  font-family:'Unbounded',sans-serif;font-size:24px;font-weight:800;
+  color:var(--teal);display:block;line-height:1;
+}
+.stat-label{font-size:10px;color:var(--navy-bdr2);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  padding:12px 60px;display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:50;
+  box-shadow:var(--shadow-sm);
+}
+.search-wrap{position:relative;flex:1;max-width:420px}
+.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:13px;pointer-events:none}
+.search-input{
+  width:100%;background:var(--bg3);border:1.5px solid var(--border);
+  border-radius:8px;padding:8px 14px 8px 36px;
+  color:var(--ink);font-family:'Nunito',sans-serif;font-size:13.5px;outline:none;
+  transition:all .18s;
+}
+.search-input::placeholder{color:var(--ink4)}
+.search-input:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(0,201,167,.1)}
+.filter-btns{display:flex;gap:5px}
+.fbtn{
+  padding:6px 13px;border-radius:7px;font-size:11.5px;font-weight:600;
+  cursor:pointer;border:1.5px solid var(--border);background:var(--bg);
+  color:var(--ink2);transition:all .18s;font-family:'Nunito',sans-serif;
+}
+.fbtn:hover,.fbtn.active{border-color:var(--teal);color:var(--teal);background:var(--teal-bg)}
+.ctrl-btn{
+  padding:6px 12px;border-radius:7px;font-size:11.5px;font-weight:600;
+  cursor:pointer;border:1.5px solid var(--border);background:var(--bg);
+  color:var(--ink2);transition:all .18s;font-family:'Nunito',sans-serif;
+}
+.ctrl-btn:hover{border-color:var(--border2);background:var(--bg3)}
+
+/* ── CONTENT ── */
+.content{padding:32px 60px 80px}
+
+/* ── CATEGORY DIVIDER ── */
+.cat-div{
+  display:flex;align-items:stretch;gap:0;
+  margin-bottom:20px;margin-top:16px;
+  border-radius:10px;overflow:hidden;
+  border:1px solid var(--border);
+  background:var(--bg2);
+  box-shadow:var(--shadow-sm);
+}
+.cat-div-stripe{width:5px;flex-shrink:0}
+.cat-div-body{padding:12px 18px;flex:1;display:flex;align-items:center;gap:12px}
+.cat-div-icon{font-size:18px}
+.cat-div-label{
+  font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;
+  color:var(--ink);letter-spacing:.3px;
+}
+.cat-div-desc{font-size:12px;color:var(--ink3);margin-left:auto}
+
+/* ── SECTION ── */
+.section{
+  margin-bottom:28px;
+  border:1.5px solid var(--border);
+  border-radius:12px;background:var(--card);
+  overflow:hidden;transition:border-color .2s,box-shadow .2s;
+  animation:popIn .32s ease both;
+  box-shadow:var(--shadow-sm);
+}
+.section:hover{border-color:var(--border2);box-shadow:var(--shadow-md)}
+@keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
+
+/* Category color on left stripe */
+.sec-stripe{width:4px;flex-shrink:0;align-self:stretch}
+
+.sec-header{
+  display:flex;align-items:flex-start;gap:0;
+  cursor:pointer;user-select:none;
+  padding:0;
+}
+.sec-header-inner{
+  display:flex;align-items:flex-start;gap:12px;flex:1;
+  padding:18px 22px;
+  background:var(--bg2);
+  border-bottom:1.5px solid var(--border);
+}
+
+/* numbered badge — bold geometric */
+.sec-badge{
+  width:36px;height:36px;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Unbounded',sans-serif;font-size:11px;font-weight:800;
+  color:#fff;flex-shrink:0;margin-top:2px;
+}
+
+.sec-title{
+  font-family:'Unbounded',sans-serif;font-size:14.5px;font-weight:700;
+  color:var(--ink);margin-bottom:5px;letter-spacing:-.2px;line-height:1.35;
+}
+.sec-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+.badge{
+  padding:2px 9px;border-radius:5px;
+  font-size:10.5px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;
+}
+.b-crit{background:var(--coral-bg);color:var(--coral2)}
+.b-high{background:var(--blue-bg);color:var(--blue)}
+.b-med{background:var(--gold-bg);color:var(--gold)}
+.b-low{background:var(--teal-bg);color:var(--teal2)}
+
+.tag-p{
+  display:inline-block;padding:2px 8px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:4px;font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--ink2);margin:2px 2px 2px 0;
+}
+
+.chevron{
+  color:var(--ink4);font-size:16px;transition:transform .26s;
+  margin-left:auto;flex-shrink:0;padding-top:2px;
+  align-self:flex-start;margin-top:20px;margin-right:16px;
+}
+.section.open .chevron{transform:rotate(180deg)}
+.sec-body{display:none}
+.section.open .sec-body{display:block}
+
+/* ── FIELD GRID ── */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.field{padding:16px 22px;border-right:1.5px solid var(--border);border-bottom:1.5px solid var(--border)}
+.field:nth-child(even){border-right:none}
+.ff{grid-column:1/-1;padding:16px 22px;border-bottom:1.5px solid var(--border)}
+.fg>:last-child,.fg>:nth-last-child(2):nth-child(odd){border-bottom:none}
+
+.fl{
+  font-size:9.5px;font-weight:700;color:var(--ink4);
+  text-transform:uppercase;letter-spacing:1.5px;
+  margin-bottom:7px;display:flex;align-items:center;gap:6px;
+  font-family:'Unbounded',sans-serif;
+}
+.fv{color:var(--ink);font-size:13.5px;line-height:1.67;font-family:'Nunito',sans-serif}
+.fv code{
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;
+  background:var(--teal-bg);padding:1px 5px;border-radius:3px;color:var(--teal2);
+}
+.fv strong{color:var(--teal2);font-weight:600}
+
+/* ── RISK BOX ── */
+.risk-box{
+  padding:11px 14px;border-radius:8px;border-left:3px solid;
+  font-size:13px;line-height:1.65;font-family:'Nunito',sans-serif;
+}
+.r-crit{background:var(--coral-bg);border-color:var(--coral);color:#7a1a1a}
+.r-high{background:var(--blue-bg);border-color:var(--blue);color:#0d3a7a}
+.r-med{background:var(--gold-bg);border-color:var(--gold);color:#6b4200}
+.r-low{background:var(--teal-bg);border-color:var(--teal);color:#004d3e}
+
+/* ── CODE ── */
+.code-wrap{position:relative;margin:10px 0 4px}
+.code-fn{
+  background:#07111d;
+  padding:6px 15px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#4d6f8e;
+  border-radius:8px 8px 0 0;
+  display:flex;align-items:center;gap:8px;
+}
+.code-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+pre{
+  background:#0b1829;border-radius:0 0 8px 8px;
+  padding:16px 18px;overflow-x:auto;
+  font-family:'JetBrains Mono',monospace;font-size:11.8px;line-height:1.78;
+  color:#c5ddef;
+}
+pre.r{border-radius:8px}
+.copy-btn{
+  position:absolute;right:9px;top:8px;
+  background:rgba(0,201,167,.12);border:1px solid rgba(0,201,167,.22);
+  color:var(--teal2);padding:4px 9px;border-radius:4px;
+  font-size:10px;cursor:pointer;font-family:'Nunito',sans-serif;font-weight:700;
+  transition:all .18s;
+}
+.copy-btn:hover{background:rgba(0,201,167,.22);color:var(--teal)}
+.copy-btn.copied{border-color:#00c851;color:#00c851}
+
+/* Syntax — Dart flavored */
+.kw{color:#82aaff}
+.str{color:#c3e88d}
+.cmt{color:#4d6f8e;font-style:italic}
+.fn{color:#82aaff}
+.num{color:#f78c6c}
+.tag{color:#f07178}
+.cls{color:#ffcb6b}
+.dart-kw{color:#c792ea}
+.annot{color:#f78c6c}
+.type{color:#ffcb6b}
+.op{color:#89ddff}
+
+/* ── VERIFY ── */
+.vblock{
+  background:#060e18;border-radius:8px;
+  border-left:3px solid var(--teal);
+  padding:14px 18px;font-family:'JetBrains Mono',monospace;
+  font-size:11.5px;color:#63c8b4;line-height:1.85;
+}
+
+/* ── VAPT ── */
+.vapt{
+  background:linear-gradient(135deg,var(--teal-bg),var(--blue-bg));
+  border:1.5px solid rgba(0,201,167,.22);border-radius:10px;
+  padding:15px 20px;display:flex;gap:13px;align-items:flex-start;
+}
+.vapt-ico{font-size:20px;flex-shrink:0;margin-top:1px}
+.vapt-txt{font-size:12.5px;color:var(--ink2);line-height:1.68;font-style:italic;font-family:'Nunito',sans-serif}
+.vapt-lbl{
+  font-size:9px;font-weight:800;color:var(--teal2);
+  text-transform:uppercase;letter-spacing:1.8px;
+  margin-bottom:5px;font-style:normal;font-family:'Unbounded',sans-serif;
+}
+
+/* ── WHO TABLE ── */
+.wtbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.wtbl th{
+  background:var(--bg3);padding:9px 13px;text-align:left;
+  font-size:9.5px;color:var(--ink3);font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;
+  border:1.5px solid var(--border);font-family:'Unbounded',sans-serif;
+}
+.wtbl td{padding:9px 13px;border:1.5px solid var(--border);color:var(--ink);vertical-align:top;font-family:'Nunito',sans-serif}
+.wtbl tr:hover td{background:var(--bg)}
+.rbadge{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-size:10.5px;font-weight:700;font-family:'Nunito',sans-serif;
+  margin:2px 2px 2px 0;
+}
+.r-fe{background:var(--teal-bg);color:var(--teal2)}
+.r-mob{background:var(--blue-bg);color:var(--blue)}
+.r-be{background:var(--violet-bg);color:var(--violet)}
+.r-dso{background:var(--gold-bg);color:var(--gold)}
+.r-sa{background:var(--coral-bg);color:var(--coral2)}
+
+/* ── RESTART PILL ── */
+.rpill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;background:var(--teal-bg);
+  border:1px solid rgba(0,201,167,.25);border-radius:20px;
+  font-size:11px;color:var(--teal2);font-family:'JetBrains Mono',monospace;
+  margin:3px 4px 3px 0;
+}
+
+/* ── CHECKLIST ── */
+ul.cl{list-style:none;padding:0}
+ul.cl li{padding:3px 0;display:flex;gap:8px;align-items:baseline;font-size:13.5px;font-family:'Nunito',sans-serif}
+ul.cl li::before{
+  content:'◆';color:var(--teal);font-size:8px;flex-shrink:0;margin-top:3px;
+}
+
+/* ── PLATFORM BADGE ── */
+.plat{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;
+  font-family:'JetBrains Mono',monospace;margin:2px 2px 2px 0;
+}
+.p-android{background:#e8f5e9;color:#1b5e20}
+.p-ios{background:#f3f3f3;color:#1c1c1e}
+.p-web{background:var(--blue-bg);color:var(--blue)}
+.p-all{background:var(--teal-bg);color:var(--teal2)}
+
+/* ── SCROLL TOP ── */
+#goTop{
+  position:fixed;bottom:28px;right:28px;
+  width:44px;height:44px;
+  background:linear-gradient(135deg,var(--teal),#00eacc);
+  border:none;border-radius:10px;color:var(--navy);
+  font-size:18px;font-weight:900;cursor:pointer;display:none;
+  align-items:center;justify-content:center;z-index:200;
+  box-shadow:0 4px 16px rgba(0,201,167,.4);transition:transform .2s;
+}
+#goTop:hover{transform:scale(1.1) rotate(-5deg)}
+
+.section.hidden{display:none}
+
+@media print{
+  .sidebar,.topbar,#goTop{display:none!important}
+  .main{margin-left:0}
+  .sec-body{display:block!important}
+  .section{break-inside:avoid}
+}
+@media(max-width:860px){
+  .sidebar{display:none}.main{margin-left:0}
+  .hero{padding:36px 20px}.hero h1{font-size:26px}
+  .content{padding:20px}.topbar{padding:10px 20px}
+  .fg{grid-template-columns:1fr}
+  .cat-div-desc{display:none}
+}
+
+a{color:var(--teal2);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* Category colour utilities */
+.stripe-teal   {background:var(--teal)}
+.stripe-coral  {background:var(--coral)}
+.stripe-blue   {background:var(--blue)}
+.stripe-gold   {background:var(--gold)}
+.stripe-violet {background:var(--violet)}
+.stripe-rose   {background:var(--rose)}
+.stripe-navy   {background:#334e6a}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ SIDEBAR ══════════════ -->
+<nav class="sidebar">
+  <div class="sb-topline"></div>
+  <div class="sb-logo">
+    <div class="sb-logomark">🦋</div>
+    <h2>Flutter Security<br>Hardening Guide</h2>
+    <p>VAPT Remediation</p>
+  </div>
+
+  <div class="sb-cat">// Secrets & Storage</div>
+  <div class="nav-item" onclick="jumpTo('s01')"><span class="nav-num">01</span><span class="nd" style="background:var(--teal)"></span>API Key & dart-define</div>
+  <div class="nav-item" onclick="jumpTo('s02')"><span class="nav-num">02</span><span class="nd" style="background:var(--teal)"></span>Secure Local Storage</div>
+  <div class="nav-item" onclick="jumpTo('s03')"><span class="nav-num">03</span><span class="nd" style="background:var(--teal)"></span>Keychain / Keystore</div>
+
+  <div class="sb-cat">// Network</div>
+  <div class="nav-item" onclick="jumpTo('s04')"><span class="nav-num">04</span><span class="nd" style="background:var(--blue)"></span>Certificate Pinning</div>
+  <div class="nav-item" onclick="jumpTo('s05')"><span class="nav-num">05</span><span class="nd" style="background:var(--blue)"></span>Network Security Config</div>
+  <div class="nav-item" onclick="jumpTo('s06')"><span class="nav-num">06</span><span class="nd" style="background:var(--blue)"></span>WebView Security</div>
+
+  <div class="sb-cat">// Auth & Access</div>
+  <div class="nav-item" onclick="jumpTo('s07')"><span class="nav-num">07</span><span class="nd" style="background:var(--violet)"></span>Biometric Authentication</div>
+  <div class="nav-item" onclick="jumpTo('s08')"><span class="nav-num">08</span><span class="nd" style="background:var(--violet)"></span>OAuth / AppAuth</div>
+  <div class="nav-item" onclick="jumpTo('s09')"><span class="nav-num">09</span><span class="nd" style="background:var(--violet)"></span>Deep Link Validation</div>
+
+  <div class="sb-cat">// Runtime Protection</div>
+  <div class="nav-item" onclick="jumpTo('s10')"><span class="nav-num">10</span><span class="nd" style="background:var(--gold)"></span>Root / Jailbreak Detection</div>
+  <div class="nav-item" onclick="jumpTo('s11')"><span class="nav-num">11</span><span class="nd" style="background:var(--gold)"></span>Debug Mode Detection</div>
+  <div class="nav-item" onclick="jumpTo('s12')"><span class="nav-num">12</span><span class="nd" style="background:var(--gold)"></span>Screenshot Prevention</div>
+
+  <div class="sb-cat">// Build & Deploy</div>
+  <div class="nav-item" onclick="jumpTo('s13')"><span class="nav-num">13</span><span class="nd" style="background:var(--coral)"></span>Code Obfuscation</div>
+  <div class="nav-item" onclick="jumpTo('s14')"><span class="nav-num">14</span><span class="nd" style="background:var(--coral)"></span>Dependency Security</div>
+
+  <div class="sb-cat">// Web & Firebase</div>
+  <div class="nav-item" onclick="jumpTo('s15')"><span class="nav-num">15</span><span class="nd" style="background:var(--rose)"></span>Flutter Web Headers</div>
+  <div class="nav-item" onclick="jumpTo('s16')"><span class="nav-num">16</span><span class="nd" style="background:var(--rose)"></span>Firebase Security Rules</div>
+
+  <div class="sb-footer">
+    <div class="sb-version">v2025.1</div><br>
+    Flutter 3.x · Dart 3.x<br>
+    Android · iOS · Web<br>
+    Updated: April 2026
+  </div>
+</nav>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-deco"></div><div class="hero-deco2"></div>
+  <div class="hero-eyebrow">
+    <span class="etag et-vapt">VAPT Remediation</span>
+    <span class="etag et-owasp">OWASP MASVS</span>
+    <span class="etag et-flutter">Flutter 3.x / Dart 3</span>
+    <span class="etag et-dart">Android · iOS · Web</span>
+  </div>
+  <h1>Flutter Security<br>Hardening Guide</h1>
+  <p class="hero-sub">A complete, copy-paste-ready security baseline for Flutter applications on Android, iOS, and Web. Every control targets Flutter's unique attack surface — from dart-define secret management to certificate pinning, obfuscation, and Firebase rules.</p>
+  <div class="hero-stats">
+    <div class="stat-pill"><span class="stat-num">16</span><div class="stat-label">Controls</div></div>
+    <div class="stat-pill"><span class="stat-num">50+</span><div class="stat-label">Dart Snippets</div></div>
+    <div class="stat-pill"><span class="stat-num">3</span><div class="stat-label">Platforms</div></div>
+    <div class="stat-pill"><span class="stat-num">100%</span><div class="stat-label">Free / OSS</div></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="search-wrap">
+    <span class="s-icon">⌕</span>
+    <input class="search-input" id="searchInput" type="text" placeholder="Search controls, packages, Dart patterns…" oninput="filterSecs()">
+  </div>
+  <div class="filter-btns">
+    <button class="fbtn active" onclick="filterSev('all',this)">All</button>
+    <button class="fbtn" onclick="filterSev('critical',this)" style="color:var(--coral)">Critical</button>
+    <button class="fbtn" onclick="filterSev('high',this)" style="color:var(--blue)">High</button>
+    <button class="fbtn" onclick="filterSev('medium',this)" style="color:var(--gold)">Medium</button>
+  </div>
+  <button class="ctrl-btn" onclick="expandAll()">▼ Expand All</button>
+  <button class="ctrl-btn" onclick="collapseAll()">▲ Collapse All</button>
+</div>
+
+<div class="content">
+
+<!-- ═══════ CAT: SECRETS & STORAGE ═══════ -->
+<div class="cat-div">
+  <div class="cat-div-stripe stripe-teal"></div>
+  <div class="cat-div-body">
+    <div class="cat-div-icon">🔑</div>
+    <div class="cat-div-label">Secrets &amp; Storage</div>
+    <div class="cat-div-desc">API keys, local data encryption, and keychain/keystore access</div>
+  </div>
+</div>
+
+<!-- 01 — API KEYS & dart-define -->
+<div class="section open" id="s01" data-severity="critical" data-tags="api key dart-define env secrets hardcoded bundle flutter_config dotenv">
+  <div class="sec-header" onclick="tog('s01')">
+    <div class="sec-stripe stripe-teal"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--teal)">01</div>
+      <div style="flex:1">
+        <div class="sec-title">API Key Security with --dart-define</div>
+        <div class="sec-meta">
+          <span class="badge b-crit">CRITICAL</span>
+          <span class="plat p-all">All Platforms</span>
+          <span class="tag-p">dart-define</span><span class="tag-p">envied</span><span class="tag-p">pubspec.yaml</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Hardcoding API keys, Firebase config, or secrets directly in Dart source files embeds them in the compiled app binary. Anyone can extract these strings using tools like <code>strings</code>, APKTool, or MobSF within seconds.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-crit">API key theft from published APK/IPA enables unauthorized API abuse, cloud resource misuse (billing fraud), data exfiltration, and backend account takeover.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📁 Files & Paths</div>
+        <div class="fv">
+          <span class="tag-p">lib/config/env.dart</span><span class="tag-p">pubspec.yaml</span>
+          <span class="tag-p">.env (never commit)</span><span class="tag-p">CI/CD secrets</span>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 1 — Pass secrets via --dart-define at build time</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>Terminal — Build with secrets injected</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="cmt"># ✗ NEVER: hardcode in source</span>
+<span class="cmt"># const apiKey = 'AIzaSyABC123...';</span>
+
+<span class="cmt"># ✓ Inject at build time via --dart-define</span>
+$ flutter build apk \
+  --dart-define=API_KEY=your_api_key_here \
+  --dart-define=FIREBASE_PROJECT_ID=my-project \
+  --dart-define=BASE_URL=https://api.your-app.com \
+  --release
+
+<span class="cmt"># Or from a file (Flutter 3.7+)</span>
+$ flutter build apk \
+  --dart-define-from-file=.env.production \
+  --release
+
+<span class="cmt"># .env.production format (JSON):</span>
+<span class="cmt"># { "API_KEY": "xxx", "BASE_URL": "https://api.your-app.com" }</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>lib/config/env.dart — Type-safe env accessor</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="cmt">// Access dart-define values — only available after build injection</span>
+<span class="dart-kw">abstract class</span> <span class="type">Env</span> {
+  <span class="cmt">// fromEnvironment reads the --dart-define value</span>
+  <span class="dart-kw">static const</span> <span class="type">String</span> apiKey = <span class="type">String</span>.<span class="fn">fromEnvironment</span>(
+    <span class="str">'API_KEY'</span>,
+    defaultValue: <span class="str">''</span>,
+  );
+
+  <span class="dart-kw">static const</span> <span class="type">String</span> baseUrl = <span class="type">String</span>.<span class="fn">fromEnvironment</span>(
+    <span class="str">'BASE_URL'</span>,
+    defaultValue: <span class="str">'https://api.your-app.com'</span>,
+  );
+
+  <span class="dart-kw">static const</span> <span class="type">bool</span> isProduction = <span class="type">bool</span>.<span class="fn">fromEnvironment</span>(
+    <span class="str">'IS_PROD'</span>,
+    defaultValue: <span class="kw">false</span>,
+  );
+
+  <span class="cmt">// Validate all required vars are set at app start</span>
+  <span class="dart-kw">static void</span> <span class="fn">validate</span>() {
+    <span class="kw">assert</span>(apiKey.isNotEmpty, <span class="str">'API_KEY not set. Use --dart-define=API_KEY=...'</span>);
+    <span class="kw">assert</span>(baseUrl.isNotEmpty, <span class="str">'BASE_URL not set.'</span>);
+  }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>lib/main.dart — Validate on startup</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="dart-kw">void</span> <span class="fn">main</span>() {
+  <span class="cmt">// Validate secrets are injected before app launches</span>
+  <span class="type">Env</span>.<span class="fn">validate</span>();
+  <span class="fn">runApp</span>(<span class="dart-kw">const</span> <span class="type">MyApp</span>());
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 2 — Use envied package for compile-time obfuscation</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>pubspec.yaml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">dependencies:
+  envied: ^0.5.4
+
+dev_dependencies:
+  envied_generator: ^0.5.4
+  build_runner: ^2.4.9</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>lib/env/env.g.dart (generated — add to .gitignore)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'package:envied/envied.dart'</span>;
+
+<span class="annot">part</span> <span class="str">'env.g.dart'</span>;
+
+<span class="annot">@Envied</span>(path: <span class="str">'.env'</span>, obfuscate: <span class="kw">true</span>)  <span class="cmt">// obfuscate=true XOR-encodes values</span>
+<span class="dart-kw">abstract class</span> <span class="type">Env</span> {
+  <span class="annot">@EnviedField</span>(varName: <span class="str">'API_KEY'</span>,    obfuscate: <span class="kw">true</span>)
+  <span class="dart-kw">static const</span> <span class="type">String</span> apiKey = _<span class="type">Env</span>.apiKey;
+
+  <span class="annot">@EnviedField</span>(varName: <span class="str">'BASE_URL'</span>,   obfuscate: <span class="kw">true</span>)
+  <span class="dart-kw">static const</span> <span class="type">String</span> baseUrl = _<span class="type">Env</span>.baseUrl;
+}</pre>
+          </div>
+          <p style="margin-top:10px;font-size:13px;color:var(--ink2)">⚠️ Add <code>lib/env/env.g.dart</code> and <code>.env</code> to <code>.gitignore</code> — never commit them.</p>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-dso">DevOps/CI</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔄 Rebuild Required</div>
+        <div class="fv"><div class="rpill">⟳ flutter clean && flutter build</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Scan release APK for hardcoded secrets
+$ strings build/app/outputs/flutter-apk/app-release.apk | grep -iE 'AIza|sk_live|secret|password'
+→ (empty — no secrets in binary)
+
+# Decompile and search with apktool
+$ apktool d app-release.apk -o decompiled/
+$ grep -r "API_KEY\|apiKey" decompiled/smali/
+→ Should show XOR-obfuscated bytes, NOT the raw key
+
+# Verify dart-define values don't appear in strings
+$ strings app-release.apk | grep "your_actual_api_key_value"
+→ (empty)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All API keys and secrets are injected at compile time via <em>--dart-define-from-file</em> from CI/CD pipeline secrets — never from committed source files. The <em>envied</em> package applies XOR-based compile-time obfuscation. Binary string scan of the release APK confirms no plaintext API keys. <em>.env</em> files and generated code are excluded from version control.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 02 — SECURE LOCAL STORAGE -->
+<div class="section" id="s02" data-severity="critical" data-tags="local storage SharedPreferences flutter_secure_storage encrypted sensitive data AES keychain">
+  <div class="sec-header" onclick="tog('s02')">
+    <div class="sec-stripe stripe-teal"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--teal)">02</div>
+      <div style="flex:1">
+        <div class="sec-title">Secure Local Storage — Never SharedPreferences for Secrets</div>
+        <div class="sec-meta">
+          <span class="badge b-crit">CRITICAL</span>
+          <span class="plat p-android">Android</span><span class="plat p-ios">iOS</span>
+          <span class="tag-p">flutter_secure_storage</span><span class="tag-p">hive_ce</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv"><code>SharedPreferences</code> stores data as plaintext XML/JSON files in the app's data directory. On rooted Android devices or jailbroken iPhones, these files are fully readable. Never store tokens, passwords, or PII here.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-crit">Token theft from plaintext SharedPreferences on rooted/jailbroken devices, cold-boot attacks, and forensic tool extraction (adb backup, iMazing) exposing all stored credentials.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — flutter_secure_storage backed by Keychain/Keystore</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>pubspec.yaml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">dependencies:
+  flutter_secure_storage: ^9.2.2  <span class="cmt"># Uses Android Keystore / iOS Keychain</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>lib/services/secure_storage.dart</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'package:flutter_secure_storage/flutter_secure_storage.dart'</span>;
+
+<span class="dart-kw">class</span> <span class="type">SecureStorageService</span> {
+  <span class="dart-kw">static const</span> _storage = <span class="type">FlutterSecureStorage</span>(
+    aOptions: <span class="type">AndroidOptions</span>(
+      encryptedSharedPreferences: <span class="kw">true</span>,   <span class="cmt">// AES-256 via Keystore</span>
+      keyCipherAlgorithm: <span class="type">KeyCipherAlgorithm</span>.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+      storageCipherAlgorithm: <span class="type">StorageCipherAlgorithm</span>.AES_GCM_NoPadding,
+    ),
+    iOptions: <span class="type">IOSOptions</span>(
+      accessibility: <span class="type">KeychainAccessibility</span>.first_unlock_this_device,
+      <span class="cmt">// Requires device authentication before access</span>
+    ),
+  );
+
+  <span class="cmt">// ─── Write secure value ───────────────────────────────────────</span>
+  <span class="dart-kw">static Future</span>&lt;<span class="dart-kw">void</span>&gt; <span class="fn">write</span>(<span class="type">String</span> key, <span class="type">String</span> value) <span class="dart-kw">async</span> {
+    <span class="dart-kw">await</span> _storage.<span class="fn">write</span>(key: key, value: value);
+  }
+
+  <span class="cmt">// ─── Read secure value ────────────────────────────────────────</span>
+  <span class="dart-kw">static Future</span>&lt;<span class="type">String</span>?&gt; <span class="fn">read</span>(<span class="type">String</span> key) <span class="dart-kw">async</span> {
+    <span class="dart-kw">return await</span> _storage.<span class="fn">read</span>(key: key);
+  }
+
+  <span class="cmt">// ─── Delete a key ─────────────────────────────────────────────</span>
+  <span class="dart-kw">static Future</span>&lt;<span class="dart-kw">void</span>&gt; <span class="fn">delete</span>(<span class="type">String</span> key) <span class="dart-kw">async</span> {
+    <span class="dart-kw">await</span> _storage.<span class="fn">delete</span>(key: key);
+  }
+
+  <span class="cmt">// ─── Wipe all data on logout ──────────────────────────────────</span>
+  <span class="dart-kw">static Future</span>&lt;<span class="dart-kw">void</span>&gt; <span class="fn">deleteAll</span>() <span class="dart-kw">async</span> {
+    <span class="dart-kw">await</span> _storage.<span class="fn">deleteAll</span>();
+  }
+}
+
+<span class="cmt">// Storage key constants — centralise all key names</span>
+<span class="dart-kw">abstract class</span> <span class="type">StorageKeys</span> {
+  <span class="dart-kw">static const</span> accessToken   = <span class="str">'access_token'</span>;
+  <span class="dart-kw">static const</span> refreshToken  = <span class="str">'refresh_token'</span>;
+  <span class="dart-kw">static const</span> deviceId      = <span class="str">'device_id'</span>;
+  <span class="cmt">// ✗ NEVER store raw passwords — only tokens</span>
+}</pre>
+          </div>
+          <p style="margin-top:10px;font-size:13px;color:var(--ink2)">📊 <strong>Storage decision matrix:</strong></p>
+          <table class="wtbl" style="margin-top:8px;font-size:12px">
+            <tr><th>Data Type</th><th>Storage</th><th>Safe?</th></tr>
+            <tr><td>Auth tokens, passwords</td><td><code>flutter_secure_storage</code></td><td style="color:var(--teal2);font-weight:700">✅ Required</td></tr>
+            <tr><td>PII (email, name)</td><td><code>flutter_secure_storage</code></td><td style="color:var(--teal2);font-weight:700">✅ Recommended</td></tr>
+            <tr><td>User preferences, theme</td><td><code>SharedPreferences</code></td><td style="color:var(--gold);font-weight:700">⚠ OK (non-sensitive)</td></tr>
+            <tr><td>Cached data (posts, images)</td><td><code>Hive CE</code> encrypted</td><td style="color:var(--teal2);font-weight:700">✅ With encryption</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Android: check SharedPreferences XML for sensitive data
+$ adb shell run-as com.your.app cat shared_prefs/*.xml
+→ Should NOT contain access_token, password, or PII
+
+# Android: verify EncryptedSharedPreferences (keystore-backed)
+$ adb shell ls /data/data/com.your.app/shared_prefs/
+→ FlutterSecureStorage files should be encrypted blobs, not readable XML
+
+# iOS: verify Keychain access
+# Use iMazing or Keychain-Dumper on jailbroken device
+→ Keys stored with kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+→ Values should be encrypted (not readable without device unlock)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All sensitive data (auth tokens, refresh tokens, device identifiers) is stored exclusively via <em>flutter_secure_storage</em> backed by Android Keystore (AES-256-GCM) and iOS Keychain (<em>kSecAttrAccessibleWhenUnlockedThisDeviceOnly</em>). SharedPreferences is restricted to non-sensitive UI preferences. ADB inspection of the app's data directory confirms no plaintext tokens in shared_prefs XML files. A deleteAll() method wipes all secure storage on explicit logout.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 03 — KEYCHAIN / KEYSTORE -->
+<div class="section" id="s03" data-severity="high" data-tags="keychain keystore android iOS biometric encryption keys hardware backed TEE">
+  <div class="sec-header" onclick="tog('s03')">
+    <div class="sec-stripe stripe-teal"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--teal)">03</div>
+      <div style="flex:1">
+        <div class="sec-title">Android Keystore &amp; iOS Keychain Hardening</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-android">Android</span><span class="plat p-ios">iOS</span>
+          <span class="tag-p">android:networkSecurityConfig</span><span class="tag-p">TEE</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Without proper Keystore configuration, cryptographic keys may be stored in software (not hardware-backed TEE), making them extractable from rooted devices. Android backup may also expose Keystore data if not disabled.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Encryption key extraction from software Keystore on rooted devices, ADB backup exposing app data, and missing <em>allowBackup=false</em> leaking app files to cloud backup services.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — AndroidManifest.xml hardening</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>android/app/src/main/AndroidManifest.xml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="tag">&lt;application</span>
+  <span class="cmt">&lt;!-- Disable automatic ADB backup — prevents data extraction --&gt;</span>
+  <span class="attr">android:allowBackup=</span><span class="str">"false"</span>
+  <span class="cmt">&lt;!-- Custom backup rules if you need selective backup --&gt;</span>
+  <span class="attr">android:fullBackupContent=</span><span class="str">"@xml/backup_rules"</span>
+  <span class="cmt">&lt;!-- Restrict data extraction (Android 12+) --&gt;</span>
+  <span class="attr">android:dataExtractionRules=</span><span class="str">"@xml/data_extraction_rules"</span>
+  <span class="cmt">&lt;!-- Restrict app to debuggable=false in release --&gt;</span>
+  <span class="attr">android:debuggable=</span><span class="str">"false"</span>
+  <span class="cmt">&lt;!-- Network config for SSL pinning --&gt;</span>
+  <span class="attr">android:networkSecurityConfig=</span><span class="str">"@xml/network_security_config"</span>
+<span class="tag">&gt;</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>android/app/src/main/res/xml/backup_rules.xml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="tag">&lt;full-backup-content&gt;</span>
+  <span class="cmt">&lt;!-- Exclude sensitive data from cloud backup --&gt;</span>
+  <span class="tag">&lt;exclude</span> <span class="attr">domain=</span><span class="str">"sharedpref"</span> <span class="attr">path=</span><span class="str">"FlutterSecureStorage"</span> <span class="tag">/&gt;</span>
+  <span class="tag">&lt;exclude</span> <span class="attr">domain=</span><span class="str">"database"</span>   <span class="attr">path=</span><span class="str">"app_data.db"</span>              <span class="tag">/&gt;</span>
+<span class="tag">&lt;/full-backup-content&gt;</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--teal)"></div>ios/Runner/Info.plist — iOS hardening flags</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">&lt;!-- Prevent iCloud backup of sensitive keychain items --&gt;</span>
+<span class="tag">&lt;key&gt;</span>NSAllowsArbitraryLoads<span class="tag">&lt;/key&gt;</span>
+<span class="tag">&lt;false/&gt;</span>
+
+<span class="cmt">&lt;!-- Require encrypted backups --&gt;</span>
+<span class="tag">&lt;key&gt;</span>UIFileSharingEnabled<span class="tag">&lt;/key&gt;</span>
+<span class="tag">&lt;false/&gt;</span>
+
+<span class="cmt">&lt;!-- Prevent file sharing via iTunes --&gt;</span>
+<span class="tag">&lt;key&gt;</span>LSSupportsOpeningDocumentsInPlace<span class="tag">&lt;/key&gt;</span>
+<span class="tag">&lt;false/&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-sa">Mobile Security</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Android: verify backup is disabled
+$ aapt dump badging app-release.apk | grep "allowBackup"
+→ allowBackup='false'
+
+# Android: attempt ADB backup — should fail
+$ adb backup -f test.ab com.your.app
+→ "Backup not allowed" or empty backup
+
+# Android: verify debuggable is false in release
+$ aapt dump badging app-release.apk | grep "debuggable"
+→ (empty — debuggable not set = false by default in release)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div><em>android:allowBackup=false</em> is set in AndroidManifest preventing ADB and cloud backup data extraction. Sensitive directories are explicitly excluded from backup rules. <em>android:debuggable</em> is absent from the release manifest (defaults to false). iOS file-sharing entitlements are disabled. ADB backup test confirms backup is blocked.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ CAT: NETWORK ═══════ -->
+<div class="cat-div" style="margin-top:24px">
+  <div class="cat-div-stripe stripe-blue"></div>
+  <div class="cat-div-body">
+    <div class="cat-div-icon">🌐</div>
+    <div class="cat-div-label">Network Security</div>
+    <div class="cat-div-desc">Certificate pinning, cleartext traffic prevention, WebView hardening</div>
+  </div>
+</div>
+
+<!-- 04 — CERTIFICATE PINNING -->
+<div class="section" id="s04" data-severity="critical" data-tags="certificate pinning SSL TLS MITM man in the middle dio http client trust anchor">
+  <div class="sec-header" onclick="tog('s04')">
+    <div class="sec-stripe stripe-blue"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--blue)">04</div>
+      <div style="flex:1">
+        <div class="sec-title">Certificate Pinning (HTTPS + Dio)</div>
+        <div class="sec-meta">
+          <span class="badge b-crit">CRITICAL</span>
+          <span class="plat p-all">All Platforms</span>
+          <span class="tag-p">dio</span><span class="tag-p">http_certificate_pinning</span><span class="tag-p">dart:io</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Without certificate pinning, Flutter apps trust any CA-signed certificate. Attackers using proxy tools (Burp Suite, mitmproxy) or installing a rogue CA certificate can intercept all HTTPS traffic — including auth tokens and API requests.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-crit">Complete HTTPS traffic interception via MITM attack — auth tokens, API keys, user data, and private communications are exposed in plaintext to the attacker.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 1 — Certificate pinning via Dio + SecurityContext</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--blue)"></div>pubspec.yaml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">dependencies:
+  dio: ^5.7.0</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--blue)"></div>lib/network/pinned_http_client.dart</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'dart:io'</span>;
+<span class="kw">import</span> <span class="str">'package:dio/dio.dart'</span>;
+<span class="kw">import</span> <span class="str">'package:flutter/services.dart'</span>;
+
+<span class="dart-kw">class</span> <span class="type">PinnedHttpClient</span> {
+  <span class="dart-kw">static Future</span>&lt;<span class="type">Dio</span>&gt; <span class="fn">create</span>() <span class="dart-kw">async</span> {
+    <span class="cmt">// Load pinned certificate from assets</span>
+    <span class="dart-kw">final</span> certBytes = <span class="dart-kw">await</span> rootBundle.<span class="fn">load</span>(<span class="str">'assets/certs/api_cert.cer'</span>);
+    <span class="dart-kw">final</span> cert = certBytes.<span class="fn">buffer</span>.<span class="fn">asUint8List</span>();
+
+    <span class="cmt">// Create SecurityContext with ONLY your certificate trusted</span>
+    <span class="dart-kw">final</span> secCtx = <span class="type">SecurityContext</span>(withTrustedRoots: <span class="kw">false</span>);
+    secCtx.<span class="fn">setTrustedCertificatesBytes</span>(cert);
+
+    <span class="cmt">// Create HttpClient using pinned context</span>
+    <span class="dart-kw">final</span> httpClient = <span class="type">HttpClient</span>(context: secCtx);
+    <span class="cmt">// Reject connections that don't match pinned cert</span>
+    httpClient.badCertificateCallback =
+        (<span class="type">X509Certificate</span> cert, <span class="type">String</span> host, <span class="type">int</span> port) {
+      <span class="cmt">// In prod: always return false — never trust bad certs</span>
+      <span class="kw">return false</span>;
+    };
+
+    <span class="dart-kw">final</span> dio = <span class="type">Dio</span>(<span class="type">BaseOptions</span>(
+      baseUrl:       <span class="type">Env</span>.baseUrl,
+      connectTimeout: <span class="dart-kw">const</span> <span class="type">Duration</span>(seconds: <span class="num">10</span>),
+      receiveTimeout: <span class="dart-kw">const</span> <span class="type">Duration</span>(seconds: <span class="num">30</span>),
+    ));
+
+    <span class="cmt">// Attach custom adapter with pinned client</span>
+    dio.httpClientAdapter = <span class="type">IOHttpClientAdapter</span>(
+      createHttpClient: () => httpClient,
+    );
+
+    <span class="cmt">// Add auth interceptor</span>
+    dio.interceptors.<span class="fn">add</span>(<span class="type">AuthInterceptor</span>());
+
+    <span class="kw">return</span> dio;
+  }
+}
+
+<span class="cmt">// ─── Extract cert public key hash (use for SPKI pinning) ──────</span>
+<span class="cmt">// $ openssl x509 -in cert.pem -pubkey -noout | openssl pkey -pubin -outform DER | openssl dgst -sha256 -binary | base64</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 2 — Android Network Security Config (backup pinning)</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--blue)"></div>android/app/src/main/res/xml/network_security_config.xml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="tag">&lt;network-security-config&gt;</span>
+  <span class="tag">&lt;base-config</span> <span class="attr">cleartextTrafficPermitted=</span><span class="str">"false"</span><span class="tag">&gt;</span>
+    <span class="tag">&lt;trust-anchors&gt;</span>
+      <span class="cmt">&lt;!-- Only trust your own CA / Let's Encrypt --&gt;</span>
+      <span class="tag">&lt;certificates</span> <span class="attr">src=</span><span class="str">"@raw/api_cert"</span> <span class="tag">/&gt;</span>
+    <span class="tag">&lt;/trust-anchors&gt;</span>
+  <span class="tag">&lt;/base-config&gt;</span>
+
+  <span class="tag">&lt;domain-config&gt;</span>
+    <span class="tag">&lt;domain</span> <span class="attr">includeSubdomains=</span><span class="str">"true"</span><span class="tag">&gt;</span>api.your-app.com<span class="tag">&lt;/domain&gt;</span>
+    <span class="tag">&lt;pin-set</span> <span class="attr">expiration=</span><span class="str">"2026-12-31"</span><span class="tag">&gt;</span>
+      <span class="cmt">&lt;!-- Primary pin (current cert SHA-256 SPKI hash) --&gt;</span>
+      <span class="tag">&lt;pin</span> <span class="attr">digest=</span><span class="str">"SHA-256"</span><span class="tag">&gt;</span>AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=<span class="tag">&lt;/pin&gt;</span>
+      <span class="cmt">&lt;!-- Backup pin (keep at least one backup!) --&gt;</span>
+      <span class="tag">&lt;pin</span> <span class="attr">digest=</span><span class="str">"SHA-256"</span><span class="tag">&gt;</span>BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB=<span class="tag">&lt;/pin&gt;</span>
+    <span class="tag">&lt;/pin-set&gt;</span>
+  <span class="tag">&lt;/domain-config&gt;</span>
+
+  <span class="cmt">&lt;!-- NEVER allow debug-time CA trust to leak to release --&gt;</span>
+  <span class="tag">&lt;debug-overrides&gt;</span>
+    <span class="tag">&lt;trust-anchors&gt;</span>
+      <span class="tag">&lt;certificates</span> <span class="attr">src=</span><span class="str">"user"</span> <span class="tag">/&gt;</span>
+    <span class="tag">&lt;/trust-anchors&gt;</span>
+  <span class="tag">&lt;/debug-overrides&gt;</span>
+<span class="tag">&lt;/network-security-config&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-be">Backend/DevOps</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Test with mitmproxy — intercept should fail
+$ mitmproxy --listen-port 8080
+# Configure device to use 192.168.x.x:8080 as proxy
+# Open app and make API calls
+→ App shows SSL handshake error or network error (NOT intercept)
+
+# Test Burp Suite certificate interception
+$ burpsuite → Proxy → Install cert → Configure device proxy
+# Make API call from Flutter app
+→ javax.net.ssl.SSLPeerUnverifiedException: Certificate pinning failure
+
+# Verify cleartext is blocked (Android)
+$ adb shell curl http://api.your-app.com/test
+→ CLEARTEXT communication not permitted</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Certificate pinning is implemented at two layers: Dart SecurityContext (withTrustedRoots: false, custom CA only) and Android Network Security Config (SHA-256 SPKI pin with backup pin). Cleartext traffic is globally prohibited. Mitmproxy and Burp Suite interception tests confirm SSL handshake failure when using a rogue CA certificate. A pin expiry date is configured with a documented rotation procedure.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 05 — NETWORK SECURITY CONFIG -->
+<div class="section" id="s05" data-severity="high" data-tags="network security config cleartext traffic HTTP android ios ATS App Transport Security">
+  <div class="sec-header" onclick="tog('s05')">
+    <div class="sec-stripe stripe-blue"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--blue)">05</div>
+      <div style="flex:1">
+        <div class="sec-title">Block Cleartext HTTP Traffic</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-android">Android</span><span class="plat p-ios">iOS</span>
+          <span class="tag-p">network_security_config</span><span class="tag-p">ATS</span><span class="tag-p">Info.plist</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Flutter apps may communicate over plain HTTP (<code>http://</code>) — especially in debug builds or when <code>usesCleartextTraffic=true</code> was added for development and never removed. All production traffic must be HTTPS only.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Credentials and session tokens transmitted in cleartext over HTTP are visible to anyone on the same network (coffee shops, ISPs, DNS providers) via passive MITM.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Force HTTPS on both platforms</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--blue)"></div>android/app/src/main/AndroidManifest.xml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">&lt;!-- ✗ REMOVE this line if it exists in your manifest: --&gt;</span>
+<span class="cmt">&lt;!-- android:usesCleartextTraffic="true" --&gt;</span>
+
+<span class="cmt">&lt;!-- ✓ Set to false explicitly: --&gt;</span>
+<span class="tag">&lt;application</span>
+  <span class="attr">android:usesCleartextTraffic=</span><span class="str">"false"</span>
+  <span class="attr">android:networkSecurityConfig=</span><span class="str">"@xml/network_security_config"</span>
+<span class="tag">&gt;</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--blue)"></div>ios/Runner/Info.plist — App Transport Security (ATS)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">&lt;!-- ✗ NEVER allow arbitrary loads: --&gt;</span>
+<span class="cmt">&lt;!-- &lt;key&gt;NSAllowsArbitraryLoads&lt;/key&gt;&lt;true/&gt; --&gt;</span>
+
+<span class="cmt">&lt;!-- ✓ Enforce ATS (default, but make it explicit): --&gt;</span>
+<span class="tag">&lt;key&gt;</span>NSAppTransportSecurity<span class="tag">&lt;/key&gt;</span>
+<span class="tag">&lt;dict&gt;</span>
+  <span class="cmt">&lt;!-- Require TLS 1.2+ for all connections --&gt;</span>
+  <span class="tag">&lt;key&gt;</span>NSAllowsArbitraryLoads<span class="tag">&lt;/key&gt;</span>
+  <span class="tag">&lt;false/&gt;</span>
+  <span class="cmt">&lt;!-- If specific domains need exceptions (e.g., CDN): --&gt;</span>
+  <span class="tag">&lt;key&gt;</span>NSExceptionDomains<span class="tag">&lt;/key&gt;</span>
+  <span class="tag">&lt;dict&gt;</span>
+    <span class="tag">&lt;key&gt;</span>api.your-app.com<span class="tag">&lt;/key&gt;</span>
+    <span class="tag">&lt;dict&gt;</span>
+      <span class="tag">&lt;key&gt;</span>NSRequiresCertificateTransparency<span class="tag">&lt;/key&gt;</span><span class="tag">&lt;true/&gt;</span>
+      <span class="tag">&lt;key&gt;</span>NSExceptionMinimumTLSVersion<span class="tag">&lt;/key&gt;</span><span class="tag">&lt;string&gt;</span>TLSv1.3<span class="tag">&lt;/string&gt;</span>
+    <span class="tag">&lt;/dict&gt;</span>
+  <span class="tag">&lt;/dict&gt;</span>
+<span class="tag">&lt;/dict&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Android: scan manifest for cleartext permission
+$ aapt dump xmltree app-release.apk AndroidManifest.xml | grep -i cleartext
+→ usesCleartextTraffic=false (or absent)
+
+# iOS: check Info.plist for NSAllowsArbitraryLoads
+$ grep -A2 "NSAllowsArbitraryLoads" ios/Runner/Info.plist
+→ &lt;false/&gt;
+
+# Dart: enforce HTTPS in all URLs at code level
+$ grep -r "http://" lib/ | grep -v "https://"
+→ (empty — no http:// URLs in production code)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Cleartext HTTP traffic is prohibited on both platforms: <em>android:usesCleartextTraffic=false</em> in AndroidManifest and <em>NSAllowsArbitraryLoads=false</em> in iOS ATS configuration. All API base URLs use HTTPS. Certificate Transparency is required for the primary API domain. Codebase grep confirms no <em>http://</em> URLs in production Dart code.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 06 — WEBVIEW -->
+<div class="section" id="s06" data-severity="high" data-tags="webview flutter_webview XSS JavaScript injection deeplink navigation delegate">
+  <div class="sec-header" onclick="tog('s06')">
+    <div class="sec-stripe stripe-blue"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--blue)">06</div>
+      <div style="flex:1">
+        <div class="sec-title">Flutter WebView Security</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-all">All Platforms</span>
+          <span class="tag-p">webview_flutter</span><span class="tag-p">NavigationDelegate</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Flutter WebViews without navigation controls can be hijacked to load malicious pages, execute JavaScript injected via URL manipulation, or access native bridge methods exposing sensitive app APIs.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">XSS via injected JavaScript accessing native bridge, phishing via malicious redirects, deep-link hijacking, and session token theft via JavaScript message channels.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Hardened WebView with navigation whitelist</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--blue)"></div>lib/widgets/secure_webview.dart</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'package:webview_flutter/webview_flutter.dart'</span>;
+
+<span class="dart-kw">class</span> <span class="type">SecureWebView</span> <span class="dart-kw">extends</span> <span class="type">StatefulWidget</span> {
+  <span class="dart-kw">final</span> <span class="type">String</span> initialUrl;
+  <span class="dart-kw">final</span> <span class="type">List</span>&lt;<span class="type">String</span>&gt; allowedDomains;
+  <span class="dart-kw">const</span> <span class="type">SecureWebView</span>({<span class="dart-kw">required</span> <span class="dart-kw">this</span>.initialUrl, <span class="dart-kw">required</span> <span class="dart-kw">this</span>.allowedDomains});
+  <span class="annot">@override</span>
+  <span class="type">State</span>&lt;<span class="type">SecureWebView</span>&gt; <span class="fn">createState</span>() => _<span class="type">SecureWebViewState</span>();
+}
+
+<span class="dart-kw">class</span> _<span class="type">SecureWebViewState</span> <span class="dart-kw">extends</span> <span class="type">State</span>&lt;<span class="type">SecureWebView</span>&gt; {
+  <span class="dart-kw">late final</span> <span class="type">WebViewController</span> _controller;
+
+  <span class="annot">@override</span>
+  <span class="dart-kw">void</span> <span class="fn">initState</span>() {
+    <span class="dart-kw">super</span>.<span class="fn">initState</span>();
+    _controller = <span class="type">WebViewController</span>()
+      <span class="cmt">// ✗ NEVER enable JavaScript unless absolutely required</span>
+      ..<span class="fn">setJavaScriptMode</span>(<span class="type">JavaScriptMode</span>.disabled)
+      <span class="cmt">// Whitelist-based navigation delegate</span>
+      ..<span class="fn">setNavigationDelegate</span>(<span class="type">NavigationDelegate</span>(
+        onNavigationRequest: (request) {
+          <span class="dart-kw">final</span> uri = <span class="type">Uri</span>.<span class="fn">parse</span>(request.url);
+          <span class="cmt">// Only allow HTTPS + whitelisted domains</span>
+          <span class="kw">if</span> (uri.scheme != <span class="str">'https'</span>) {
+            <span class="kw">return</span> <span class="type">NavigationDecision</span>.prevent;
+          }
+          <span class="dart-kw">final</span> isAllowed = widget.allowedDomains.<span class="fn">any</span>(
+            (domain) => uri.host == domain || uri.host.<span class="fn">endsWith</span>(<span class="str">'.$domain'</span>),
+          );
+          <span class="kw">return</span> isAllowed
+              ? <span class="type">NavigationDecision</span>.navigate
+              : <span class="type">NavigationDecision</span>.prevent;
+        },
+        onWebResourceError: (error) {
+          <span class="cmt">// Never expose internal error details to the page</span>
+          debugPrint(<span class="str">'WebView error: ${error.errorCode}'</span>);
+        },
+      ))
+      <span class="cmt">// Disable mixed content (HTTP in HTTPS context)</span>
+      ..<span class="fn">loadRequest</span>(<span class="type">Uri</span>.<span class="fn">parse</span>(widget.initialUrl));
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>WebView instances use a domain allowlist-based NavigationDelegate, blocking all HTTP and non-whitelisted HTTPS navigation. JavaScript is disabled by default; any exceptions require explicit sign-off. Native JavaScript channels are not exposed. Redirection to external domains is blocked and logged.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ CAT: AUTH & ACCESS ═══════ -->
+<div class="cat-div" style="margin-top:24px">
+  <div class="cat-div-stripe stripe-violet"></div>
+  <div class="cat-div-body">
+    <div class="cat-div-icon">🔐</div>
+    <div class="cat-div-label">Auth &amp; Access Control</div>
+    <div class="cat-div-desc">Biometrics, OAuth flows, deep link security</div>
+  </div>
+</div>
+
+<!-- 07 — BIOMETRIC AUTH -->
+<div class="section" id="s07" data-severity="high" data-tags="biometric authentication fingerprint face id local_auth touch ID secure enclave">
+  <div class="sec-header" onclick="tog('s07')">
+    <div class="sec-stripe stripe-violet"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--violet)">07</div>
+      <div style="flex:1">
+        <div class="sec-title">Biometric Authentication (local_auth)</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-android">Android</span><span class="plat p-ios">iOS</span>
+          <span class="tag-p">local_auth</span><span class="tag-p">BiometricType</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Incorrectly implemented biometrics (e.g., accepting <code>BiometricOnly: false</code> which allows PIN/pattern fallback) or not validating available biometric strength allows bypass via weaker authenticators.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Biometric bypass via PIN/pattern fallback on shared/stolen devices, fake biometric enrollment on rooted Android devices, and Class 1 (convenience) biometric acceptance instead of Class 3 (strong).</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Secure biometric authentication</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--violet)"></div>pubspec.yaml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">dependencies:
+  local_auth: ^2.3.0</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--violet)"></div>lib/services/biometric_service.dart</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'package:local_auth/local_auth.dart'</span>;
+
+<span class="dart-kw">class</span> <span class="type">BiometricService</span> {
+  <span class="dart-kw">final</span> _auth = <span class="type">LocalAuthentication</span>();
+
+  <span class="dart-kw">Future</span>&lt;<span class="type">bool</span>&gt; <span class="fn">canAuthenticate</span>() <span class="dart-kw">async</span> {
+    <span class="dart-kw">if</span> (!<span class="dart-kw">await</span> _auth.<span class="fn">canCheckBiometrics</span>()) <span class="kw">return</span> <span class="kw">false</span>;
+    <span class="dart-kw">final</span> available = <span class="dart-kw">await</span> _auth.<span class="fn">getAvailableBiometrics</span>();
+    <span class="cmt">// Require strong biometrics (fingerprint or face)</span>
+    <span class="kw">return</span> available.<span class="fn">any</span>((b) =>
+      b == <span class="type">BiometricType</span>.fingerprint ||
+      b == <span class="type">BiometricType</span>.face        ||
+      b == <span class="type">BiometricType</span>.strong,
+    );
+  }
+
+  <span class="dart-kw">Future</span>&lt;<span class="type">bool</span>&gt; <span class="fn">authenticate</span>() <span class="dart-kw">async</span> {
+    <span class="dart-kw">if</span> (!<span class="dart-kw">await</span> <span class="fn">canAuthenticate</span>()) {
+      <span class="kw">throw</span> <span class="type">Exception</span>(<span class="str">'Biometric authentication not available'</span>);
+    }
+    <span class="kw">return</span> _auth.<span class="fn">authenticate</span>(
+      localizedReason: <span class="str">'Authenticate to access your account'</span>,
+      options: <span class="dart-kw">const</span> <span class="type">AuthenticationOptions</span>(
+        biometricOnly:   <span class="kw">true</span>,   <span class="cmt">// ✓ NO PIN/pattern fallback</span>
+        sensitiveTransaction: <span class="kw">true</span>,
+        stickyAuth: <span class="kw">true</span>,       <span class="cmt">// keep auth dialog active if app backgrounded</span>
+        useErrorDialogs: <span class="kw">true</span>,
+      ),
+    );
+  }
+}
+
+<span class="cmt">// ─── Android: declare in AndroidManifest.xml ──────────────────</span>
+<span class="cmt">// &lt;uses-permission android:name="android.permission.USE_BIOMETRIC" /&gt;</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Biometric authentication enforces <em>biometricOnly: true</em> — PIN/pattern fallback is disabled for sensitive operations. Only strong biometrics (Class 3: fingerprint, face) are accepted. The service validates biometric availability before presenting the prompt. <em>sensitiveTransaction: true</em> prevents biometric bypass attacks on Android.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 08 — OAUTH / APPAUTH -->
+<div class="section" id="s08" data-severity="critical" data-tags="OAuth PKCE AppAuth flutter_appauth authorization code custom scheme redirect deeplink token">
+  <div class="sec-header" onclick="tog('s08')">
+    <div class="sec-stripe stripe-violet"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--violet)">08</div>
+      <div style="flex:1">
+        <div class="sec-title">Secure OAuth 2.0 with PKCE (flutter_appauth)</div>
+        <div class="sec-meta">
+          <span class="badge b-crit">CRITICAL</span>
+          <span class="plat p-all">All Platforms</span>
+          <span class="tag-p">flutter_appauth</span><span class="tag-p">PKCE</span><span class="tag-p">code_verifier</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Implementing OAuth without PKCE (Proof Key for Code Exchange) leaves the authorization code vulnerable to interception on mobile — especially via custom URL scheme hijacking where any app can register the same scheme.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-crit">Authorization code interception by malicious apps registered with the same custom URL scheme, enabling full account takeover without needing a client secret.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — OAuth with PKCE via flutter_appauth</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--violet)"></div>pubspec.yaml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">dependencies:
+  flutter_appauth: ^8.0.1</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--violet)"></div>lib/services/auth_service.dart</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'package:flutter_appauth/flutter_appauth.dart'</span>;
+
+<span class="dart-kw">class</span> <span class="type">AuthService</span> {
+  <span class="dart-kw">static const</span> _appAuth = <span class="type">FlutterAppAuth</span>();
+
+  <span class="cmt">// ─── Authorization Code + PKCE flow ──────────────────────────</span>
+  <span class="dart-kw">Future</span>&lt;<span class="type">AuthorizationTokenResponse</span>?&gt; <span class="fn">signIn</span>() <span class="dart-kw">async</span> {
+    <span class="dart-kw">return await</span> _appAuth.<span class="fn">authorizeAndExchangeCode</span>(
+      <span class="type">AuthorizationTokenRequest</span>(
+        <span class="str">'YOUR_CLIENT_ID'</span>,
+        <span class="str">'com.your.app:/oauth2callback'</span>, <span class="cmt">// use App Links, not custom scheme</span>
+        issuer:               <span class="str">'https://accounts.your-idp.com'</span>,
+        scopes:               [<span class="str">'openid'</span>, <span class="str">'profile'</span>, <span class="str">'email'</span>],
+        preferEphemeralSession: <span class="kw">true</span>,    <span class="cmt">// no cookie persistence</span>
+        <span class="cmt">// PKCE is enabled by default in flutter_appauth</span>
+        <span class="cmt">// code_verifier & code_challenge generated automatically</span>
+        additionalParameters: {
+          <span class="str">'prompt'</span>: <span class="str">'consent'</span>,            <span class="cmt">// always show consent</span>
+        },
+      ),
+    );
+  }
+
+  <span class="cmt">// ─── Refresh token securely ───────────────────────────────────</span>
+  <span class="dart-kw">Future</span>&lt;<span class="type">TokenResponse</span>?&gt; <span class="fn">refreshToken</span>(<span class="type">String</span> refreshToken) <span class="dart-kw">async</span> {
+    <span class="dart-kw">return await</span> _appAuth.<span class="fn">token</span>(
+      <span class="type">TokenRequest</span>(
+        <span class="str">'YOUR_CLIENT_ID'</span>,
+        <span class="str">'com.your.app:/oauth2callback'</span>,
+        refreshToken:  refreshToken,
+        issuer:        <span class="str">'https://accounts.your-idp.com'</span>,
+        scopes:        [<span class="str">'openid'</span>, <span class="str">'profile'</span>],
+      ),
+    );
+  }
+}</pre>
+          </div>
+          <p style="margin-top:10px;font-size:13px;color:var(--ink2)">⚠️ Use <strong>Android App Links</strong> / <strong>iOS Universal Links</strong> (HTTPS-based) instead of custom URL schemes (<code>myapp://</code>) to prevent scheme hijacking. Custom schemes can be registered by any app on the device.</p>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-be">Backend/IdP Team</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>OAuth 2.0 is implemented via <em>flutter_appauth</em> using the Authorization Code + PKCE flow. PKCE code_verifier is generated automatically per-session with 256-bit entropy. HTTPS-based App Links replace custom URL schemes to prevent authorization code interception. Tokens are stored in flutter_secure_storage (Keystore/Keychain backed). Refresh tokens rotate on use with server-side revocation capability.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 09 — DEEP LINKS -->
+<div class="section" id="s09" data-severity="high" data-tags="deep link validation app links universal links URI scheme intent filter hijacking">
+  <div class="sec-header" onclick="tog('s09')">
+    <div class="sec-stripe stripe-violet"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--violet)">09</div>
+      <div style="flex:1">
+        <div class="sec-title">Deep Link Security &amp; Validation</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-android">Android</span><span class="plat p-ios">iOS</span>
+          <span class="tag-p">go_router</span><span class="tag-p">App Links</span><span class="tag-p">assetlinks.json</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Deep links accepted without validation can trigger unintended navigation (e.g., passing crafted parameters to internal screens), execute actions on behalf of the user, or enable open-redirect attacks to phishing pages.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Malicious deep links triggering authenticated actions (payments, account changes), open redirects to phishing sites, and path traversal via crafted deep link parameters passed to file operations.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Validate all deep link parameters</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--violet)"></div>lib/router/deep_link_validator.dart</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="dart-kw">class</span> <span class="type">DeepLinkValidator</span> {
+  <span class="cmt">// Allowed deep link hosts</span>
+  <span class="dart-kw">static const</span> _allowedHosts = {<span class="str">'your-app.com'</span>, <span class="str">'app.your-app.com'</span>};
+
+  <span class="cmt">// Allowed path prefixes — reject unknown paths</span>
+  <span class="dart-kw">static const</span> _allowedPaths = {
+    <span class="str">'/product/'</span>, <span class="str">'/user/'</span>, <span class="str">'/order/'</span>, <span class="str">'/share/'</span>,
+  };
+
+  <span class="dart-kw">static bool</span> <span class="fn">validate</span>(<span class="type">Uri</span> uri) {
+    <span class="cmt">// 1. Only accept HTTPS deep links (App Links / Universal Links)</span>
+    <span class="kw">if</span> (uri.scheme != <span class="str">'https'</span>) <span class="kw">return false</span>;
+
+    <span class="cmt">// 2. Validate host against allowlist</span>
+    <span class="kw">if</span> (!_allowedHosts.<span class="fn">contains</span>(uri.host)) <span class="kw">return false</span>;
+
+    <span class="cmt">// 3. Validate path starts with known prefix</span>
+    <span class="dart-kw">final</span> validPath = _allowedPaths.<span class="fn">any</span>((p) => uri.path.<span class="fn">startsWith</span>(p));
+    <span class="kw">if</span> (!validPath) <span class="kw">return false</span>;
+
+    <span class="cmt">// 4. Validate query parameters (no path traversal)</span>
+    <span class="kw">for</span> (<span class="dart-kw">final</span> value <span class="dart-kw">in</span> uri.queryParameters.values) {
+      <span class="kw">if</span> (value.<span class="fn">contains</span>(<span class="str">'..'</span>) || value.<span class="fn">contains</span>(<span class="str">'/'</span>)) <span class="kw">return false</span>;
+    }
+    <span class="kw">return true</span>;
+  }
+
+  <span class="cmt">// ─── Usage in main.dart ───────────────────────────────────────</span>
+  <span class="cmt">// Stream&lt;Uri?&gt; incoming = app_links.uriLinkStream;</span>
+  <span class="cmt">// incoming.listen((uri) {</span>
+  <span class="cmt">//   if (uri != null && DeepLinkValidator.validate(uri)) {</span>
+  <span class="cmt">//     router.go(uri.path, extra: uri.queryParameters);</span>
+  <span class="cmt">//   }</span>
+  <span class="cmt">// });</span>
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--violet)"></div>Hosting: /.well-known/assetlinks.json (Android App Links)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">[{
+  <span class="str">"relation"</span>: [<span class="str">"delegate_permission/common.handle_all_urls"</span>],
+  <span class="str">"target"</span>: {
+    <span class="str">"namespace"</span>: <span class="str">"android_app"</span>,
+    <span class="str">"package_name"</span>: <span class="str">"com.your.app"</span>,
+    <span class="str">"sha256_cert_fingerprints"</span>: [
+      <span class="str">"YOUR_APP_SIGNING_CERT_SHA256"</span>
+    ]
+  }
+}]</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-be">Backend</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All incoming deep links are validated against host and path allowlists before processing. Path traversal sequences in query parameters are rejected. Android App Links and iOS Universal Links are used exclusively — custom URL schemes are disabled. The <em>assetlinks.json</em> file is hosted at the verified domain and tested via Google's Statement List Checker.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ CAT: RUNTIME PROTECTION ═══════ -->
+<div class="cat-div" style="margin-top:24px">
+  <div class="cat-div-stripe stripe-gold"></div>
+  <div class="cat-div-body">
+    <div class="cat-div-icon">🛡️</div>
+    <div class="cat-div-label">Runtime Protection</div>
+    <div class="cat-div-desc">Root/jailbreak detection, anti-debug, screenshot prevention</div>
+  </div>
+</div>
+
+<!-- 10 — ROOT/JAILBREAK DETECTION -->
+<div class="section" id="s10" data-severity="high" data-tags="root jailbreak detection android ios flutter_jailbreak_detection safe_device rooted frida bypass">
+  <div class="sec-header" onclick="tog('s10')">
+    <div class="sec-stripe stripe-gold"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--gold)">10</div>
+      <div style="flex:1">
+        <div class="sec-title">Root / Jailbreak Detection</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-android">Android</span><span class="plat p-ios">iOS</span>
+          <span class="tag-p">flutter_jailbreak_detection</span><span class="tag-p">safe_device</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Rooted Android / jailbroken iOS devices bypass OS security boundaries — app sandboxing, Keystore encryption, file permission isolation, and certificate pinning can all be circumvented. Financial and healthcare apps must detect this condition.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Full app data extraction, Keystore bypass, certificate pinning defeat via Frida/SSL kill switch, memory dumping of sensitive runtime data, and app patching to bypass business logic.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Multi-factor device integrity checks</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--gold)"></div>pubspec.yaml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">dependencies:
+  flutter_jailbreak_detection: ^1.10.0
+  safe_device: ^1.1.4</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--gold)"></div>lib/security/device_check.dart</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart'</span>;
+<span class="kw">import</span> <span class="str">'package:safe_device/safe_device.dart'</span>;
+
+<span class="dart-kw">class</span> <span class="type">DeviceIntegrityChecker</span> {
+  <span class="dart-kw">static Future</span>&lt;<span class="type">DeviceCheckResult</span>&gt; <span class="fn">check</span>() <span class="dart-kw">async</span> {
+    <span class="dart-kw">final</span> checks = <span class="dart-kw">await</span> <span class="type">Future</span>.<span class="fn">wait</span>([
+      <span class="type">FlutterJailbreakDetection</span>.jailbroken,     <span class="cmt">// iOS jailbreak</span>
+      <span class="type">FlutterJailbreakDetection</span>.developerMode,   <span class="cmt">// Android dev mode</span>
+      <span class="type">SafeDevice</span>.isRealDevice,                   <span class="cmt">// emulator check</span>
+      <span class="type">SafeDevice</span>.isSafeDevice,                   <span class="cmt">// combined safe check</span>
+    ]);
+
+    <span class="dart-kw">final</span> isJailbroken    = checks[<span class="num">0</span>] <span class="dart-kw">as bool</span>;
+    <span class="dart-kw">final</span> isDevMode       = checks[<span class="num">1</span>] <span class="dart-kw">as bool</span>;
+    <span class="dart-kw">final</span> isRealDevice    = checks[<span class="num">2</span>] <span class="dart-kw">as bool</span>;
+    <span class="dart-kw">final</span> isSafe          = checks[<span class="num">3</span>] <span class="dart-kw">as bool</span>;
+
+    <span class="kw">return</span> <span class="type">DeviceCheckResult</span>(
+      isCompromised: isJailbroken || !isSafe,
+      isEmulator:    !isRealDevice,
+      isDeveloperMode: isDevMode,
+    );
+  }
+}
+
+<span class="cmt">// ─── Usage in app startup ─────────────────────────────────────</span>
+<span class="dart-kw">Future</span>&lt;<span class="dart-kw">void</span>&gt; <span class="fn">checkDeviceSecurity</span>(<span class="type">BuildContext</span> context) <span class="dart-kw">async</span> {
+  <span class="dart-kw">final</span> result = <span class="dart-kw">await</span> <span class="type">DeviceIntegrityChecker</span>.<span class="fn">check</span>();
+
+  <span class="kw">if</span> (result.isCompromised) {
+    <span class="cmt">// Log the event (for analytics) but don't reveal WHY to attacker</span>
+    await <span class="type">AnalyticsService</span>.<span class="fn">logEvent</span>(<span class="str">'compromised_device_detected'</span>);
+    <span class="cmt">// Show generic security warning — don't crash silently</span>
+    <span class="dart-kw">if</span> (context.mounted) {
+      <span class="fn">showDialog</span>(context: context, builder: (_) => <span class="dart-kw">const</span> <span class="type">SecurityWarningDialog</span>());
+    }
+  }
+}</pre>
+          </div>
+          <p style="margin-top:10px;font-size:13px;color:var(--ink2)">⚠️ Detection alone is not sufficient — a sophisticated attacker with Frida can hook and bypass these checks. Use alongside code obfuscation and Play Integrity API (Android) / DeviceCheck (iOS) for server-side verification.</p>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-sa">Security Team</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Device integrity checks run at app startup using <em>flutter_jailbreak_detection</em> and <em>safe_device</em>. Compromised devices receive a security warning, and events are logged server-side. Play Integrity API (Android) provides server-verified device attestation for high-security operations. Detection checks are obfuscated in the release build to resist Frida hooking.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 11 — DEBUG MODE DETECTION -->
+<div class="section" id="s11" data-severity="medium" data-tags="debug mode detection kReleaseMode kDebugMode assert disable production build">
+  <div class="sec-header" onclick="tog('s11')">
+    <div class="sec-stripe stripe-gold"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--gold)">11</div>
+      <div style="flex:1">
+        <div class="sec-title">Debug Mode Detection &amp; Prevention</div>
+        <div class="sec-meta">
+          <span class="badge b-med">MEDIUM</span>
+          <span class="plat p-all">All Platforms</span>
+          <span class="tag-p">kReleaseMode</span><span class="tag-p">kDebugMode</span><span class="tag-p">--release</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Debug builds expose Dart DevTools port, verbose logging, hot reload, and often relaxed security checks. Publishing a debug build or having debug features active in production creates serious attack exposure.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-med">Dart VM service port exposure enabling code execution and memory inspection, verbose log leakage of sensitive API responses, and relaxed certificate/biometric checks in debug mode leaking to production.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Build mode guards and debug hardening</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--gold)"></div>lib/utils/logger.dart — Environment-aware logging</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'package:flutter/foundation.dart'</span>;
+
+<span class="dart-kw">class</span> <span class="type">AppLogger</span> {
+  <span class="cmt">// ✓ kReleaseMode is a compile-time constant — dead code eliminated in prod</span>
+  <span class="dart-kw">static void</span> <span class="fn">debug</span>(<span class="type">Object</span>? msg) {
+    <span class="kw">if</span> (kDebugMode) debugPrint(<span class="str">'[DEBUG] $msg'</span>);
+  }
+
+  <span class="dart-kw">static void</span> <span class="fn">error</span>(<span class="type">Object</span>? msg) {
+    <span class="kw">if</span> (kDebugMode) debugPrint(<span class="str">'[ERROR] $msg'</span>);
+    <span class="cmt">// In release: send to crash reporting service (Sentry, Firebase Crashlytics)</span>
+    <span class="kw">if</span> (kReleaseMode) <span class="type">CrashReporter</span>.<span class="fn">log</span>(msg);
+  }
+
+  <span class="cmt">// ✗ NEVER: print(response.data) — exposes full API response in console</span>
+  <span class="cmt">// ✓ ALWAYS: AppLogger.debug('Response received: ${response.statusCode}')</span>
+}
+
+<span class="cmt">// ─── Security checks that only apply in release ───────────────</span>
+<span class="dart-kw">void</span> <span class="fn">applySecurityPolicies</span>() {
+  <span class="kw">if</span> (kReleaseMode) {
+    <span class="cmt">// Disable Flutter DevTools Observatory</span>
+    <span class="cmt">// This is automatic in release builds</span>
+
+    <span class="cmt">// Verify this is not a debug build that slipped to prod</span>
+    <span class="kw">assert</span>(!kDebugMode, <span class="str">'Do not publish debug builds!'</span>);
+  }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--gold)"></div>Terminal — Always build for release in production</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ✗ NEVER publish debug or profile builds</span>
+<span class="cmt"># flutter build apk  (defaults to debug!)</span>
+
+<span class="cmt"># ✓ ALWAYS use --release flag</span>
+$ flutter build apk     --release
+$ flutter build appbundle --release  <span class="cmt"># Google Play</span>
+$ flutter build ipa     --release    <span class="cmt"># iOS App Store</span>
+$ flutter build web     --release --dart-define=IS_PROD=true
+
+<span class="cmt"># Verify the build mode in the output</span>
+$ strings app-release.apk | grep -i "debug\|profile"
+→ Should not contain debug build indicators</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-dso">DevOps / CI</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All logging is gated behind <em>kDebugMode</em> compile-time constants, which the Dart compiler eliminates entirely in release builds (dead code removal). CI/CD pipeline enforces <em>--release</em> flag for all production builds. API responses, tokens, and sensitive objects are never passed to <em>print()</em> or <em>debugPrint()</em>. Release build scan confirms no debug artefacts or verbose log statements in the binary.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 12 — SCREENSHOT PREVENTION -->
+<div class="section" id="s12" data-severity="medium" data-tags="screenshot prevention FLAG_SECURE screen capture screen recording sensitive data banking">
+  <div class="sec-header" onclick="tog('s12')">
+    <div class="sec-stripe stripe-gold"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--gold)">12</div>
+      <div style="flex:1">
+        <div class="sec-title">Screenshot &amp; Screen Recording Prevention</div>
+        <div class="sec-meta">
+          <span class="badge b-med">MEDIUM</span>
+          <span class="plat p-android">Android</span><span class="plat p-ios">iOS</span>
+          <span class="tag-p">flutter_windowmanager</span><span class="tag-p">FLAG_SECURE</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Financial, healthcare, and auth screens can be captured via screenshots, screen recorders, or the iOS/Android app switcher preview — exposing sensitive PII, balances, and authentication data without the user's knowledge.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-med">Sensitive data visible in app switcher thumbnails leaking to spyware, screenshots captured by malicious apps with RECORD_SCREEN permission, and user-generated screenshots of financial/auth data shared inadvertently.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — FLAG_SECURE and iOS screenshot prevention</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--gold)"></div>pubspec.yaml</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">dependencies:
+  flutter_windowmanager: ^0.3.0</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--gold)"></div>lib/security/screenshot_protection.dart</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> <span class="str">'dart:io'</span>;
+<span class="kw">import</span> <span class="str">'package:flutter/services.dart'</span>;
+<span class="kw">import</span> <span class="str">'package:flutter_windowmanager/flutter_windowmanager.dart'</span>;
+
+<span class="dart-kw">class</span> <span class="type">ScreenshotProtection</span> {
+  <span class="cmt">// ─── Enable on sensitive screens ─────────────────────────────</span>
+  <span class="dart-kw">static Future</span>&lt;<span class="dart-kw">void</span>&gt; <span class="fn">enable</span>() <span class="dart-kw">async</span> {
+    <span class="kw">if</span> (<span class="type">Platform</span>.isAndroid) {
+      <span class="cmt">// Android: FLAG_SECURE blocks screenshots AND screen recording</span>
+      <span class="dart-kw">await</span> <span class="type">FlutterWindowManager</span>.<span class="fn">addFlags</span>(
+        <span class="type">FlutterWindowManager</span>.FLAG_SECURE,
+      );
+    } <span class="kw">else if</span> (<span class="type">Platform</span>.isIOS) {
+      <span class="cmt">// iOS: overlay an opaque view when screen is captured</span>
+      <span class="cmt">// Use platform channel to call UITextField.isSecureTextEntry approach</span>
+      <span class="dart-kw">await</span> <span class="dart-kw">const</span> <span class="type">MethodChannel</span>(<span class="str">'screenshot_protection'</span>)
+          .<span class="fn">invokeMethod</span>(<span class="str">'enable'</span>);
+    }
+  }
+
+  <span class="cmt">// ─── Disable when leaving sensitive screens ───────────────────</span>
+  <span class="dart-kw">static Future</span>&lt;<span class="dart-kw">void</span>&gt; <span class="fn">disable</span>() <span class="dart-kw">async</span> {
+    <span class="kw">if</span> (<span class="type">Platform</span>.isAndroid) {
+      <span class="dart-kw">await</span> <span class="type">FlutterWindowManager</span>.<span class="fn">clearFlags</span>(
+        <span class="type">FlutterWindowManager</span>.FLAG_SECURE,
+      );
+    } <span class="kw">else if</span> (<span class="type">Platform</span>.isIOS) {
+      <span class="dart-kw">await</span> <span class="dart-kw">const</span> <span class="type">MethodChannel</span>(<span class="str">'screenshot_protection'</span>)
+          .<span class="fn">invokeMethod</span>(<span class="str">'disable'</span>);
+    }
+  }
+}
+
+<span class="cmt">// ─── Usage: in sensitive screen's initState / dispose ─────────</span>
+<span class="cmt">// @override void initState() { super.initState(); ScreenshotProtection.enable(); }</span>
+<span class="cmt">// @override void dispose() { ScreenshotProtection.disable(); super.dispose(); }</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div><em>FLAG_SECURE</em> (Android) is applied on all screens displaying financial data, authentication flows, and PII. The flag also prevents screen recording and masks the app switcher thumbnail. iOS uses a secure overlay technique to blank sensitive content during screen capture. Screens with FLAG_SECURE are documented in the security design document.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ CAT: BUILD & DEPLOY ═══════ -->
+<div class="cat-div" style="margin-top:24px">
+  <div class="cat-div-stripe stripe-coral"></div>
+  <div class="cat-div-body">
+    <div class="cat-div-icon">🏗️</div>
+    <div class="cat-div-label">Build &amp; Deploy Security</div>
+    <div class="cat-div-desc">Obfuscation, dependency auditing, and CI/CD pipeline</div>
+  </div>
+</div>
+
+<!-- 13 — CODE OBFUSCATION -->
+<div class="section" id="s13" data-severity="high" data-tags="obfuscation dart compile --obfuscate split-debug-symbols reverse engineering decompile class names">
+  <div class="sec-header" onclick="tog('s13')">
+    <div class="sec-stripe stripe-coral"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--coral)">13</div>
+      <div style="flex:1">
+        <div class="sec-title">Code Obfuscation &amp; Symbol Splitting</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-android">Android</span><span class="plat p-ios">iOS</span>
+          <span class="tag-p">--obfuscate</span><span class="tag-p">--split-debug-info</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Without obfuscation, Dart class names, method names, and string literals are embedded in the binary, making reverse engineering trivial with tools like jadx, Ghidra, or MobSF. Internal business logic and API structure are fully exposed.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Reverse engineering of business logic, API endpoint enumeration, authentication bypass via patched binary, and intellectual property theft of proprietary algorithms.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Build with obfuscation flags</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--coral)"></div>Terminal — Obfuscated release builds</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ─── Android APK / AAB ───────────────────────────────────────</span>
+$ flutter build appbundle \
+  --release \
+  --obfuscate \
+  --split-debug-info=build/debug-symbols/android/
+  <span class="cmt"># --split-debug-info separates debug symbols for crash reporting</span>
+  <span class="cmt"># Store debug symbols SECURELY — not in the APK!</span>
+
+<span class="cmt"># ─── iOS IPA ─────────────────────────────────────────────────</span>
+$ flutter build ipa \
+  --release \
+  --obfuscate \
+  --split-debug-info=build/debug-symbols/ios/
+
+<span class="cmt"># ─── Upload debug symbols to crash reporter ─────────────────</span>
+<span class="cmt"># Firebase Crashlytics (Android):</span>
+$ firebase crashlytics:symbols:upload \
+  --app=APP_ID \
+  build/debug-symbols/android/app.android-arm64.symbols
+
+<span class="cmt"># ─── Verify obfuscation worked ───────────────────────────────</span>
+$ strings app-release.apk | grep -E "^[A-Z][a-z]+[A-Z]"
+<span class="cmt"># Class names should be short: a, b, c, aa, etc. NOT: UserRepository</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--coral)"></div>android/app/build.gradle — ProGuard rules</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">android {
+    buildTypes {
+        release {
+            minifyEnabled     true    // Enable ProGuard/R8
+            shrinkResources   true    // Remove unused resources
+            proguardFiles getDefaultProguardFile(<span class="str">'proguard-android-optimize.txt'</span>),
+                          <span class="str">'proguard-rules.pro'</span>
+        }
+    }
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-dso">DevOps / CI</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Check class names in APK are obfuscated
+$ apktool d app-release.apk -o decompiled/
+$ ls decompiled/smali/
+→ a/, b/, c/, aa/ ... (NOT: com/yourcompany/app/UserRepository/)
+
+# Check with strings command — method names should be single chars
+$ strings app-release.apk | grep "UserRepository\|AuthService\|ApiClient"
+→ (empty — obfuscated to a, b, c)
+
+# Verify debug symbols stored separately (NOT in APK)
+$ ls build/debug-symbols/android/
+→ *.symbols files present here, not inside the APK</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Release builds are compiled with <em>--obfuscate</em> and <em>--split-debug-info</em> flags. Dart class and method names are reduced to single characters (a, b, c). ProGuard/R8 minification is enabled for Android. Debug symbols are stored securely outside the APK and uploaded to Firebase Crashlytics for symbolicated crash reports. APK inspection confirms no readable class or method names from the Dart codebase.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 14 — DEPENDENCY SECURITY -->
+<div class="section" id="s14" data-severity="high" data-tags="pub.dev dependency security audit dart pub outdated flutter packages CVE supply chain">
+  <div class="sec-header" onclick="tog('s14')">
+    <div class="sec-stripe stripe-coral"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--coral)">14</div>
+      <div style="flex:1">
+        <div class="sec-title">Flutter Dependency Security (pub.dev Audit)</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-all">All Platforms</span>
+          <span class="tag-p">dart pub audit</span><span class="tag-p">pubspec.lock</span><span class="tag-p">dependency_review</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Flutter/Dart packages from pub.dev can contain vulnerabilities in their native Android/iOS code, Dart implementation, or transitive dependencies. Unmaintained packages with known CVEs are a common source of app store rejection and security incidents.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Supply chain attacks via compromised pub.dev packages, native code vulnerabilities in platform plugins (RCE in WebView plugins), and API compatibility breaks from unpinned dependencies.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Regular dependency auditing</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--coral)"></div>Terminal — Audit commands</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ─── Dart built-in security audit ────────────────────────────</span>
+$ dart pub audit
+→ Found X security advisories (lists CVE numbers and fixes)
+
+<span class="cmt"># ─── Check for outdated packages ──────────────────────────────</span>
+$ flutter pub outdated
+→ Lists all packages with newer versions available
+
+<span class="cmt"># ─── Upgrade to latest safe versions ─────────────────────────</span>
+$ flutter pub upgrade --major-versions  <span class="cmt"># major version bumps</span>
+$ flutter pub upgrade                   <span class="cmt"># minor/patch updates</span>
+
+<span class="cmt"># ─── Verify pubspec.lock is committed (reproducible builds) ──</span>
+$ git status pubspec.lock
+→ (tracked and committed)
+
+<span class="cmt"># ─── Check for packages with no recent activity ──────────────</span>
+$ dart pub outdated --show-all | grep "discontinued\|unlisted"
+→ (investigate any discontinued packages)</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--coral)"></div">pubspec.yaml — Security-conscious dependency pinning</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">dependencies:
+  flutter:
+    sdk: flutter
+
+  <span class="cmt"># ✓ Pin to specific compatible version ranges</span>
+  dio:                   ^5.7.0   <span class="cmt"># HTTP client</span>
+  flutter_secure_storage: ^9.2.2
+  flutter_appauth:        ^8.0.1
+  local_auth:             ^2.3.0
+
+  <span class="cmt"># ✗ AVOID: very wide ranges or no constraint</span>
+  <span class="cmt"># some_package: any   ← never do this</span>
+  <span class="cmt"># some_package: >=1.0.0   ← too wide</span>
+
+<span class="cmt"># Check package origins — prefer flutter/dart org maintained packages</span>
+<span class="cmt"># Verify publisher: pub.dev → package → "Publisher: flutter.dev" or "dart.dev"</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-dso">DevOps</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div><em>dart pub audit</em> is integrated into the CI pipeline and runs on every build. Current audit result: 0 security advisories. All dependencies are pinned to version ranges in <em>pubspec.yaml</em> and locked in <em>pubspec.lock</em> (committed). Weekly automated outdated-dependency checks are scheduled. Packages from trusted publishers (flutter.dev, dart.dev, verified organisations) are preferred.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ CAT: WEB & FIREBASE ═══════ -->
+<div class="cat-div" style="margin-top:24px">
+  <div class="cat-div-stripe stripe-rose"></div>
+  <div class="cat-div-body">
+    <div class="cat-div-icon">🔥</div>
+    <div class="cat-div-label">Web &amp; Firebase Security</div>
+    <div class="cat-div-desc">Flutter Web security headers and Firebase security rules</div>
+  </div>
+</div>
+
+<!-- 15 — FLUTTER WEB HEADERS -->
+<div class="section" id="s15" data-severity="high" data-tags="flutter web security headers nginx CSP HSTS index.html flutter build web">
+  <div class="sec-header" onclick="tog('s15')">
+    <div class="sec-stripe stripe-rose"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--rose)">15</div>
+      <div style="flex:1">
+        <div class="sec-title">Flutter Web — Security Headers &amp; Nginx Config</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="plat p-web">Flutter Web</span>
+          <span class="tag-p">nginx.conf</span><span class="tag-p">CSP</span><span class="tag-p">web/index.html</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Flutter Web apps lack security headers by default, and the compiled <code>main.dart.js</code> (often 5-10MB) exposes the entire Dart SDK in JavaScript form. Missing CSP, HSTS, and frame protection leaves the app vulnerable to XSS and clickjacking.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">XSS in Flutter Web via injected JavaScript accessing Dart's <em>dart:html</em> bindings, clickjacking attacks on the canvas-rendered app, and MIME-type confusion attacks on the JS bundle.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Nginx for Flutter Web</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--rose)"></div>/etc/nginx/sites-enabled/flutter-app.conf</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">server {
+    listen 443 ssl http2;
+    server_name your-flutter-app.com;
+    root /var/www/flutter-app/build/web;
+
+    <span class="cmt"># ─── SPA routing for Flutter Web ────────────────────────</span>
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    <span class="cmt"># ─── Security headers ────────────────────────────────────</span>
+    add_header Strict-Transport-Security  "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Frame-Options            "DENY" always;
+    add_header X-Content-Type-Options     "nosniff" always;
+    add_header Referrer-Policy            "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy         "camera=(), microphone=(), geolocation=()" always;
+
+    <span class="cmt"># ─── CSP for Flutter Web (canvas-based renderer) ─────────</span>
+    add_header Content-Security-Policy
+      "default-src 'self';
+       script-src  'self' 'unsafe-eval';
+       style-src   'self' 'unsafe-inline';
+       img-src     'self' data: blob:;
+       font-src    'self' data:;
+       connect-src 'self' https://api.your-app.com wss://api.your-app.com;
+       worker-src  'self' blob:;
+       frame-src   'none';
+       object-src  'none';"
+      always;
+
+    <span class="cmt"># ─── Cache control ────────────────────────────────────────</span>
+    location ~* \.(js|css|wasm|png|ico|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+    <span class="cmt"># Block source maps in production</span>
+    location ~* \.map$ { deny all; return 404; }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--rose)"></div>Terminal — Build Flutter Web for production</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Production Flutter Web build</span>
+$ flutter build web \
+  --release \
+  --dart-define=IS_PROD=true \
+  --dart-define-from-file=.env.production \
+  --web-renderer canvaskit \     <span class="cmt"># or 'html' — canvaskit harder to scrape</span>
+  --source-maps=false            <span class="cmt"># no source maps in production</span>
+
+<span class="cmt"># Deploy build/web/ to Nginx root</span>
+$ rsync -avz build/web/ user@server:/var/www/flutter-app/build/web/</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-dso">DevOps / Nginx Admin</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Flutter Web is served via a hardened Nginx configuration with HSTS, CSP (allowing <em>unsafe-eval</em> required by the Dart compiler output), X-Frame-Options DENY, and nosniff headers. Source maps are disabled in production. The CanvasKit renderer is used, making Dart code harder to reverse-engineer than the HTML renderer. Security headers verified via securityheaders.com (Grade A).</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 16 — FIREBASE SECURITY -->
+<div class="section" id="s16" data-severity="critical" data-tags="firebase security rules firestore realtime database storage authentication rules access control">
+  <div class="sec-header" onclick="tog('s16')">
+    <div class="sec-stripe stripe-rose"></div>
+    <div class="sec-header-inner">
+      <div class="sec-badge" style="background:var(--rose)">16</div>
+      <div style="flex:1">
+        <div class="sec-title">Firebase Security Rules</div>
+        <div class="sec-meta">
+          <span class="badge b-crit">CRITICAL</span>
+          <span class="plat p-all">All Platforms</span>
+          <span class="tag-p">Firestore rules</span><span class="tag-p">Storage rules</span><span class="tag-p">firebase.json</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Firebase default security rules are either <strong>completely open</strong> (read/write allowed by anyone) or insecure test-mode rules. Many production apps launch with <code>allow read, write: if true</code> — exposing all data publicly.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-crit">Complete Firestore database exposure to unauthenticated reads, any authenticated user modifying any other user's data, public Firebase Storage buckets exposing all uploaded files, and mass data exfiltration.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Production Firestore Security Rules</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-dot" style="background:var(--rose)"></div>firestore.rules</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">rules_version = <span class="str">'2'</span>;
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    <span class="cmt">// ✗ NEVER EVER in production:</span>
+    <span class="cmt">// match /{document=**} { allow read, write: if true; }</span>
+
+    <span class="cmt">// ─── Users: own data only ─────────────────────────────────</span>
+    match /users/{userId} {
+      allow read:  if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId
+                   && validUserData(request.resource.data);
+      allow update: if request.auth != null && request.auth.uid == userId
+                   && !request.resource.data.diff(resource.data).affectedKeys()
+                      .hasAny([<span class="str">'role'</span>, <span class="str">'createdAt'</span>]); <span class="cmt">// can't self-promote role</span>
+      allow delete: if <span class="kw">false</span>; <span class="cmt">// no self-delete</span>
+    }
+
+    <span class="cmt">// ─── Posts: authenticated read, owner write ───────────────</span>
+    match /posts/{postId} {
+      allow read:   if request.auth != null;
+      allow create: if request.auth != null
+                   && request.resource.data.authorId == request.auth.uid
+                   && validPostData(request.resource.data);
+      allow update: if request.auth != null
+                   && resource.data.authorId == request.auth.uid;
+      allow delete: if request.auth != null
+                   && resource.data.authorId == request.auth.uid;
+    }
+
+    <span class="cmt">// ─── Admin operations — server-side only ─────────────────</span>
+    match /admin/{document=**} {
+      allow read, write: if <span class="kw">false</span>; <span class="cmt">// ONLY via Firebase Admin SDK</span>
+    }
+
+    <span class="cmt">// ─── Helper functions ─────────────────────────────────────</span>
+    function <span class="fn">validUserData</span>(data) {
+      return data.keys().<span class="fn">hasAll</span>([<span class="str">'name'</span>, <span class="str">'email'</span>])
+        && data.name is string && data.name.size() <= <span class="num">100</span>
+        && data.email is string;
+    }
+
+    function <span class="fn">validPostData</span>(data) {
+      return data.keys().<span class="fn">hasAll</span>([<span class="str">'title'</span>, <span class="str">'authorId'</span>])
+        && data.title is string && data.title.size() <= <span class="num">500</span>;
+    }
+  }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--rose)"></div>storage.rules — Firebase Storage</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">rules_version = <span class="str">'2'</span>;
+service firebase.storage {
+  match /b/{bucket}/o {
+    <span class="cmt">// User profile images: owner can write, authenticated can read</span>
+    match /users/{userId}/profile/{fileName} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null
+                   && request.auth.uid == userId
+                   && request.resource.size < <span class="num">5</span> * <span class="num">1024</span> * <span class="num">1024</span>   <span class="cmt">// 5MB max</span>
+                   && request.resource.contentType.<span class="fn">matches</span>(<span class="str">'image/.*'</span>);
+    }
+    <span class="cmt">// Deny all other access by default</span>
+    match /{allPaths=**} {
+      allow read, write: if <span class="kw">false</span>;
+    }
+  }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn"><div class="code-dot" style="background:var(--rose)"></div>Terminal — Test and deploy rules</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Test rules before deploying (Firebase Emulator Suite)</span>
+$ firebase emulators:start
+$ firebase emulators:exec --only firestore 'dart test test/security_rules_test.dart'
+
+<span class="cmt"># Deploy rules to production</span>
+$ firebase deploy --only firestore:rules
+$ firebase deploy --only storage:rules</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge r-mob">Flutter Developer</span><span class="rbadge r-be">Backend / Firebase Admin</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Test unauthenticated read is blocked
+$ curl "https://firestore.googleapis.com/v1/projects/PROJECT_ID/databases/(default)/documents/users"
+→ 403 PERMISSION_DENIED
+
+# Test cross-user write is blocked
+# Log in as User A, try to write to User B's document
+→ FirebaseException: PERMISSION_DENIED: Missing or insufficient permissions.
+
+# Firebase Security Rules Simulator (Firebase Console)
+# → Rules → Simulator → test each scenario
+→ All unauthorized operations: Denied
+→ Authorized operations: Allowed
+
+# Run automated rules tests
+$ firebase emulators:exec 'dart test' → All tests passing</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Firestore and Storage security rules enforce authentication on all operations. Users can only read and write their own documents (UID-matched). Role escalation via client-side writes is prevented by blocking changes to the <em>role</em> field. The <em>/admin/</em> collection is restricted to server-side Firebase Admin SDK only (client access returns false). File size (5MB) and MIME type restrictions are enforced in Storage rules. Rules are tested via the Firebase Emulator Suite before deployment.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ SUMMARY TABLE ═══════ -->
+<div style="margin-top:44px;background:var(--card);border:2px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-lg)">
+  <!-- Coloured top strip -->
+  <div style="height:4px;background:linear-gradient(90deg,var(--teal) 0%,var(--blue) 25%,var(--violet) 50%,var(--gold) 75%,var(--coral) 100%)"></div>
+  <div style="padding:24px 28px;border-bottom:1.5px solid var(--border)">
+    <h2 style="font-family:'Unbounded',sans-serif;font-size:18px;font-weight:800;color:var(--ink);letter-spacing:-.5px">🦋 Flutter Security Controls Master Checklist</h2>
+    <p style="color:var(--ink2);font-size:12.5px;margin-top:5px;font-family:'Nunito',sans-serif">Track remediation status · Update as each control is implemented and verified across all target platforms</p>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="wtbl" style="width:100%">
+      <thead>
+        <tr><th>#</th><th>Control</th><th>Severity</th><th>Platform</th><th>Key Package / Tool</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>API Key Security (--dart-define / envied)</td><td><span class="badge b-crit">CRITICAL</span></td><td><span class="plat p-all">All</span></td><td><span class="tag-p">envied</span></td><td>☐ Open</td></tr>
+        <tr><td>02</td><td>Secure Local Storage</td><td><span class="badge b-crit">CRITICAL</span></td><td><span class="plat p-android">Android</span><span class="plat p-ios">iOS</span></td><td><span class="tag-p">flutter_secure_storage</span></td><td>☐ Open</td></tr>
+        <tr><td>03</td><td>Keystore / Keychain Hardening</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-android">Android</span><span class="plat p-ios">iOS</span></td><td><span class="tag-p">allowBackup=false</span></td><td>☐ Open</td></tr>
+        <tr><td>04</td><td>Certificate Pinning</td><td><span class="badge b-crit">CRITICAL</span></td><td><span class="plat p-all">All</span></td><td><span class="tag-p">dio SecurityContext</span></td><td>☐ Open</td></tr>
+        <tr><td>05</td><td>Block Cleartext HTTP Traffic</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-android">Android</span><span class="plat p-ios">iOS</span></td><td><span class="tag-p">network_security_config</span></td><td>☐ Open</td></tr>
+        <tr><td>06</td><td>Flutter WebView Security</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-all">All</span></td><td><span class="tag-p">webview_flutter</span></td><td>☐ Open</td></tr>
+        <tr><td>07</td><td>Biometric Authentication</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-android">Android</span><span class="plat p-ios">iOS</span></td><td><span class="tag-p">local_auth</span></td><td>☐ Open</td></tr>
+        <tr><td>08</td><td>OAuth 2.0 + PKCE</td><td><span class="badge b-crit">CRITICAL</span></td><td><span class="plat p-all">All</span></td><td><span class="tag-p">flutter_appauth</span></td><td>☐ Open</td></tr>
+        <tr><td>09</td><td>Deep Link Validation</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-android">Android</span><span class="plat p-ios">iOS</span></td><td><span class="tag-p">assetlinks.json</span></td><td>☐ Open</td></tr>
+        <tr><td>10</td><td>Root / Jailbreak Detection</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-android">Android</span><span class="plat p-ios">iOS</span></td><td><span class="tag-p">flutter_jailbreak_detection</span></td><td>☐ Open</td></tr>
+        <tr><td>11</td><td>Debug Mode Detection</td><td><span class="badge b-med">MEDIUM</span></td><td><span class="plat p-all">All</span></td><td><span class="tag-p">kReleaseMode</span></td><td>☐ Open</td></tr>
+        <tr><td>12</td><td>Screenshot Prevention</td><td><span class="badge b-med">MEDIUM</span></td><td><span class="plat p-android">Android</span><span class="plat p-ios">iOS</span></td><td><span class="tag-p">FLAG_SECURE</span></td><td>☐ Open</td></tr>
+        <tr><td>13</td><td>Code Obfuscation</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-android">Android</span><span class="plat p-ios">iOS</span></td><td><span class="tag-p">--obfuscate</span></td><td>☐ Open</td></tr>
+        <tr><td>14</td><td>Dependency Security (pub.dev)</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-all">All</span></td><td><span class="tag-p">dart pub audit</span></td><td>☐ Open</td></tr>
+        <tr><td>15</td><td>Flutter Web Security Headers</td><td><span class="badge b-high">HIGH</span></td><td><span class="plat p-web">Web</span></td><td><span class="tag-p">nginx CSP</span></td><td>☐ Open</td></tr>
+        <tr><td>16</td><td>Firebase Security Rules</td><td><span class="badge b-crit">CRITICAL</span></td><td><span class="plat p-all">All</span></td><td><span class="tag-p">firestore.rules</span></td><td>☐ Open</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:18px 28px;border-top:1.5px solid var(--border);display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--coral);border-radius:2px;display:inline-block"></span><span style="font-size:12px;color:var(--ink2);font-family:'Nunito',sans-serif">Critical: 5 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--blue);border-radius:2px;display:inline-block"></span><span style="font-size:12px;color:var(--ink2);font-family:'Nunito',sans-serif">High: 9 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width=10px;height:10px;background:var(--gold);border-radius:2px;display:inline-block"></span><span style="font-size:12px;color:var(--ink2);font-family:'Nunito',sans-serif">Medium: 2 controls</span></div>
+    <div style="margin-left:auto;font-size:10.5px;color:var(--ink4);font-family:'JetBrains Mono',monospace">OWASP MASVS · Flutter 3.x · April 2026</div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</main>
+
+<button id="goTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+function tog(id){document.getElementById(id).classList.toggle('open')}
+function jumpTo(id){
+  const el=document.getElementById(id);
+  if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'start'})}
+}
+function expandAll(){document.querySelectorAll('.section').forEach(s=>s.classList.add('open'))}
+function collapseAll(){document.querySelectorAll('.section').forEach(s=>s.classList.remove('open'))}
+function filterSecs(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.section').forEach(s=>{
+    const t=(s.textContent+' '+(s.dataset.tags||'')).toLowerCase();
+    s.classList.toggle('hidden',q.length>1&&!t.includes(q));
+  });
+}
+function filterSev(sev,btn){
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>{
+    s.classList.toggle('hidden',sev!=='all'&&s.dataset.severity!==sev);
+  });
+}
+function cp(btn){
+  const pre=btn.closest('.code-wrap').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ Copied';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2000);
+  });
+}
+window.addEventListener('scroll',()=>{
+  document.getElementById('goTop').style.display=window.scrollY>400?'flex':'none';
+});
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id=e.target.id;
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      const ni=document.querySelector(`.nav-item[onclick="jumpTo('${id}')"]`);
+      if(ni)ni.classList.add('active');
+    }
+  });
+},{threshold:.12});
+document.querySelectorAll('.section').forEach((s,i)=>{
+  s.style.animationDelay=(i*.03)+'s';
+  obs.observe(s);
+});
+</script>
+</body>
+</html>
