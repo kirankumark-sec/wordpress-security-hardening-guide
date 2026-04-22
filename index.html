@@ -42,6 +42,11 @@
             padding: 25px;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
         }
 
         .card h2 {
@@ -76,6 +81,7 @@
         }
     </style>
 </head>
+
 <body>
 
 <header>
@@ -98,24 +104,25 @@
         <p>Security recommendations for Node.js applications and runtime environments.</p>
         <a href="nodejs-security-hardening-guide.html">View Guide</a>
     </div>
-   
+
+    <!-- React -->
     <div class="card">
         <h2>React Security Hardening</h2>
-        <p>Security recommendations for React applications and runtime environments.</p>
+        <p>Security recommendations for React applications and frontend environments.</p>
         <a href="react-security-hardening-guide.html">View Guide</a>
     </div>
-    <!-- Future Guides -->
-    <!--
+
+    <!-- Flutter -->
     <div class="card">
-        <h2>Linux Server Hardening</h2>
-        <p>Coming soon</p>
-        <aiv>
-    -->
+        <h2>Flutter Security Hardening</h2>
+        <p>Best practices to secure Flutter mobile and web applications.</p>
+        <a href="flutter-security-hardening-guide.html">View Guide</a>
+    </div>
 
 </div>
 
 <footer>
-    Maintained by Kiran Kumar K | Security Hardening Repository
+    Maintained by Kiran Kumar K ｜ Security Hardening Repository
 </footer>
 
 </body>
