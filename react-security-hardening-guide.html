@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>React Security Hardening Guide · VAPT Remediation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=Epilogue:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #f7f4ef;
+  --bg2:       #fdfcfa;
+  --bg3:       #f0ece4;
+  --card:      #ffffff;
+  --card2:     #f9f7f3;
+  --border:    #e4ddd2;
+  --border2:   #cec5b8;
+  --ink:       #1c1714;
+  --ink2:      #4a4038;
+  --ink3:      #9a8e84;
+  --ink4:      #c5bbb2;
+
+  /* Accent palette */
+  --indigo:    #2d22b3;
+  --indigo2:   #4538d4;
+  --indigo-bg: #edeaff;
+  --coral:     #e03c52;
+  --coral-bg:  #fdeef0;
+  --teal:      #0d8c72;
+  --teal-bg:   #e3f5f1;
+  --amber:     #c47a0a;
+  --amber-bg:  #fdf3e0;
+  --violet:    #7c3aed;
+  --violet-bg: #f3eeff;
+
+  --shadow-sm: 0 1px 4px rgba(28,23,20,0.07);
+  --shadow-md: 0 4px 16px rgba(28,23,20,0.09);
+  --shadow-lg: 0 8px 32px rgba(28,23,20,0.11);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Epilogue',sans-serif;
+  font-size:14.5px;
+  line-height:1.72;
+  overflow-x:hidden;
+}
+
+/* ── TEXTURE ── */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23c5bbb2' fill-opacity='0.09'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;
+}
+
+/* ══════════ SIDEBAR ══════════ */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:274px;
+  background:var(--card);
+  border-right:1px solid var(--border);
+  overflow-y:auto;z-index:100;
+  display:flex;flex-direction:column;
+  box-shadow:var(--shadow-sm);
+}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* Colorful top strip */
+.sidebar-strip{
+  height:4px;
+  background:linear-gradient(90deg,var(--indigo) 0%,var(--coral) 35%,var(--teal) 65%,var(--amber) 100%);
+}
+
+.sb-logo{padding:22px 22px 18px;border-bottom:1px solid var(--border)}
+.sb-icon{
+  width:42px;height:42px;
+  background:linear-gradient(135deg,var(--indigo),var(--coral));
+  border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:20px;margin-bottom:12px;
+  box-shadow:0 4px 12px rgba(45,34,179,0.25);
+}
+.sb-logo h2{
+  font-family:'Fraunces',serif;font-size:14px;font-weight:700;
+  color:var(--ink);letter-spacing:-.2px;
+}
+.sb-logo p{font-size:10.5px;color:var(--ink3);margin-top:3px;text-transform:uppercase;letter-spacing:1.3px;font-family:'Epilogue',sans-serif}
+
+.sb-cat{
+  padding:14px 22px 4px;
+  font-size:9.5px;font-weight:700;color:var(--ink4);
+  text-transform:uppercase;letter-spacing:1.8px;
+  font-family:'Epilogue',sans-serif;
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 22px;color:var(--ink2);font-size:12.5px;
+  cursor:pointer;border-left:3px solid transparent;
+  transition:all .18s;font-family:'Epilogue',sans-serif;
+}
+.nav-item:hover,.nav-item.active{
+  background:var(--indigo-bg);color:var(--indigo);
+  border-left-color:var(--indigo);
+}
+.nav-num{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--ink4);min-width:22px;
+}
+.nav-item:hover .nav-num,.nav-item.active .nav-num{color:var(--indigo2)}
+.nav-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+  margin-right:2px;
+}
+
+.sb-footer{
+  margin-top:auto;padding:16px 22px;
+  border-top:1px solid var(--border);
+  font-size:10.5px;color:var(--ink4);
+  font-family:'JetBrains Mono',monospace;line-height:1.9;
+}
+
+/* ══════════ MAIN ══════════ */
+.main{margin-left:274px;position:relative;z-index:1}
+
+/* ── HERO ── */
+.hero{
+  position:relative;overflow:hidden;
+  padding:56px 60px 52px;
+  background:var(--card2);
+  border-bottom:1px solid var(--border);
+}
+/* Top color strip */
+.hero::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:5px;
+  background:linear-gradient(90deg,var(--indigo) 0%,var(--coral) 50%,var(--teal) 100%);
+}
+/* Decorative React atom */
+.hero-deco{
+  position:absolute;right:48px;top:50%;transform:translateY(-50%);
+  font-size:180px;opacity:0.04;user-select:none;line-height:1;
+  font-family:'Fraunces',serif;font-weight:800;color:var(--indigo);
+}
+
+.hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.hbadge{
+  padding:4px 12px;border-radius:20px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:500;
+  border:1.5px solid;letter-spacing:.3px;
+}
+.hb-vapt{background:var(--coral-bg);color:var(--coral);border-color:rgba(224,60,82,0.3)}
+.hb-owasp{background:var(--indigo-bg);color:var(--indigo);border-color:rgba(45,34,179,0.3)}
+.hb-react{background:var(--teal-bg);color:var(--teal);border-color:rgba(13,140,114,0.3)}
+.hb-vite{background:var(--amber-bg);color:var(--amber);border-color:rgba(196,122,10,0.3)}
+
+.hero h1{
+  font-family:'Fraunces',serif;font-size:46px;font-weight:800;
+  line-height:1.05;margin-bottom:14px;color:var(--ink);
+  letter-spacing:-.5px;
+}
+.hero h1 em{
+  font-style:italic;font-weight:300;color:var(--indigo);
+}
+.hero-sub{color:var(--ink2);font-size:15px;max-width:580px;margin-bottom:30px;line-height:1.68}
+
+.hero-stats{display:flex;gap:0;flex-wrap:wrap;border:1px solid var(--border);border-radius:12px;overflow:hidden;max-width:520px;background:var(--card)}
+.stat-item{
+  flex:1;padding:16px 20px;border-right:1px solid var(--border);
+  text-align:center;min-width:100px;
+}
+.stat-item:last-child{border-right:none}
+.stat-num{
+  font-family:'Fraunces',serif;font-size:28px;font-weight:700;
+  color:var(--indigo);display:block;line-height:1;
+}
+.stat-label{font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-weight:500}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:12px 60px;display:flex;align-items:center;gap:10px;
+  position:sticky;top:0;z-index:50;
+  box-shadow:var(--shadow-sm);
+}
+.search-wrap{position:relative;flex:1;max-width:420px}
+.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--ink3);font-size:13px;pointer-events:none}
+.search-input{
+  width:100%;background:var(--bg);border:1.5px solid var(--border);
+  border-radius:8px;padding:8px 14px 8px 36px;
+  color:var(--ink);font-family:'Epilogue',sans-serif;font-size:13.5px;outline:none;
+  transition:all .18s;
+}
+.search-input::placeholder{color:var(--ink4)}
+.search-input:focus{border-color:var(--indigo);box-shadow:0 0 0 3px rgba(45,34,179,0.08)}
+.filter-btns{display:flex;gap:5px}
+.fbtn{
+  padding:6px 13px;border-radius:6px;font-size:11.5px;font-weight:600;
+  cursor:pointer;border:1.5px solid var(--border);background:var(--bg);
+  color:var(--ink2);transition:all .18s;font-family:'Epilogue',sans-serif;
+}
+.fbtn:hover,.fbtn.active{border-color:var(--indigo);color:var(--indigo);background:var(--indigo-bg)}
+.ctrl-btn{
+  padding:6px 12px;border-radius:6px;font-size:11.5px;
+  cursor:pointer;border:1.5px solid var(--border);background:var(--bg);
+  color:var(--ink2);transition:all .18s;font-family:'Epilogue',sans-serif;font-weight:500;
+}
+.ctrl-btn:hover{border-color:var(--border2);background:var(--bg3)}
+
+/* ── CONTENT ── */
+.content{padding:36px 60px 80px}
+
+/* ── SECTION CARD ── */
+.section{
+  margin-bottom:40px;border:1.5px solid var(--border);
+  border-radius:16px;background:var(--card);
+  overflow:hidden;transition:border-color .2s,box-shadow .2s;
+  animation:lift .35s ease both;
+  box-shadow:var(--shadow-sm);
+}
+.section:hover{border-color:var(--border2);box-shadow:var(--shadow-md)}
+@keyframes lift{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── COLORED LEFT ACCENT ON SECTION ── */
+.section[data-cat="xss"]      .sec-accent{background:var(--coral)}
+.section[data-cat="auth"]     .sec-accent{background:var(--indigo)}
+.section[data-cat="data"]     .sec-accent{background:var(--teal)}
+.section[data-cat="build"]    .sec-accent{background:var(--amber)}
+.section[data-cat="network"]  .sec-accent{background:var(--violet)}
+.section[data-cat="audit"]    .sec-accent{background:var(--ink2)}
+
+.sec-accent{
+  width:5px;flex-shrink:0;
+  align-self:stretch;
+  background:var(--border2);
+}
+
+.sec-header{
+  padding:20px 24px;
+  background:var(--card2);
+  border-bottom:1.5px solid var(--border);
+  display:flex;align-items:flex-start;gap:0;
+  cursor:pointer;user-select:none;
+}
+.sec-header-inner{
+  display:flex;align-items:flex-start;gap:14px;flex:1;
+}
+.sec-num-wrap{
+  display:flex;align-items:center;gap:8px;margin-top:1px;
+}
+.sec-num{
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  background:var(--ink);color:#fff;
+  padding:4px 9px;border-radius:6px;min-width:36px;text-align:center;
+  flex-shrink:0;
+}
+.section[data-cat="xss"]     .sec-num{background:var(--coral)}
+.section[data-cat="auth"]    .sec-num{background:var(--indigo)}
+.section[data-cat="data"]    .sec-num{background:var(--teal)}
+.section[data-cat="build"]   .sec-num{background:var(--amber)}
+.section[data-cat="network"] .sec-num{background:var(--violet)}
+.section[data-cat="audit"]   .sec-num{background:var(--ink2)}
+
+.sec-title-group{flex:1}
+.sec-title{
+  font-family:'Fraunces',serif;font-size:17px;font-weight:700;
+  color:var(--ink);margin-bottom:5px;letter-spacing:-.1px;
+}
+.sec-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+
+.badge{
+  padding:2px 9px;border-radius:20px;
+  font-size:10.5px;font-weight:700;
+  font-family:'Epilogue',sans-serif;letter-spacing:.2px;
+}
+.b-critical{background:var(--coral-bg);color:var(--coral)}
+.b-high{background:var(--indigo-bg);color:var(--indigo)}
+.b-medium{background:var(--amber-bg);color:var(--amber)}
+.b-low{background:var(--teal-bg);color:var(--teal)}
+
+.tag-p{
+  display:inline-block;padding:2px 8px;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:4px;font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--ink2);margin:2px 2px 2px 0;
+}
+
+.chevron{color:var(--ink4);font-size:17px;transition:transform .28s;margin-left:auto;padding-top:2px;flex-shrink:0}
+.section.open .chevron{transform:rotate(180deg)}
+.sec-body{display:none}
+.section.open .sec-body{display:block}
+
+/* ── FIELD GRID ── */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.field{padding:18px 24px;border-right:1.5px solid var(--border);border-bottom:1.5px solid var(--border)}
+.field:nth-child(even){border-right:none}
+.ff{grid-column:1/-1;padding:18px 24px;border-bottom:1.5px solid var(--border)}
+/* Remove last border */
+.fg>:last-child,.fg>:nth-last-child(2):nth-child(odd){border-bottom:none}
+
+.fl{
+  font-size:10px;font-weight:700;color:var(--ink4);
+  text-transform:uppercase;letter-spacing:1.4px;
+  margin-bottom:7px;display:flex;align-items:center;gap:6px;
+  font-family:'Epilogue',sans-serif;
+}
+.fv{color:var(--ink);font-size:13.5px;line-height:1.67}
+.fv strong{color:var(--indigo);font-weight:600}
+.fv code{
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;
+  background:var(--indigo-bg);
+  padding:1px 5px;border-radius:3px;color:var(--indigo2);
+}
+
+/* ── RISK BOX ── */
+.risk-box{
+  padding:11px 14px;border-radius:8px;border-left:3px solid;
+  font-size:13px;line-height:1.65;
+}
+.r-critical{background:var(--coral-bg);border-color:var(--coral);color:#8b1c2b}
+.r-high{background:var(--indigo-bg);border-color:var(--indigo);color:#1a146b}
+.r-medium{background:var(--amber-bg);border-color:var(--amber);color:#7a4c06}
+.r-low{background:var(--teal-bg);border-color:var(--teal);color:#064d3d}
+
+/* ── CODE BLOCK ── */
+.code-wrap{position:relative;margin:10px 0 4px}
+.code-fn{
+  background:var(--ink);padding:6px 15px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#a5b4c8;
+  border-radius:8px 8px 0 0;
+  display:flex;align-items:center;gap:8px;
+}
+.code-fn::before{
+  content:'';width:7px;height:7px;
+  border-radius:50%;flex-shrink:0;
+}
+.section[data-cat="xss"]     .code-fn::before{background:var(--coral)}
+.section[data-cat="auth"]    .code-fn::before{background:#7c9ef5}
+.section[data-cat="data"]    .code-fn::before{background:var(--teal)}
+.section[data-cat="build"]   .code-fn::before{background:var(--amber)}
+.section[data-cat="network"] .code-fn::before{background:#c4a0ff}
+.section[data-cat="audit"]   .code-fn::before{background:#8fa3bf}
+
+pre{
+  background:#1e1b2e;border-radius:0 0 8px 8px;
+  padding:16px 18px;overflow-x:auto;
+  font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.78;
+  color:#cdd6f4;
+}
+pre.rd{border-radius:8px}
+.copy-btn{
+  position:absolute;right:9px;top:8px;
+  background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);
+  color:#8fa3bf;padding:4px 9px;border-radius:4px;
+  font-size:10px;cursor:pointer;font-family:'Epilogue',sans-serif;font-weight:600;
+  transition:all .18s;
+}
+.copy-btn:hover{background:rgba(255,255,255,0.14);color:#cdd6f4}
+.copy-btn.copied{border-color:#00d060;color:#00d060}
+
+/* Syntax */
+.kw{color:#cba6f7}
+.str{color:#a6e3a1}
+.cmt{color:#6c7086;font-style:italic}
+.fn{color:#89dceb}
+.num{color:#fab387}
+.tag{color:#f38ba8}
+.attr{color:#f9e2af}
+.op{color:#f38ba8}
+.cls{color:#cba6f7}
+.jsx{color:#89b4fa}
+
+/* ── VERIFY ── */
+.vblock{
+  background:#1e1b2e;border-radius:8px;
+  border-left:3px solid var(--teal);
+  padding:14px 18px;font-family:'JetBrains Mono',monospace;
+  font-size:11.5px;color:#94e2d5;line-height:1.85;
+}
+
+/* ── VAPT CLOSURE ── */
+.vapt{
+  background:linear-gradient(135deg,var(--indigo-bg),var(--teal-bg));
+  border:1.5px solid rgba(45,34,179,0.18);border-radius:10px;
+  padding:16px 20px;display:flex;gap:13px;align-items:flex-start;
+}
+.vapt-ico{font-size:20px;flex-shrink:0;margin-top:1px}
+.vapt-txt{font-size:12.5px;color:var(--ink2);line-height:1.68;font-style:italic}
+.vapt-lbl{
+  font-size:9.5px;font-weight:700;color:var(--indigo);
+  text-transform:uppercase;letter-spacing:1.6px;
+  margin-bottom:5px;font-style:normal;font-family:'JetBrains Mono',monospace;
+}
+
+/* ── WHO TABLE ── */
+.who-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.who-tbl th{
+  background:var(--bg3);padding:9px 13px;text-align:left;
+  font-size:10px;color:var(--ink3);font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;
+  border:1.5px solid var(--border);font-family:'Epilogue',sans-serif;
+}
+.who-tbl td{padding:9px 13px;border:1.5px solid var(--border);color:var(--ink);vertical-align:top}
+.who-tbl tr:hover td{background:var(--bg)}
+.role-badge{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-size:10.5px;font-weight:600;font-family:'Epilogue',sans-serif;
+  margin:2px 2px 2px 0;
+}
+.r-fe{background:var(--teal-bg);color:var(--teal)}
+.r-be{background:var(--indigo-bg);color:var(--indigo)}
+.r-dso{background:var(--amber-bg);color:var(--amber)}
+.r-sa{background:var(--coral-bg);color:var(--coral)}
+
+/* ── RESTART PILL ── */
+.rpill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;background:var(--indigo-bg);
+  border:1px solid rgba(45,34,179,0.2);border-radius:20px;
+  font-size:11px;color:var(--indigo);font-family:'JetBrains Mono',monospace;
+  margin:3px 4px 3px 0;
+}
+
+/* ── CHECK LIST ── */
+ul.cl{list-style:none;padding:0}
+ul.cl li{padding:3px 0;display:flex;gap:8px;align-items:baseline;font-size:13px}
+ul.cl li::before{content:'✦';color:var(--indigo);font-size:10px;flex-shrink:0;margin-top:2px}
+
+/* ── DIVIDER ── */
+.cat-divider{
+  padding:28px 60px 8px;
+  display:flex;align-items:center;gap:14px;
+}
+.cat-divider-line{flex:1;height:1.5px;background:var(--border)}
+.cat-divider-label{
+  font-family:'Fraunces',serif;font-size:12px;font-weight:600;
+  color:var(--ink3);white-space:nowrap;letter-spacing:.5px;
+}
+
+/* ── SCROLL TOP ── */
+#goTop{
+  position:fixed;bottom:28px;right:28px;
+  width:42px;height:42px;
+  background:var(--indigo);
+  border:none;border-radius:50%;color:#fff;
+  font-size:18px;cursor:pointer;display:none;
+  align-items:center;justify-content:center;z-index:200;
+  box-shadow:0 4px 14px rgba(45,34,179,0.35);transition:transform .2s;
+}
+#goTop:hover{transform:scale(1.1)}
+
+.section.hidden{display:none}
+
+@media print{
+  .sidebar,.topbar,#goTop{display:none!important}
+  .main{margin-left:0}
+  .sec-body{display:block!important}
+  .section{break-inside:avoid}
+}
+@media(max-width:860px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .hero{padding:36px 20px}
+  .hero h1{font-size:30px}
+  .content{padding:20px}
+  .topbar{padding:10px 20px}
+  .fg{grid-template-columns:1fr}
+  .cat-divider{padding:20px 20px 8px}
+}
+
+a{color:var(--indigo);text-decoration:none}
+a:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ SIDEBAR ═══════════════ -->
+<nav class="sidebar">
+  <div class="sidebar-strip"></div>
+  <div class="sb-logo">
+    <div class="sb-icon">⚛</div>
+    <h2>React Security Hardening</h2>
+    <p>VAPT Remediation Guide</p>
+  </div>
+
+  <div class="sb-cat">── XSS &amp; Injection</div>
+  <div class="nav-item" onclick="jumpTo('s01')"><span class="nav-num">01</span><span class="nav-dot" style="background:var(--coral)"></span>XSS &amp; dangerouslySetInnerHTML</div>
+  <div class="nav-item" onclick="jumpTo('s02')"><span class="nav-num">02</span><span class="nav-dot" style="background:var(--coral)"></span>Input Validation (RHF + Zod)</div>
+
+  <div class="sb-cat">── Auth &amp; Tokens</div>
+  <div class="nav-item" onclick="jumpTo('s03')"><span class="nav-num">03</span><span class="nav-dot" style="background:var(--indigo)"></span>Secure Token Storage</div>
+  <div class="nav-item" onclick="jumpTo('s04')"><span class="nav-num">04</span><span class="nav-dot" style="background:var(--indigo)"></span>Protected Routes (React Router)</div>
+  <div class="nav-item" onclick="jumpTo('s05')"><span class="nav-num">05</span><span class="nav-dot" style="background:var(--indigo)"></span>Secure API Calls (Axios)</div>
+
+  <div class="sb-cat">── Data &amp; State</div>
+  <div class="nav-item" onclick="jumpTo('s06')"><span class="nav-num">06</span><span class="nav-dot" style="background:var(--teal)"></span>State Security (Redux/Context)</div>
+  <div class="nav-item" onclick="jumpTo('s07')"><span class="nav-num">07</span><span class="nav-dot" style="background:var(--teal)"></span>Environment Variables</div>
+  <div class="nav-item" onclick="jumpTo('s08')"><span class="nav-num">08</span><span class="nav-dot" style="background:var(--teal)"></span>Sensitive Data in DevTools</div>
+
+  <div class="sb-cat">── Build &amp; Deploy</div>
+  <div class="nav-item" onclick="jumpTo('s09')"><span class="nav-num">09</span><span class="nav-dot" style="background:var(--amber)"></span>Source Maps in Production</div>
+  <div class="nav-item" onclick="jumpTo('s10')"><span class="nav-num">10</span><span class="nav-dot" style="background:var(--amber)"></span>Build Hardening (Vite/CRA)</div>
+  <div class="nav-item" onclick="jumpTo('s11')"><span class="nav-num">11</span><span class="nav-dot" style="background:var(--amber)"></span>Dependency Security</div>
+
+  <div class="sb-cat">── Network &amp; Headers</div>
+  <div class="nav-item" onclick="jumpTo('s12')"><span class="nav-num">12</span><span class="nav-dot" style="background:var(--violet)"></span>Content Security Policy (SPA)</div>
+  <div class="nav-item" onclick="jumpTo('s13')"><span class="nav-num">13</span><span class="nav-dot" style="background:var(--violet)"></span>Third-Party Script Security</div>
+  <div class="nav-item" onclick="jumpTo('s14')"><span class="nav-num">14</span><span class="nav-dot" style="background:var(--violet)"></span>Clickjacking &amp; Framing</div>
+
+  <div class="sb-cat">── Audit</div>
+  <div class="nav-item" onclick="jumpTo('s15')"><span class="nav-num">15</span><span class="nav-dot" style="background:var(--ink2)"></span>CORS from SPA Perspective</div>
+  <div class="nav-item" onclick="jumpTo('s16')"><span class="nav-num">16</span><span class="nav-dot" style="background:var(--ink2)"></span>Security Audit Checklist</div>
+
+  <div class="sb-footer">
+    v2025.1 · OWASP React Cheatsheet<br>
+    React 18 · Vite · Nginx · CRA<br>
+    Updated: April 2026
+  </div>
+</nav>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="main">
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-deco">⚛</div>
+  <div class="hero-badges">
+    <span class="hbadge hb-vapt">VAPT Remediation</span>
+    <span class="hbadge hb-owasp">OWASP Top 10</span>
+    <span class="hbadge hb-react">React 18 / Next.js</span>
+    <span class="hbadge hb-vite">Vite · CRA · Nginx</span>
+  </div>
+  <h1>React Security<br><em>Hardening Guide</em></h1>
+  <p class="hero-sub">A complete, copy-paste-ready security baseline for React SPAs. Every control targets the unique attack surface of frontend applications — from XSS via JSX to token theft, DevTools leakage, and supply-chain attacks.</p>
+  <div class="hero-stats">
+    <div class="stat-item"><span class="stat-num">16</span><div class="stat-label">Controls</div></div>
+    <div class="stat-item"><span class="stat-num">50+</span><div class="stat-label">Code Snippets</div></div>
+    <div class="stat-item"><span class="stat-num">100%</span><div class="stat-label">Free / OSS</div></div>
+    <div class="stat-item"><span class="stat-num">A+</span><div class="stat-label">Security Grade</div></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="search-wrap">
+    <span class="s-icon">⌕</span>
+    <input class="search-input" id="searchInput" type="text" placeholder="Search controls, packages, vulnerabilities…" oninput="filterSecs()">
+  </div>
+  <div class="filter-btns">
+    <button class="fbtn active" onclick="filterSev('all',this)">All</button>
+    <button class="fbtn" onclick="filterSev('critical',this)" style="color:var(--coral)">Critical</button>
+    <button class="fbtn" onclick="filterSev('high',this)" style="color:var(--indigo)">High</button>
+    <button class="fbtn" onclick="filterSev('medium',this)" style="color:var(--amber)">Medium</button>
+  </div>
+  <button class="ctrl-btn" onclick="expandAll()">Expand All</button>
+  <button class="ctrl-btn" onclick="collapseAll()">Collapse All</button>
+</div>
+
+<div class="content">
+
+<!-- ════════════════════════════════════
+  01 — XSS & dangerouslySetInnerHTML
+════════════════════════════════════ -->
+<div class="cat-divider"><div class="cat-divider-line"></div><div class="cat-divider-label">XSS &amp; Injection</div><div class="cat-divider-line"></div></div>
+
+<div class="section open" id="s01" data-cat="xss" data-severity="critical" data-tags="xss cross site scripting dangerouslysetinnerhtml dompurify sanitize innerHTML react">
+  <div class="sec-header" onclick="tog('s01')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">01</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">XSS Prevention &amp; dangerouslySetInnerHTML</div>
+        <div class="sec-meta">
+          <span class="badge b-critical">CRITICAL</span>
+          <span class="badge" style="background:var(--coral-bg);color:var(--coral)">Frontend</span>
+          <span class="tag-p">DOMPurify</span><span class="tag-p">JSX</span><span class="tag-p">dompurify</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">React auto-escapes JSX expressions, but <code>dangerouslySetInnerHTML</code> bypasses this and directly injects raw HTML. Using it with unsanitized user content enables stored/reflected XSS. Also vulnerable: <code>href</code> with <code>javascript:</code> URLs and <code>eval()</code> usage.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Stored/reflected XSS enabling session hijacking, credential theft, DOM-based token exfiltration, keylogging, and full account takeover via injected scripts.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📁 Files &amp; Paths</div>
+        <div class="fv">
+          <span class="tag-p">src/components/*.jsx</span><span class="tag-p">src/utils/sanitize.js</span>
+          <span class="tag-p">src/components/RichText.jsx</span>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix 1 — Install DOMPurify &amp; create a safe wrapper</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre>$ npm install dompurify
+$ npm install --save-dev @types/dompurify  <span class="cmt"># TypeScript</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/utils/sanitize.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> DOMPurify <span class="kw">from</span> <span class="str">'dompurify'</span>;
+
+<span class="cmt">// Configure DOMPurify — strict profile</span>
+DOMPurify.<span class="fn">addHook</span>(<span class="str">'afterSanitizeAttributes'</span>, (node) => {
+  <span class="cmt">// Block all javascript: href attacks</span>
+  <span class="kw">if</span> (<span class="str">'href'</span> <span class="kw">in</span> node) {
+    <span class="kw">if</span> (!/^(https?|mailto):/.test(node.href)) {
+      node.<span class="fn">removeAttribute</span>(<span class="str">'href'</span>);
+    }
+  }
+  <span class="cmt">// Force target=_blank links to have rel="noopener noreferrer"</span>
+  <span class="kw">if</span> (node.<span class="fn">getAttribute</span>(<span class="str">'target'</span>) === <span class="str">'_blank'</span>) {
+    node.<span class="fn">setAttribute</span>(<span class="str">'rel'</span>, <span class="str">'noopener noreferrer'</span>);
+  }
+});
+
+<span class="kw">const</span> PURIFY_CONFIG = {
+  ALLOWED_TAGS: [<span class="str">'p'</span>,<span class="str">'b'</span>,<span class="str">'i'</span>,<span class="str">'em'</span>,<span class="str">'strong'</span>,<span class="str">'a'</span>,<span class="str">'ul'</span>,<span class="str">'ol'</span>,<span class="str">'li'</span>,<span class="str">'br'</span>,<span class="str">'h2'</span>,<span class="str">'h3'</span>],
+  ALLOWED_ATTR: [<span class="str">'href'</span>,<span class="str">'target'</span>,<span class="str">'rel'</span>,<span class="str">'class'</span>],
+  ALLOW_DATA_ATTR: <span class="kw">false</span>,
+  FORBID_SCRIPTS: <span class="kw">true</span>,
+  FORBID_TAGS: [<span class="str">'script'</span>,<span class="str">'iframe'</span>,<span class="str">'object'</span>,<span class="str">'embed'</span>,<span class="str">'form'</span>],
+};
+
+<span class="kw">export const</span> sanitizeHtml = (dirty) =>
+  DOMPurify.<span class="fn">sanitize</span>(dirty, PURIFY_CONFIG);
+
+<span class="kw">export const</span> sanitizeUrl = (url) => {
+  <span class="kw">if</span> (!/^(https?):\/\//i.test(url)) <span class="kw">return</span> <span class="str">'#'</span>;
+  <span class="kw">return</span> url;
+};</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/components/RichText.jsx — Safe HTML renderer</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> { sanitizeHtml } <span class="kw">from</span> <span class="str">'../utils/sanitize'</span>;
+
+<span class="cmt">// ✗ NEVER: raw unsanitized HTML</span>
+<span class="cmt">// &lt;div dangerouslySetInnerHTML={{ __html: userContent }} /&gt;</span>
+
+<span class="cmt">// ✓ ALWAYS: sanitize before rendering</span>
+<span class="kw">export function</span> <span class="fn">SafeHtml</span>({ content, className }) {
+  <span class="kw">const</span> clean = <span class="fn">sanitizeHtml</span>(content);
+  <span class="kw">return</span> (
+    <span class="jsx">&lt;div
+      className={className}
+      dangerouslySetInnerHTML={{ __html: clean }}
+    /&gt;</span>
+  );
+}
+
+<span class="cmt">// ✗ NEVER: javascript: URLs in hrefs</span>
+<span class="cmt">// &lt;a href={userUrl}&gt;Click&lt;/a&gt;</span>
+
+<span class="cmt">// ✓ ALWAYS: validate URL protocol</span>
+<span class="kw">export function</span> <span class="fn">SafeLink</span>({ href, children }) {
+  <span class="kw">const</span> safe = <span class="fn">sanitizeUrl</span>(href);
+  <span class="kw">return</span> <span class="jsx">&lt;a href={safe} rel=<span class="str">"noopener noreferrer"</span>&gt;{children}&lt;/a&gt;</span>;
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔒 Secure JSX Patterns</div>
+        <div class="fv">
+          <ul class="cl">
+            <li>JSX <code>{expression}</code> auto-escapes — always use it</li>
+            <li>Never use <code>eval()</code> or <code>new Function()</code> with user data</li>
+            <li>Validate <code>href</code> starts with <code>https://</code> or <code>mailto:</code></li>
+            <li>Add <code>rel="noopener noreferrer"</code> to all <code>target="_blank"</code></li>
+            <li>Never pass user input to <code>dangerouslySetInnerHTML</code> without DOMPurify</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Run automated XSS scan on the built SPA
+$ npx retire --path dist/
+$ npx eslint src/ --rule '{"no-script-url": "error"}'
+
+# Manual: render an XSS payload in any rich-text field
+# Payload: &lt;img src=x onerror="alert(document.cookie)"&gt;
+# Expected: image tag stripped, alert NEVER fires
+
+# Check for dangerouslySetInnerHTML in codebase without DOMPurify
+$ grep -r "dangerouslySetInnerHTML" src/ | grep -v "sanitize\|DOMPurify"
+→ (empty — all usages are wrapped with sanitization)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All usages of <em>dangerouslySetInnerHTML</em> have been wrapped with DOMPurify sanitization using a strict allowlist of HTML tags and attributes. JavaScript URL schemes in <em>href</em> attributes are blocked via a URL validation utility. All external links enforce <em>rel="noopener noreferrer"</em>. An ESLint rule prohibits <em>javascript:</em> URL patterns. DOMPurify post-sanitize hook confirms zero script injection in test payloads.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════
+  02 — INPUT VALIDATION
+════════════════════ -->
+<div class="section" id="s02" data-cat="xss" data-severity="high" data-tags="input validation react hook form zod yup formik sanitization schema">
+  <div class="sec-header" onclick="tog('s02')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">02</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Input Validation with React Hook Form + Zod</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="badge" style="background:var(--coral-bg);color:var(--coral)">Frontend</span>
+          <span class="tag-p">react-hook-form</span><span class="tag-p">zod</span><span class="tag-p">@hookform/resolvers</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">React forms without validation allow malformed data, oversized payloads, script injection, and invalid types to reach the API layer. Client-side validation alone is insufficient but is an essential first defense layer.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Injection attacks via form fields, business logic bypass via unexpected data types, and DoS via oversized inputs that overwhelm backend processing.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — RHF + Zod with security-focused schema</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre>$ npm install react-hook-form zod @hookform/resolvers</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/schemas/auth.schema.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+
+<span class="kw">export const</span> loginSchema = z.<span class="fn">object</span>({
+  email: z.<span class="fn">string</span>()
+    .<span class="fn">min</span>(<span class="num">1</span>, <span class="str">'Email is required'</span>)
+    .<span class="fn">email</span>(<span class="str">'Must be a valid email address'</span>)
+    .<span class="fn">max</span>(<span class="num">254</span>, <span class="str">'Email too long'</span>)
+    .<span class="fn">toLowerCase</span>()
+    .<span class="fn">trim</span>(),
+
+  password: z.<span class="fn">string</span>()
+    .<span class="fn">min</span>(<span class="num">8</span>,  <span class="str">'Minimum 8 characters'</span>)
+    .<span class="fn">max</span>(<span class="num">128</span>, <span class="str">'Password too long'</span>),
+});
+
+<span class="kw">export const</span> profileSchema = z.<span class="fn">object</span>({
+  name: z.<span class="fn">string</span>()
+    .<span class="fn">min</span>(<span class="num">1</span>).<span class="fn">max</span>(<span class="num">100</span>)
+    .<span class="fn">regex</span>(<span class="str">/^[\p{L}\p{M} '-]+$/u</span>, <span class="str">'Name contains invalid characters'</span>),
+
+  bio: z.<span class="fn">string</span>()
+    .<span class="fn">max</span>(<span class="num">500</span>, <span class="str">'Bio limited to 500 characters'</span>)
+    .<span class="fn">optional</span>(),
+
+  website: z.<span class="fn">string</span>()
+    .<span class="fn">url</span>(<span class="str">'Must be a valid URL'</span>)
+    .<span class="fn">startsWith</span>(<span class="str">'https://'</span>, <span class="str">'Only HTTPS URLs allowed'</span>)
+    .<span class="fn">optional</span>(),
+
+  age: z.<span class="fn">number</span>()
+    .<span class="fn">int</span>().<span class="fn">min</span>(<span class="num">13</span>).<span class="fn">max</span>(<span class="num">120</span>)
+    .<span class="fn">optional</span>(),
+});</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/components/LoginForm.jsx</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> { useForm } <span class="kw">from</span> <span class="str">'react-hook-form'</span>;
+<span class="kw">import</span> { zodResolver } <span class="kw">from</span> <span class="str">'@hookform/resolvers/zod'</span>;
+<span class="kw">import</span> { loginSchema } <span class="kw">from</span> <span class="str">'../schemas/auth.schema'</span>;
+
+<span class="kw">export function</span> <span class="fn">LoginForm</span>({ onSubmit }) {
+  <span class="kw">const</span> { register, handleSubmit, formState: { errors } } = <span class="fn">useForm</span>({
+    resolver: <span class="fn">zodResolver</span>(loginSchema),
+    mode: <span class="str">'onBlur'</span>,          <span class="cmt">// validate on blur, not on every keystroke</span>
+  });
+
+  <span class="kw">return</span> (
+    <span class="jsx">&lt;form onSubmit={handleSubmit(onSubmit)} noValidate&gt;
+      &lt;input
+        type=<span class="str">"email"</span>
+        autoComplete=<span class="str">"email"</span>
+        aria-invalid={!!errors.email}
+        {...register(<span class="str">'email'</span>)}
+      /&gt;
+      {errors.email &amp;&amp; &lt;span role=<span class="str">"alert"</span>&gt;{errors.email.message}&lt;/span&gt;}
+
+      &lt;input
+        type=<span class="str">"password"</span>
+        autoComplete=<span class="str">"current-password"</span>
+        aria-invalid={!!errors.password}
+        {...register(<span class="str">'password'</span>)}
+      /&gt;
+      {errors.password &amp;&amp; &lt;span role=<span class="str">"alert"</span>&gt;{errors.password.message}&lt;/span&gt;}
+
+      &lt;button type=<span class="str">"submit"</span>&gt;Login&lt;/button&gt;
+    &lt;/form&gt;</span>
+  );
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">⚠ Important Note</div>
+        <div class="fv"><div class="risk-box r-medium">Client-side validation is a UX layer — <strong>never trust it for security</strong>. Always validate again on the backend (Node.js/Express). Attackers can bypass browser validation entirely.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Test validation fires correctly in browser
+# Submit form with email="&lt;script&gt;" → should show validation error
+# Submit with password="short" → "Minimum 8 characters"
+
+# Verify schema via unit tests
+$ npx vitest src/schemas/auth.schema.test.js
+→ All schema validation tests pass
+
+# Check Zod errors never expose internal logic to users
+# Error messages should be user-friendly, not technical stack traces</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All React forms use React Hook Form with Zod schema validation. Schemas enforce type correctness, length limits, format validation (email, URL), and character allowlists. Validation fires on blur to provide immediate feedback. Form fields declare appropriate <em>autocomplete</em> attributes and ARIA roles for accessibility. Note: all schemas are mirrored in backend validation — client-side validation is defense-in-depth only.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════
+  AUTH DIVIDER
+════════════════════ -->
+<div class="cat-divider"><div class="cat-divider-line"></div><div class="cat-divider-label">Auth &amp; Token Security</div><div class="cat-divider-line"></div></div>
+
+<!-- ════════════
+  03 — TOKEN STORAGE
+════════════ -->
+<div class="section" id="s03" data-cat="auth" data-severity="critical" data-tags="token storage localStorage sessionStorage httpOnly cookie XSS theft JWT bearer">
+  <div class="sec-header" onclick="tog('s03')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">03</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Secure Token Storage — Never localStorage</div>
+        <div class="sec-meta">
+          <span class="badge b-critical">CRITICAL</span>
+          <span class="badge" style="background:var(--indigo-bg);color:var(--indigo)">Frontend + Backend</span>
+          <span class="tag-p">httpOnly cookie</span><span class="tag-p">axios</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Storing JWT access tokens in <code>localStorage</code> or <code>sessionStorage</code> makes them accessible to any JavaScript on the page. A single XSS vulnerability — even in a third-party script — can silently exfiltrate all tokens.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Complete session hijacking via XSS token theft from <code>localStorage</code>. Tokens stolen this way enable full account takeover lasting until token expiry — potentially weeks if refresh tokens are also stolen.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Use httpOnly cookies (set by backend, read by browser automatically)</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">src/api/client.js — Axios with cookie credentials</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> axios <span class="kw">from</span> <span class="str">'axios'</span>;
+
+<span class="cmt">// ─────────────────────────────────────────────────────────────
+// ✗ NEVER — token theft via XSS is possible here:
+//   localStorage.setItem('token', jwt)
+//   axios.defaults.headers.common['Authorization'] = `Bearer ${localStorage.getItem('token')}`
+//
+// ✓ ALWAYS — httpOnly cookies sent automatically by browser:
+// ─────────────────────────────────────────────────────────────</span>
+<span class="kw">const</span> api = axios.<span class="fn">create</span>({
+  baseURL: <span class="str">'/api'</span>,
+  withCredentials: <span class="kw">true</span>,   <span class="cmt">// sends httpOnly cookie on every request</span>
+  timeout: <span class="num">10000</span>,
+  headers: {
+    <span class="str">'Content-Type'</span>: <span class="str">'application/json'</span>,
+    <span class="str">'X-Requested-With'</span>: <span class="str">'XMLHttpRequest'</span>,  <span class="cmt">// helps CSRF detection</span>
+  },
+});
+
+<span class="kw">export default</span> api;</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/context/AuthContext.jsx — Token-free auth state</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> { createContext, useContext, useState, useEffect } <span class="kw">from</span> <span class="str">'react'</span>;
+<span class="kw">import</span> api <span class="kw">from</span> <span class="str">'../api/client'</span>;
+
+<span class="kw">const</span> AuthContext = <span class="fn">createContext</span>(<span class="kw">null</span>);
+
+<span class="kw">export function</span> <span class="fn">AuthProvider</span>({ children }) {
+  <span class="cmt">// ✓ Store only non-sensitive user info in state (not the token!)</span>
+  <span class="kw">const</span> [user, setUser] = <span class="fn">useState</span>(<span class="kw">null</span>);   <span class="cmt">// { id, name, role } only</span>
+  <span class="kw">const</span> [loading, setLoading] = <span class="fn">useState</span>(<span class="kw">true</span>);
+
+  <span class="cmt">// Restore session on mount by calling /api/auth/me</span>
+  <span class="cmt">// Cookie is sent automatically — no token needed in JS memory</span>
+  <span class="fn">useEffect</span>(() => {
+    api.<span class="fn">get</span>(<span class="str">'/auth/me'</span>)
+      .<span class="fn">then</span>(r => <span class="fn">setUser</span>(r.data.user))
+      .<span class="fn">catch</span>(() => <span class="fn">setUser</span>(<span class="kw">null</span>))
+      .<span class="fn">finally</span>(() => <span class="fn">setLoading</span>(<span class="kw">false</span>));
+  }, []);
+
+  <span class="kw">const</span> login = <span class="kw">async</span> (credentials) => {
+    <span class="kw">const</span> { data } = <span class="kw">await</span> api.<span class="fn">post</span>(<span class="str">'/auth/login'</span>, credentials);
+    <span class="cmt">// Backend sets httpOnly cookie — we only store user profile in state</span>
+    <span class="fn">setUser</span>(data.user);
+    <span class="kw">return</span> data.user;
+  };
+
+  <span class="kw">const</span> logout = <span class="kw">async</span> () => {
+    <span class="kw">await</span> api.<span class="fn">post</span>(<span class="str">'/auth/logout'</span>); <span class="cmt">// backend clears cookie</span>
+    <span class="fn">setUser</span>(<span class="kw">null</span>);
+  };
+
+  <span class="kw">return</span> (
+    <span class="jsx">&lt;AuthContext.Provider value={{ user, login, logout, loading }}&gt;
+      {!loading &amp;&amp; children}
+    &lt;/AuthContext.Provider&gt;</span>
+  );
+}
+
+<span class="kw">export const</span> useAuth = () => <span class="fn">useContext</span>(AuthContext);</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span><span class="role-badge r-be">Backend Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">📊 Comparison</div>
+        <div class="fv">
+          <table class="who-tbl" style="font-size:11.5px">
+            <tr><th>Storage</th><th>XSS Safe?</th><th>CSRF Risk</th><th>Verdict</th></tr>
+            <tr><td><code>localStorage</code></td><td>❌ No</td><td>Low</td><td style="color:var(--coral);font-weight:600">Avoid</td></tr>
+            <tr><td><code>sessionStorage</code></td><td>❌ No</td><td>Low</td><td style="color:var(--coral);font-weight:600">Avoid</td></tr>
+            <tr><td>JS memory (useState)</td><td>✅ Yes</td><td>Low</td><td style="color:var(--amber);font-weight:600">OK (volatile)</td></tr>
+            <tr><td>httpOnly Cookie</td><td>✅ Yes</td><td>Add CSRF token</td><td style="color:var(--teal);font-weight:600">✅ Recommended</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# In browser DevTools console — token MUST NOT be visible
+> localStorage.getItem('token')
+→ null
+
+> document.cookie
+→ "" or only non-sensitive cookies (httpOnly NOT visible here)
+
+# Check network tab — cookie should be in request headers automatically
+# GET /api/auth/me → Request Headers → Cookie: accessToken=... ✓
+
+# Confirm httpOnly flag in Set-Cookie response header
+$ curl -I -X POST https://your-app.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"user@test.com","password":"pass"}'
+→ set-cookie: accessToken=...; HttpOnly; Secure; SameSite=Strict</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>JWT access tokens are stored exclusively in HttpOnly/Secure/SameSite=Strict cookies set by the backend — never in <code>localStorage</code>, <code>sessionStorage</code>, or accessible JavaScript memory. The React application uses <em>withCredentials: true</em> so cookies are sent automatically. Only non-sensitive user profile data (id, name, role) is held in React state. Verification confirms tokens are not accessible via <em>document.cookie</em> or browser storage APIs.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════
+  04 — PROTECTED ROUTES
+════════════ -->
+<div class="section" id="s04" data-cat="auth" data-severity="high" data-tags="protected routes react router auth guard role based access rbac private route">
+  <div class="sec-header" onclick="tog('s04')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">04</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Protected Routes &amp; Role-Based Auth Guards</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="badge" style="background:var(--indigo-bg);color:var(--indigo)">Frontend</span>
+          <span class="tag-p">react-router-dom</span><span class="tag-p">v6</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Without route guards, unauthenticated users can navigate directly to protected URLs (e.g., <code>/admin/dashboard</code>), and lower-privilege users can access admin-only views by knowing the URL pattern.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Unauthorized access to admin UI, privilege escalation via URL manipulation, and exposure of sensitive data rendered in components before auth check completes.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — ProtectedRoute component (React Router v6)</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">src/components/ProtectedRoute.jsx</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> { Navigate, useLocation } <span class="kw">from</span> <span class="str">'react-router-dom'</span>;
+<span class="kw">import</span> { useAuth } <span class="kw">from</span> <span class="str">'../context/AuthContext'</span>;
+
+<span class="cmt">/**
+ * ProtectedRoute — redirects unauthenticated users to /login
+ * and blocks insufficient-role users with a 403 page.
+ */</span>
+<span class="kw">export function</span> <span class="fn">ProtectedRoute</span>({ children, requiredRoles = [] }) {
+  <span class="kw">const</span> { user, loading } = <span class="fn">useAuth</span>();
+  <span class="kw">const</span> location = <span class="fn">useLocation</span>();
+
+  <span class="cmt">// Don't render anything while checking auth (prevents flash)</span>
+  <span class="kw">if</span> (loading) <span class="kw">return</span> <span class="jsx">&lt;div aria-busy=<span class="str">"true"</span>&gt;Checking session…&lt;/div&gt;</span>;
+
+  <span class="cmt">// Not authenticated → redirect to login, save intended path</span>
+  <span class="kw">if</span> (!user) {
+    <span class="kw">return</span> <span class="jsx">&lt;Navigate to=<span class="str">"/login"</span> state={{ from: location }} replace /&gt;</span>;
+  }
+
+  <span class="cmt">// Authenticated but insufficient role → 403 page</span>
+  <span class="kw">if</span> (requiredRoles.length > <span class="num">0</span> && !requiredRoles.<span class="fn">includes</span>(user.role)) {
+    <span class="kw">return</span> <span class="jsx">&lt;Navigate to=<span class="str">"/403"</span> replace /&gt;</span>;
+  }
+
+  <span class="kw">return</span> children;
+}
+
+<span class="cmt">// Usage in router:</span>
+<span class="cmt">// &lt;Route path="/admin" element={</span>
+<span class="cmt">//   &lt;ProtectedRoute requiredRoles={['admin']}&gt;</span>
+<span class="cmt">//     &lt;AdminDashboard /&gt;</span>
+<span class="cmt">//   &lt;/ProtectedRoute&gt;</span>
+<span class="cmt">// } /&gt;</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/router/AppRouter.jsx — Route structure</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> { BrowserRouter, Routes, Route } <span class="kw">from</span> <span class="str">'react-router-dom'</span>;
+<span class="kw">import</span> { ProtectedRoute } <span class="kw">from</span> <span class="str">'../components/ProtectedRoute'</span>;
+
+<span class="kw">export function</span> <span class="fn">AppRouter</span>() {
+  <span class="kw">return</span> (
+    <span class="jsx">&lt;BrowserRouter&gt;
+      &lt;Routes&gt;
+        &lt;!-- Public routes --&gt;
+        &lt;Route path=<span class="str">"/"</span>      element={&lt;Home /&gt;} /&gt;
+        &lt;Route path=<span class="str">"/login"</span> element={&lt;Login /&gt;} /&gt;
+        &lt;Route path=<span class="str">"/403"</span>   element={&lt;Forbidden /&gt;} /&gt;
+
+        &lt;!-- Auth required: any logged-in user --&gt;
+        &lt;Route path=<span class="str">"/profile"</span> element={
+          &lt;ProtectedRoute&gt;
+            &lt;UserProfile /&gt;
+          &lt;/ProtectedRoute&gt;
+        } /&gt;
+
+        &lt;!-- Admin only --&gt;
+        &lt;Route path=<span class="str">"/admin/*"</span> element={
+          &lt;ProtectedRoute requiredRoles={[<span class="str">'admin'</span>]}&gt;
+            &lt;AdminLayout /&gt;
+          &lt;/ProtectedRoute&gt;
+        } /&gt;
+
+        &lt;!-- Catch-all: 404 --&gt;
+        &lt;Route path=<span class="str">"*"</span> element={&lt;NotFound /&gt;} /&gt;
+      &lt;/Routes&gt;
+    &lt;/BrowserRouter&gt;</span>
+  );
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">⚠ Critical Reminder</div>
+        <div class="fv"><div class="risk-box r-medium">Route guards are <strong>UX-level protection only</strong>. Always enforce role-based access control on the backend API. A user can disable JS and hit your API directly, bypassing all frontend guards.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Navigate to /admin while logged out
+→ Should redirect to /login with ?from=/admin
+
+# Log in as regular user, navigate to /admin
+→ Should redirect to /403
+
+# Verify no sensitive data rendered before auth check
+# Check React DevTools — ProtectedRoute shows loading state, not content</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All authenticated routes are wrapped with a <em>ProtectedRoute</em> component that validates session state before rendering. Unauthenticated users are redirected to <em>/login</em> with the intended path preserved for post-login redirect. Role-based access control prevents lower-privilege users from accessing admin routes, redirecting to a dedicated 403 page. A loading state prevents any content flash before auth resolution.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════
+  05 — AXIOS INTERCEPTORS
+════════════ -->
+<div class="section" id="s05" data-cat="auth" data-severity="high" data-tags="axios interceptor API calls refresh token 401 retry CSRF header secure requests">
+  <div class="sec-header" onclick="tog('s05')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">05</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Secure API Calls with Axios Interceptors</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="badge" style="background:var(--indigo-bg);color:var(--indigo)">Frontend</span>
+          <span class="tag-p">axios</span><span class="tag-p">interceptors</span><span class="tag-p">token refresh</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Without interceptors, expired token 401 errors are unhandled (user sees broken UI), CSRF tokens are manually included per-request (error-prone), and failed requests cascade silently without re-auth.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Session continuity failure exposing users to state loss, missing CSRF headers on requests leaving forms unprotected, and silent API errors that hide security failures from monitoring.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Hardened Axios with interceptors</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">src/api/client.js — Full interceptor setup</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> axios <span class="kw">from</span> <span class="str">'axios'</span>;
+
+<span class="kw">const</span> api = axios.<span class="fn">create</span>({
+  baseURL:         <span class="str">'/api'</span>,
+  withCredentials: <span class="kw">true</span>,
+  timeout:         <span class="num">15000</span>,
+});
+
+<span class="cmt">// ─── Request interceptor ─────────────────────────────────────</span>
+api.interceptors.request.<span class="fn">use</span>(<span class="kw">async</span> (config) => {
+  <span class="cmt">// Fetch CSRF token and attach to every mutating request</span>
+  <span class="kw">if</span> ([<span class="str">'post'</span>,<span class="str">'put'</span>,<span class="str">'patch'</span>,<span class="str">'delete'</span>].<span class="fn">includes</span>(config.method)) {
+    <span class="kw">try</span> {
+      <span class="kw">const</span> { data } = <span class="kw">await</span> axios.<span class="fn">get</span>(<span class="str">'/api/csrf-token'</span>, { withCredentials: <span class="kw">true</span> });
+      config.headers[<span class="str">'X-CSRF-Token'</span>] = data.csrfToken;
+    } <span class="kw">catch</span> (e) {
+      console.<span class="fn">warn</span>(<span class="str">'CSRF token fetch failed'</span>);
+    }
+  }
+  <span class="cmt">// Never attach tokens from localStorage — cookie handles auth</span>
+  <span class="kw">return</span> config;
+});
+
+<span class="cmt">// ─── Response interceptor ────────────────────────────────────</span>
+<span class="kw">let</span> isRefreshing = <span class="kw">false</span>;
+<span class="kw">let</span> refreshQueue = [];
+
+api.interceptors.response.<span class="fn">use</span>(
+  (response) => response,
+  <span class="kw">async</span> (error) => {
+    <span class="kw">const</span> original = error.config;
+
+    <span class="cmt">// Handle 401 — attempt token refresh once</span>
+    <span class="kw">if</span> (error.response?.status === <span class="num">401</span> && !original._retried) {
+      <span class="kw">if</span> (isRefreshing) {
+        <span class="kw">return new</span> <span class="cls">Promise</span>((res, rej) =>
+          refreshQueue.<span class="fn">push</span>({ resolve: res, reject: rej })
+        ).<span class="fn">then</span>(() => api(original));
+      }
+      original._retried = <span class="kw">true</span>;
+      isRefreshing = <span class="kw">true</span>;
+      <span class="kw">try</span> {
+        <span class="kw">await</span> axios.<span class="fn">post</span>(<span class="str">'/api/auth/refresh'</span>, {}, { withCredentials: <span class="kw">true</span> });
+        refreshQueue.<span class="fn">forEach</span>(({ resolve }) => <span class="fn">resolve</span>());
+        refreshQueue = [];
+        <span class="kw">return</span> <span class="fn">api</span>(original);
+      } <span class="kw">catch</span> (refreshErr) {
+        refreshQueue.<span class="fn">forEach</span>(({ reject }) => <span class="fn">reject</span>(refreshErr));
+        refreshQueue = [];
+        <span class="cmt">// Redirect to login on refresh failure</span>
+        window.location.<span class="fn">assign</span>(<span class="str">'/login?session=expired'</span>);
+      } <span class="kw">finally</span> {
+        isRefreshing = <span class="kw">false</span>;
+      }
+    }
+
+    <span class="cmt">// Sanitize error before logging — never log raw responses</span>
+    <span class="kw">const</span> safeError = {
+      status:  error.response?.status,
+      message: error.response?.data?.error || error.message,
+      url:     original.url,
+    };
+    console.<span class="fn">error</span>(<span class="str">'API Error:'</span>, safeError);
+
+    <span class="kw">return</span> Promise.<span class="fn">reject</span>(safeError);
+  }
+);
+
+<span class="kw">export default</span> api;</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span><span class="role-badge r-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Force a 401 — simulate expired token:
+# Clear the backend session / expire the cookie manually
+# Make a protected API call from React app
+→ Should silently refresh and retry (user sees no error)
+
+# Check CSRF header is sent on POST requests
+# Browser Network tab → POST /api/data → Request Headers:
+→ X-CSRF-Token: (value present)
+
+# Verify no Authorization header with Bearer token
+→ Authorization header should NOT appear in requests</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Axios interceptors centrally enforce CSRF token attachment on all mutating requests, handle 401 token refresh with queue management to prevent race conditions, and redirect to login on refresh failure. No Authorization headers with Bearer tokens are set — authentication relies exclusively on HttpOnly cookies. API error responses are sanitized before logging to prevent sensitive backend data from appearing in browser console.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ DATA DIVIDER ═══════════════ -->
+<div class="cat-divider"><div class="cat-divider-line"></div><div class="cat-divider-label">Data &amp; State Security</div><div class="cat-divider-line"></div></div>
+
+<!-- 06 — STATE SECURITY -->
+<div class="section" id="s06" data-cat="data" data-severity="medium" data-tags="redux context state management sensitive data PII password redux devtools persist">
+  <div class="sec-header" onclick="tog('s06')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">06</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">State Management Security (Redux / Context)</div>
+        <div class="sec-meta">
+          <span class="badge b-medium">MEDIUM</span>
+          <span class="badge" style="background:var(--teal-bg);color:var(--teal)">Frontend</span>
+          <span class="tag-p">redux</span><span class="tag-p">redux-persist</span><span class="tag-p">context</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Storing sensitive data (passwords, full credit card numbers, SSNs, tokens) in Redux state persists them to <code>localStorage</code> via <code>redux-persist</code> and makes them visible in Redux DevTools — accessible to any browser extension.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-medium">Sensitive PII and credentials persisted to <code>localStorage</code> via redux-persist, XSS access to full Redux state tree, and malicious browser extensions reading DevTools state.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Whitelist only safe state for persistence + block sensitive state</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">src/store/store.js — Safe redux-persist config</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> { configureStore, combineReducers } <span class="kw">from</span> <span class="str">'@reduxjs/toolkit'</span>;
+<span class="kw">import</span> { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } <span class="kw">from</span> <span class="str">'redux-persist'</span>;
+<span class="kw">import</span> storage <span class="kw">from</span> <span class="str">'redux-persist/lib/storage'</span>;
+
+<span class="cmt">// ✓ WHITELIST only non-sensitive slices for persistence</span>
+<span class="kw">const</span> persistConfig = {
+  key: <span class="str">'root'</span>,
+  storage,
+  whitelist: [<span class="str">'ui'</span>, <span class="str">'preferences'</span>],   <span class="cmt">// ONLY these slices persist</span>
+  <span class="cmt">// ✗ NEVER whitelist: auth, payment, userData with PII, tokens</span>
+};
+
+<span class="kw">const</span> rootReducer = <span class="fn">combineReducers</span>({
+  ui:          uiReducer,          <span class="cmt">// ✓ Safe to persist (theme, locale)</span>
+  preferences: prefReducer,        <span class="cmt">// ✓ Safe (layout settings)</span>
+  auth:        authReducer,        <span class="cmt">// ✗ NOT persisted — re-fetch on mount</span>
+  user:        userReducer,        <span class="cmt">// ✗ NOT persisted — minimal in-memory</span>
+});
+
+<span class="kw">const</span> persistedReducer = <span class="fn">persistReducer</span>(persistConfig, rootReducer);
+
+<span class="kw">export const</span> store = <span class="fn">configureStore</span>({
+  reducer: persistedReducer,
+  devTools: process.env.NODE_ENV !== <span class="str">'production'</span>,  <span class="cmt">// Disable DevTools in prod</span>
+  middleware: (getDefaultMiddleware) =>
+    <span class="fn">getDefaultMiddleware</span>({
+      serializableCheck: {
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+      },
+    }),
+});</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/store/authSlice.js — Never store tokens in Redux</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="kw">import</span> { createSlice } <span class="kw">from</span> <span class="str">'@reduxjs/toolkit'</span>;
+
+<span class="kw">const</span> authSlice = <span class="fn">createSlice</span>({
+  name: <span class="str">'auth'</span>,
+  initialState: {
+    user:    <span class="kw">null</span>,   <span class="cmt">// Only: { id, name, role, email } — no passwords!</span>
+    <span class="cmt">// ✗ NEVER: token, password, refreshToken, creditCard</span>
+  },
+  reducers: {
+    setUser:   (state, { payload }) => { state.user = payload },
+    clearUser: (state) => { state.user = <span class="kw">null</span> },
+  },
+});</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Check localStorage for sensitive data
+> JSON.parse(localStorage.getItem('persist:root'))
+→ Should only contain 'ui' and 'preferences' — no auth, no tokens
+
+# Open Redux DevTools in production build
+→ DevTools panel should be empty / disabled in production
+
+# Search codebase for sensitive data in state
+$ grep -r "password\|token\|secret\|creditCard" src/store/
+→ Only references that are correctly NOT stored</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Redux state persistence is configured with an explicit whitelist containing only non-sensitive UI and preferences slices. Authentication state, user PII, and all token-related data are excluded from persistence. Redux DevTools is disabled in production builds via the <em>devTools</em> flag. State slices confirmed to contain no passwords, tokens, or sensitive credentials.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 07 — ENV VARS -->
+<div class="section" id="s07" data-cat="data" data-severity="critical" data-tags="environment variables REACT_APP VITE_ secrets .env frontend exposed bundle API keys">
+  <div class="sec-header" onclick="tog('s07')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">07</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Environment Variables — Never Expose Secrets in Frontend</div>
+        <div class="sec-meta">
+          <span class="badge b-critical">CRITICAL</span>
+          <span class="badge" style="background:var(--teal-bg);color:var(--teal)">Build</span>
+          <span class="tag-p">.env</span><span class="tag-p">VITE_</span><span class="tag-p">REACT_APP_</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Any environment variable prefixed with <code>VITE_</code> or <code>REACT_APP_</code> is <strong>inlined into the JavaScript bundle</strong> and readable by anyone who inspects the built files. Database passwords, private API keys, and JWT secrets must never use these prefixes.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-critical">Secret API keys and credentials embedded in production JS bundle are readable in browser DevTools (Sources tab → search → find any string). GitHub scanners, wayback machine, and CDN caches can expose them permanently.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Safe vs Unsafe variable classification</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">.env.production — What belongs in the frontend build</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="cmt"># ✓ SAFE — public, non-sensitive, read-only config</span>
+VITE_API_BASE_URL=https://api.your-app.com
+VITE_APP_NAME=YourApp
+VITE_GOOGLE_MAPS_PUBLIC_KEY=AIza...    <span class="cmt"># restrict by HTTP referrer in GCP!</span>
+VITE_SENTRY_DSN=https://public@sentry.io/123
+
+<span class="cmt"># ✗ NEVER in frontend .env (goes in backend only!)</span>
+<span class="cmt"># VITE_DB_PASSWORD=secret        ← exposed in bundle</span>
+<span class="cmt"># VITE_JWT_SECRET=mysecret       ← exposed in bundle</span>
+<span class="cmt"># VITE_STRIPE_SECRET_KEY=sk_live ← exposed in bundle</span>
+<span class="cmt"># VITE_SMTP_PASSWORD=pass        ← exposed in bundle</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/config/env.js — Validate required env vars at build time</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// Validate all required public env vars are set at startup</span>
+<span class="kw">const</span> required = [<span class="str">'VITE_API_BASE_URL'</span>];
+
+required.<span class="fn">forEach</span>((key) => {
+  <span class="kw">if</span> (!import.meta.env[key]) {
+    <span class="kw">throw new</span> <span class="cls">Error</span>(<span class="str">`Missing required env var: ${key}`</span>);
+  }
+});
+
+<span class="kw">export const</span> config = {
+  apiUrl:  import.meta.env.VITE_API_BASE_URL,
+  appName: import.meta.env.VITE_APP_NAME || <span class="str">'App'</span>,
+};</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">.gitignore — Ensure .env files never reach Git</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># All local .env files</span>
+.env
+.env.local
+.env.*.local
+.env.production.local
+dist/         <span class="cmt"># never commit the build output</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span><span class="role-badge r-dso">DevOps</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Search the production bundle for secrets
+$ grep -r "sk_live\|password\|secret\|private_key" dist/assets/
+→ (empty — no secrets in bundle)
+
+# Check what's exposed via import.meta.env
+$ grep -r "import.meta.env\." src/ | grep -v 'VITE_'
+→ (empty — only VITE_ prefixed vars used in frontend)
+
+# Audit all VITE_ variables for sensitivity
+$ grep -r "VITE_" .env.production
+→ Each listed variable should be public/non-sensitive</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All environment variables exposed to the React bundle (via <em>VITE_</em> prefix) have been audited and contain only public, non-sensitive configuration. Database credentials, JWT secrets, private API keys, and SMTP passwords are confirmed absent from frontend configuration. A grep scan of the production bundle confirms no secret patterns. <em>.env</em> files are excluded from version control via <em>.gitignore</em>.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 08 — DEVTOOLS -->
+<div class="section" id="s08" data-cat="data" data-severity="medium" data-tags="react devtools redux devtools production disable sensitive component props console log">
+  <div class="sec-header" onclick="tog('s08')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">08</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Sensitive Data in DevTools &amp; Console Logs</div>
+        <div class="sec-meta">
+          <span class="badge b-medium">MEDIUM</span>
+          <span class="badge" style="background:var(--teal-bg);color:var(--teal)">Frontend</span>
+          <span class="tag-p">React DevTools</span><span class="tag-p">console.log</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">React DevTools exposes every component's props and state to browser extensions. <code>console.log()</code> of API responses, user objects, or form data leaks sensitive information to anyone with DevTools open — and to browser extensions reading console output.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-medium">Sensitive user PII, API response data, and internal application state exposed to browser extensions, shared screens, shoulder-surfing, and JavaScript console interception.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Strip console logs in production + sanitize DevTools props</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">vite.config.js — Auto-remove console.log in production</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> { defineConfig } <span class="kw">from</span> <span class="str">'vite'</span>;
+<span class="kw">import</span> react <span class="kw">from</span> <span class="str">'@vitejs/plugin-react'</span>;
+
+<span class="kw">export default</span> <span class="fn">defineConfig</span>(({ mode }) => ({
+  plugins: [<span class="fn">react</span>()],
+  build: {
+    sourcemap: mode !== <span class="str">'production'</span>,  <span class="cmt">// disable source maps in prod</span>
+    minify: <span class="str">'terser'</span>,
+    terserOptions: {
+      compress: {
+        drop_console: mode === <span class="str">'production'</span>,   <span class="cmt">// ✓ removes all console.*</span>
+        drop_debugger: <span class="kw">true</span>,
+        pure_funcs: [<span class="str">'console.log'</span>, <span class="str">'console.debug'</span>, <span class="str">'console.info'</span>],
+      },
+    },
+  },
+}));</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/components/UserCard.jsx — Never pass raw PII as visible props</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ✗ Avoid — full user object visible in React DevTools</span>
+<span class="kw">function</span> <span class="fn">UserCard</span>({ user }) {  <span class="cmt">// user includes SSN, dob, full address...</span>
+  <span class="kw">return</span> <span class="jsx">&lt;div&gt;{user.name}&lt;/div&gt;</span>;
+}
+
+<span class="cmt">// ✓ Destructure — pass only what's needed</span>
+<span class="kw">function</span> <span class="fn">UserCard</span>({ name, avatarUrl, role }) {  <span class="cmt">// minimal props</span>
+  <span class="kw">return</span> <span class="jsx">&lt;div&gt;{name}&lt;/div&gt;</span>;
+}
+
+<span class="cmt">// ✓ For debugging — use a logger that respects NODE_ENV</span>
+<span class="kw">const</span> log = process.env.NODE_ENV === <span class="str">'development'</span>
+  ? console.log
+  : () => {};   <span class="cmt">// no-op in production</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Open production build in browser, open DevTools console
+→ No console.log, console.debug, or console.info output visible
+
+# Check for console statements in built bundle
+$ grep -c "console\.log" dist/assets/index-*.js
+→ 0
+
+# Inspect React DevTools — UserCard component
+→ Props should show: name, avatarUrl, role (not: ssn, fullAddress, dob)</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All <em>console.log</em>, <em>console.debug</em>, and <em>console.info</em> statements are removed from the production bundle via Terser's <em>drop_console</em> option. Components follow the principle of minimal props — only required display data is passed, not full user objects. Verified by inspecting the production build: zero console statements and no PII visible in React DevTools component tree.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ BUILD DIVIDER ═══════ -->
+<div class="cat-divider"><div class="cat-divider-line"></div><div class="cat-divider-label">Build &amp; Deploy Security</div><div class="cat-divider-line"></div></div>
+
+<!-- 09 — SOURCE MAPS -->
+<div class="section" id="s09" data-cat="build" data-severity="high" data-tags="source maps production vite CRA disable hidden bundle reverse engineer">
+  <div class="sec-header" onclick="tog('s09')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">09</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Disable Source Maps in Production</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="badge" style="background:var(--amber-bg);color:var(--amber)">Build Config</span>
+          <span class="tag-p">vite.config.js</span><span class="tag-p">.env.production</span><span class="tag-p">nginx.conf</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Production source maps (<code>.js.map</code> files) expose your full, unminified source code — including comments, variable names, internal logic, API endpoint patterns, and business logic — to anyone who opens DevTools.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Full source code reverse engineering, exposure of internal API patterns and endpoint names, business logic disclosure, hardcoded strings and comments with sensitive context, and finding of hidden features/flags.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Disable source maps for Vite &amp; CRA + block via Nginx</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">vite.config.js (Vite)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">export default</span> <span class="fn">defineConfig</span>(({ mode }) => ({
+  build: {
+    sourcemap: mode === <span class="str">'development'</span>,  <span class="cmt">// false in production</span>
+    rollupOptions: {
+      output: {
+        <span class="cmt">// Obfuscate chunk names (don't reveal module structure)</span>
+        chunkFileNames: <span class="str">'assets/[hash].js'</span>,
+        entryFileNames: <span class="str">'assets/[hash].js'</span>,
+        assetFileNames: <span class="str">'assets/[hash].[ext]'</span>,
+      },
+    },
+  },
+}));</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">.env.production (CRA)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Create React App — disable source maps in production build</span>
+GENERATE_SOURCEMAP=false</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">/etc/nginx/sites-enabled/your-app.conf — Block .map files if they exist</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Block access to source map files at server level (defense in depth)</span>
+location ~* \.map$ {
+    deny all;
+    return 404;
+    access_log off;
+    log_not_found off;
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span><span class="role-badge r-dso">DevOps</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Check no .map files in production build
+$ ls dist/assets/*.map 2>/dev/null | wc -l
+→ 0
+
+# Check no SourceMappingURL comment in JS bundle
+$ grep "sourceMappingURL" dist/assets/index-*.js
+→ (empty)
+
+# Attempt to access a .map URL via Nginx
+$ curl -I https://your-app.com/assets/index-abc.js.map
+→ HTTP/2 404
+
+# Open DevTools → Sources → should show minified code only, not original</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Source map generation is disabled in the production Vite build (<em>sourcemap: false</em>) and via <em>GENERATE_SOURCEMAP=false</em> for CRA. Chunk filenames use content hashes without module names. Nginx blocks <em>.map</em> file access at the server level as defense-in-depth. Production bundle verified to contain no <em>//# sourceMappingURL</em> references. Reverse engineering of source code is not possible from the deployed bundle.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 10 — BUILD HARDENING -->
+<div class="section" id="s10" data-cat="build" data-severity="high" data-tags="vite build config cra hardening minify obfuscate chunk size CSP nonce">
+  <div class="sec-header" onclick="tog('s10')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">10</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Vite / CRA Build Hardening</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="badge" style="background:var(--amber-bg);color:var(--amber)">Build Config</span>
+          <span class="tag-p">vite.config.js</span><span class="tag-p">SRI</span><span class="tag-p">terser</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Default Vite/CRA builds may include development tooling, unminified chunks with readable variable names, missing Subresource Integrity hashes on CDN assets, and no chunk size limits that could indicate bundled secrets.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">CDN asset tampering (no SRI), large bundle chunks indicating bundled secrets, readable variable names aiding reverse engineering, and development utilities shipped to production.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Production-hardened vite.config.js</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">vite.config.js — Complete security hardening</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> { defineConfig } <span class="kw">from</span> <span class="str">'vite'</span>;
+<span class="kw">import</span> react <span class="kw">from</span> <span class="str">'@vitejs/plugin-react'</span>;
+
+<span class="kw">export default</span> <span class="fn">defineConfig</span>(({ mode }) => ({
+  plugins: [<span class="fn">react</span>()],
+
+  build: {
+    sourcemap:  <span class="kw">false</span>,       <span class="cmt">// no source maps in prod</span>
+    minify:     <span class="str">'terser'</span>,
+    target:     <span class="str">'es2018'</span>,    <span class="cmt">// avoid legacy polyfills (attack surface)</span>
+    chunkSizeWarningLimit: <span class="num">500</span>,  <span class="cmt">// warn on large chunks</span>
+
+    terserOptions: {
+      compress: {
+        drop_console:   <span class="kw">true</span>,
+        drop_debugger:  <span class="kw">true</span>,
+        passes:         <span class="num">2</span>,       <span class="cmt">// double minification pass</span>
+      },
+      mangle: {
+        toplevel: <span class="kw">true</span>,         <span class="cmt">// mangle top-level variable names</span>
+      },
+      format: {
+        comments: <span class="kw">false</span>,        <span class="cmt">// strip all comments (including version hints)</span>
+      },
+    },
+
+    rollupOptions: {
+      output: {
+        <span class="cmt">// Separate vendor chunks — easier to audit</span>
+        manualChunks(id) {
+          <span class="kw">if</span> (id.<span class="fn">includes</span>(<span class="str">'node_modules'</span>)) {
+            <span class="kw">return</span> <span class="str">'vendor'</span>;
+          }
+        },
+        <span class="cmt">// Hash-only filenames — no module names exposed</span>
+        chunkFileNames: <span class="str">'[hash].js'</span>,
+        entryFileNames: <span class="str">'[hash].js'</span>,
+        assetFileNames: <span class="str">'[hash].[ext]'</span>,
+      },
+    },
+  },
+
+  <span class="cmt">// Prevent accidental exposure of env vars</span>
+  envPrefix: [<span class="str">'VITE_'</span>],   <span class="cmt">// only VITE_ vars exposed (default)</span>
+}));</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span><span class="role-badge r-dso">DevOps</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Run production build and analyze
+$ npm run build
+$ npx vite-bundle-visualizer   # or webpack-bundle-analyzer for CRA
+
+# Check no comments in bundle
+$ grep -c "/\*\|//" dist/assets/*.js
+→ 0 (all comments stripped)
+
+# Verify chunk sizes are reasonable (no huge unexplained chunks)
+$ ls -lh dist/assets/*.js | sort -k5 -rh | head -5
+→ Largest chunk should be vendor.js (~200-400KB) — not 10MB+</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Vite production build is hardened: Terser minification with double-pass compression, top-level variable name mangling, all comments stripped (preventing version hints), source maps disabled, and console statements removed. Chunk filenames use content hashes only. Bundle analysis confirms no unexpected large chunks indicating bundled secrets. All comments (including version annotations) are absent from the production bundle.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 11 — DEPS -->
+<div class="section" id="s11" data-cat="build" data-severity="high" data-tags="npm audit dependencies snyk outdated supply chain react version cve vulnerability">
+  <div class="sec-header" onclick="tog('s11')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">11</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Frontend Dependency Security</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="badge" style="background:var(--amber-bg);color:var(--amber)">DevSecOps</span>
+          <span class="tag-p">npm audit</span><span class="tag-p">snyk</span><span class="tag-p">socket.dev</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">React projects have hundreds of transitive dependencies. CVEs in widely-used packages (e.g., <code>lodash</code>, <code>axios</code>, <code>react-scripts</code>, <code>webpack</code>) are actively exploited. Malicious packages via typosquatting target common React package names.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">XSS via vulnerable React component libraries, prototype pollution via lodash CVEs, supply chain attacks via malicious npm packages, and ReDoS via vulnerable regex packages in build tools.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Automated security scanning in CI</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal — Audit and remediate</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Run npm security audit</span>
+$ npm audit
+$ npm audit --audit-level=high   <span class="cmt"># fail CI on high/critical</span>
+$ npm audit fix                  <span class="cmt"># auto-fix non-breaking</span>
+
+<span class="cmt"># Use Socket.dev for supply-chain analysis (beyond CVEs)</span>
+$ npx @socket.dev/cli check
+
+<span class="cmt"># Check for typosquatted packages (common React targets)</span>
+$ npx installed-check             <span class="cmt"># flags malicious indicators</span>
+
+<span class="cmt"># Pin exact versions — no ranges in production</span>
+$ npm install --save-exact react react-dom axios
+
+<span class="cmt"># Use lockfile for reproducible installs</span>
+$ npm ci   <span class="cmt"># always in CI/CD (uses package-lock.json exactly)</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">.github/workflows/security.yml — Automated weekly scan</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">name: Security Audit
+on:
+  schedule:
+    - cron: <span class="str">'0 8 * * 1'</span>   <span class="cmt"># Every Monday 8 AM</span>
+  push:
+    branches: [main]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: <span class="str">'20'</span> }
+      - run: npm ci
+      - run: npm audit --audit-level=high
+      - run: npx snyk test --severity-threshold=high
+        env: { SNYK_TOKEN: <span class="str">'${{ secrets.SNYK_TOKEN }}'</span> }</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span><span class="role-badge r-dso">DevOps</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+$ npm audit --audit-level=high
+→ found 0 vulnerabilities (high/critical)
+
+$ npx snyk test
+→ Tested X dependencies. No issues found.
+
+# Verify lockfile is committed
+$ git status package-lock.json
+→ (unmodified / tracked)
+
+# Verify React version is latest stable
+$ npm view react version
+$ node -e "console.log(require('./package.json').dependencies.react)"
+→ Should match latest stable React</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Automated dependency security scanning is integrated into the CI/CD pipeline via npm audit (high severity threshold) and Snyk, running on every push to main and weekly scheduled scans. All production dependencies are pinned to exact versions. <em>npm ci</em> is used in deployments for reproducible builds from the committed lockfile. Current scan result: 0 high or critical vulnerabilities. Package-lock.json is committed and verified.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ NETWORK DIVIDER ═══════ -->
+<div class="cat-divider"><div class="cat-divider-line"></div><div class="cat-divider-label">Network &amp; Headers</div><div class="cat-divider-line"></div></div>
+
+<!-- 12 — CSP for SPA -->
+<div class="section" id="s12" data-cat="network" data-severity="high" data-tags="content security policy CSP SPA nginx nonce hash react inline script">
+  <div class="sec-header" onclick="tog('s12')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">12</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Content Security Policy for React SPAs</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="badge" style="background:var(--violet-bg);color:var(--violet)">Server + Build</span>
+          <span class="tag-p">nginx.conf</span><span class="tag-p">CSP</span><span class="tag-p">index.html</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">React SPAs without a CSP allow any injected script to execute, external resources to be loaded, and data to be exfiltrated to attacker-controlled domains. <code>unsafe-inline</code> in CSP negates XSS protection — React's inline event handlers require careful nonce-based CSP.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">XSS attacks load remote malicious scripts, data exfiltration to external domains via injected <code>fetch()</code>, and Magecart-style skimmer attacks on forms via third-party script compromise.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — CSP for React SPA via Nginx</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">/etc/nginx/sites-enabled/your-app.conf — CSP header for SPA</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ─── React SPA served from Nginx ────────────────────────────</span>
+server {
+    listen 443 ssl http2;
+    server_name your-app.com;
+
+    root /var/www/your-app/dist;
+    index index.html;
+
+    <span class="cmt"># SPA routing — serve index.html for all routes</span>
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    <span class="cmt"># ─── Security headers ────────────────────────────────────</span>
+    add_header Content-Security-Policy
+      "default-src 'self';
+       script-src  'self';
+       style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
+       font-src    'self' https://fonts.gstatic.com;
+       img-src     'self' data: https: blob:;
+       connect-src 'self' https://api.your-app.com wss://api.your-app.com;
+       media-src   'self';
+       frame-src   'none';
+       object-src  'none';
+       base-uri    'self';
+       form-action 'self';
+       upgrade-insecure-requests;"
+      always;
+
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), camera=(), microphone=()" always;
+
+    <span class="cmt"># Cache static assets (not HTML)</span>
+    location ~* \.(js|css|png|jpg|ico|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">public/_headers (Netlify/Vercel/Cloudflare Pages)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Netlify _headers file (place in public/ or project root)</span>
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; connect-src 'self' https://api.your-app.com; frame-src 'none'; object-src 'none'; base-uri 'self';
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Referrer-Policy: strict-origin-when-cross-origin</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dso">DevOps / Infra</span><span class="role-badge r-fe">Frontend Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔄 Restart</div>
+        <div class="fv"><div class="rpill">⟳ systemctl reload nginx</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Check CSP header is present
+$ curl -I https://your-app.com/ | grep -i content-security-policy
+→ content-security-policy: default-src 'self'; ...
+
+# Test CSP blocks inline scripts (if unsafe-inline not set)
+# In browser console: eval("alert(1)") → blocked by CSP
+
+# Grade the CSP policy
+$ curl -s "https://csp-evaluator.withgoogle.com/..." (use online tool)
+→ No high-severity CSP bypasses found
+
+# Test external script injection is blocked
+# Inject: &lt;script src="https://evil.com/steal.js"&gt;&lt;/script&gt;
+→ Browser console: Refused to load the script ... violates CSP</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>A Content Security Policy is enforced via Nginx response headers restricting script execution to <em>'self'</em>, blocking inline scripts without nonces, restricting <em>connect-src</em> to approved API domains, and disabling framing (<em>frame-src: none</em>). <em>base-uri</em> and <em>form-action</em> are restricted to <em>'self'</em>. Policy has been validated via Google's CSP Evaluator with no high-severity bypass findings. <em>upgrade-insecure-requests</em> enforces HTTPS for all sub-resources.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 13 — THIRD PARTY -->
+<div class="section" id="s13" data-cat="network" data-severity="high" data-tags="third party scripts SRI subresource integrity cdn script tag external library">
+  <div class="sec-header" onclick="tog('s13')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">13</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Third-Party Script Security (SRI)</div>
+        <div class="sec-meta">
+          <span class="badge b-high">HIGH</span>
+          <span class="badge" style="background:var(--violet-bg);color:var(--violet)">Frontend + Build</span>
+          <span class="tag-p">integrity</span><span class="tag-p">crossorigin</span><span class="tag-p">SRI</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Loading JavaScript or CSS from CDNs without Subresource Integrity (SRI) hashes means a compromised CDN server can serve malicious code that executes in your app's origin context — a classic Magecart attack vector.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">CDN supply-chain attack — if the CDN is compromised, the attacker's JavaScript runs with full access to your DOM, cookies, and API. Affects millions of users simultaneously across all visitors.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Add SRI hashes to all external resources</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">index.html — SRI for CDN-loaded resources</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">&lt;!-- ✓ CORRECT: SRI hash + crossorigin for CDN scripts --&gt;</span>
+<span class="tag">&lt;script
+  src=<span class="str">"https://cdn.example.com/library@2.1.0/lib.min.js"</span>
+  integrity=<span class="str">"sha384-ABC123XYZ...your-hash-here"</span>
+  crossorigin=<span class="str">"anonymous"</span>
+&gt;&lt;/script&gt;</span>
+
+<span class="cmt">&lt;!-- Generate SRI hash: --&gt;</span>
+<span class="cmt">&lt;!-- $ curl https://cdn.example.com/lib.min.js | openssl dgst -sha384 -binary | openssl base64 -A --&gt;</span>
+<span class="cmt">&lt;!-- Or use: https://www.srihash.org --&gt;</span>
+
+<span class="tag">&lt;link
+  rel=<span class="str">"stylesheet"</span>
+  href=<span class="str">"https://cdn.example.com/styles.min.css"</span>
+  integrity=<span class="str">"sha384-DEF456ABC...your-hash-here"</span>
+  crossorigin=<span class="str">"anonymous"</span>
+/&gt;</span>
+
+<span class="cmt">&lt;!-- ✗ WRONG: No integrity check → CDN compromise = your app compromised --&gt;</span>
+<span class="cmt">&lt;!-- &lt;script src="https://cdn.example.com/lib.min.js"&gt;&lt;/script&gt; --&gt;</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">Terminal — Generate SRI hash for any resource</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Generate SHA-384 SRI hash</span>
+$ curl -s https://cdn.example.com/library.min.js \
+  | openssl dgst -sha384 -binary \
+  | openssl base64 -A
+→ sha384-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+<span class="cmt"># Or use the npx tool</span>
+$ npx sri-hash https://cdn.example.com/library.min.js</pre>
+          </div>
+          <p style="margin-top:10px;color:var(--ink2);font-size:13px">💡 <strong>Best practice</strong>: bundle dependencies via npm rather than CDN links. This avoids CDN risk entirely and allows tree-shaking for smaller bundles.</p>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Find all external script/link tags without integrity attribute
+$ grep -n "&lt;script\|&lt;link" public/index.html | grep -v "integrity=" | grep "http"
+→ (empty — all external resources have SRI)
+
+# Verify SRI works — modify CDN hash intentionally and load page
+# Browser console should show: "Failed to find a valid digest..."
+→ Resource blocked by browser SRI check</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>All external scripts and stylesheets loaded from CDNs include SHA-384 Subresource Integrity hashes and the <em>crossorigin="anonymous"</em> attribute. Browser will block loading of any CDN asset whose content differs from the pinned hash. Where possible, third-party libraries have been bundled via npm to eliminate CDN dependency. An automated check confirms no external resources lack SRI attributes.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 14 — CLICKJACKING -->
+<div class="section" id="s14" data-cat="network" data-severity="medium" data-tags="clickjacking iframe framing X-Frame-Options CSP frame-ancestors deny">
+  <div class="sec-header" onclick="tog('s14')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">14</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">Clickjacking &amp; iframe Framing Prevention</div>
+        <div class="sec-meta">
+          <span class="badge b-medium">MEDIUM</span>
+          <span class="badge" style="background:var(--violet-bg);color:var(--violet)">Server + Frontend</span>
+          <span class="tag-p">X-Frame-Options</span><span class="tag-p">frame-ancestors</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">If a React SPA can be embedded in an iframe on attacker-controlled pages, users can be tricked into clicking invisible UI elements (clickjacking) — triggering actions like account deletion, fund transfers, or OAuth grants.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-medium">Clickjacking attacks tricking users into performing unintended authenticated actions — password changes, privacy setting changes, OAuth permission grants, financial transactions.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Frame busting at server &amp; React level</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">/etc/nginx/sites-enabled/your-app.conf</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Prevent framing via legacy header (IE/older browsers)</span>
+add_header X-Frame-Options "DENY" always;
+
+<span class="cmt"># Modern: CSP frame-ancestors (overrides X-Frame-Options)</span>
+<span class="cmt"># Already included in CSP header above:</span>
+<span class="cmt"># ... frame-ancestors 'self' ...</span>
+<span class="cmt"># Use 'none' if you never need to frame your own app:</span>
+<span class="cmt"># ... frame-ancestors 'none' ...</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">src/utils/frameProtection.js — React-level bust (defense-in-depth)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// Frame-busting script — runs before React renders</span>
+<span class="cmt">// Add to public/index.html or import in main.jsx</span>
+<span class="kw">if</span> (window.self !== window.top) {
+  <span class="cmt">// We're inside an iframe we didn't expect</span>
+  window.top.location.href = window.location.href;
+  <span class="cmt">// Or show a warning instead of redirecting:</span>
+  <span class="cmt">// document.body.innerHTML = '&lt;h1&gt;Security Error: framing not allowed&lt;/h1&gt;';</span>
+}
+
+<span class="cmt">// Alternatively in main.jsx:</span>
+<span class="kw">if</span> (window.self !== window.top) {
+  <span class="kw">throw new</span> <span class="cls">Error</span>(<span class="str">'Application cannot run inside an iframe'</span>);
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-dso">DevOps / Nginx Admin</span><span class="role-badge r-fe">Frontend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Verify X-Frame-Options header is set
+$ curl -I https://your-app.com/ | grep -i x-frame-options
+→ x-frame-options: DENY
+
+# Try embedding your app in an iframe
+# In any HTML page: &lt;iframe src="https://your-app.com"&gt;&lt;/iframe&gt;
+→ Browser shows: "your-app.com refused to connect"
+
+# Check CSP frame-ancestors
+$ curl -I https://your-app.com/ | grep content-security-policy | grep "frame-ancestors"
+→ ... frame-ancestors 'none'; ...</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Clickjacking protection is implemented via <em>X-Frame-Options: DENY</em> and the CSP <em>frame-ancestors 'none'</em> directive (which takes precedence in modern browsers). A JavaScript frame-busting guard in the React app provides defense-in-depth. Browser test confirms the application refuses to load in any iframe context.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ AUDIT DIVIDER ═══════ -->
+<div class="cat-divider"><div class="cat-divider-line"></div><div class="cat-divider-label">Audit &amp; Monitoring</div><div class="cat-divider-line"></div></div>
+
+<!-- 15 — CORS from SPA -->
+<div class="section" id="s15" data-cat="audit" data-severity="medium" data-tags="CORS SPA preflight credentials origin whitelist react frontend fetch axios">
+  <div class="sec-header" onclick="tog('s15')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">15</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">CORS from the React SPA Perspective</div>
+        <div class="sec-meta">
+          <span class="badge b-medium">MEDIUM</span>
+          <span class="badge" style="background:var(--ink2);color:#fff;font-size:10px">Frontend + Backend</span>
+          <span class="tag-p">vite proxy</span><span class="tag-p">withCredentials</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">React apps in development often use <code>proxy</code> or allow all origins — and these insecure settings leak to production. Misconfiguring <code>withCredentials: true</code> with a wildcard CORS backend creates CSRF-via-CORS vulnerabilities.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-medium">CSRF via CORS — attacker site makes credentialed cross-origin requests. Credential leakage if <em>withCredentials: true</em> is paired with <em>Access-Control-Allow-Origin: *</em> (browser actually blocks this, but misconfigured backends may fall back to echoing origin).</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Development proxy + production CORS checklist</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">vite.config.js — Dev proxy (prevents CORS issues in dev, not prod)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">export default</span> <span class="fn">defineConfig</span>({
+  server: {
+    proxy: {
+      <span class="str">'/api'</span>: {
+        target: <span class="str">'http://localhost:3000'</span>,
+        changeOrigin: <span class="kw">true</span>,
+        secure: <span class="kw">false</span>,
+        <span class="cmt">// rewrite: (path) => path.replace(/^\/api/, ''),</span>
+      },
+    },
+  },
+});</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">Production CORS verification checklist</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ✓ Backend must NEVER set these in production:</span>
+<span class="cmt">#   Access-Control-Allow-Origin: *   + Access-Control-Allow-Credentials: true</span>
+<span class="cmt"># (browser blocks it, but some proxies may accept it)</span>
+
+<span class="cmt"># ✓ Correct production CORS headers from backend:</span>
+<span class="cmt">#   Access-Control-Allow-Origin: https://your-app.com</span>
+<span class="cmt">#   Access-Control-Allow-Credentials: true</span>
+<span class="cmt">#   Access-Control-Allow-Methods: GET, POST, PUT, DELETE</span>
+<span class="cmt">#   Access-Control-Allow-Headers: Content-Type, X-CSRF-Token</span>
+
+<span class="cmt"># Test from unauthorized origin:</span>
+$ curl -H <span class="str">"Origin: https://evil.com"</span> \
+       -H <span class="str">"Cookie: session=valid"</span> \
+       https://api.your-app.com/user/profile
+<span class="cmt"># Must NOT return Access-Control-Allow-Origin: https://evil.com</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span><span class="role-badge r-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>The Vite development proxy is used only in development and does not affect production CORS behavior. The production backend enforces an origin whitelist (<em>Access-Control-Allow-Origin: https://your-app.com</em>) and never uses wildcard with credentials. Cross-origin requests from unauthorized origins are confirmed to receive no CORS headers, verified via curl with forged Origin headers.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 16 — AUDIT CHECKLIST -->
+<div class="section" id="s16" data-cat="audit" data-severity="medium" data-tags="audit checklist review eslint security linting scan OWASP ZAP automated">
+  <div class="sec-header" onclick="tog('s16')">
+    <div class="sec-accent"></div>
+    <div class="sec-header-inner">
+      <div class="sec-num-wrap"><div class="sec-num">16</div></div>
+      <div class="sec-title-group">
+        <div class="sec-title">React Security Audit Checklist &amp; Automated Linting</div>
+        <div class="sec-meta">
+          <span class="badge b-medium">MEDIUM</span>
+          <span class="badge" style="background:var(--ink2);color:#fff;font-size:10px">DevSecOps</span>
+          <span class="tag-p">eslint-plugin-security</span><span class="tag-p">OWASP ZAP</span>
+        </div>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Without automated security linting, insecure code patterns (unsafe HTML injection, hardcoded secrets, eval usage) are only caught in manual review — which is inconsistent and error-prone.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-medium">Security regressions introduced via new code commits, hardcoded API keys caught only after exposure, and accumulated technical security debt from un-reviewed insecure patterns.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Security ESLint rules + OWASP ZAP scan</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn">Terminal — Install security linting plugins</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">$ npm install --save-dev \
+  eslint-plugin-security \
+  eslint-plugin-no-secrets \
+  eslint-plugin-react \
+  eslint-plugin-jsx-a11y</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">.eslintrc.json — Security rules</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre">{
+  <span class="attr">"plugins"</span>: [<span class="str">"security"</span>, <span class="str">"no-secrets"</span>, <span class="str">"react"</span>],
+  <span class="attr">"extends"</span>: [
+    <span class="str">"plugin:security/recommended"</span>,
+    <span class="str">"plugin:react/recommended"</span>
+  ],
+  <span class="attr">"rules"</span>: {
+    <span class="str">"no-eval"</span>:                       <span class="str">"error"</span>,
+    <span class="str">"no-implied-eval"</span>:               <span class="str">"error"</span>,
+    <span class="str">"no-new-func"</span>:                   <span class="str">"error"</span>,
+    <span class="str">"no-script-url"</span>:                 <span class="str">"error"</span>,
+    <span class="str">"security/detect-eval-with-expression"</span>: <span class="str">"error"</span>,
+    <span class="str">"security/detect-non-literal-regexp"</span>:   <span class="str">"warn"</span>,
+    <span class="str">"security/detect-object-injection"</span>:     <span class="str">"warn"</span>,
+    <span class="str">"no-secrets/no-secrets"</span>: [<span class="str">"error"</span>, {
+      <span class="str">"tolerance"</span>: <span class="num">4.5</span>
+    }],
+    <span class="cmt">// Enforce DOMPurify usage check</span>
+    <span class="str">"react/no-danger"</span>:               <span class="str">"error"</span>,
+    <span class="str">"react/no-danger-with-children"</span>:  <span class="str">"error"</span>
+  }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:10px">
+            <div class="code-fn">Terminal — Run OWASP ZAP on the built SPA</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># Run OWASP ZAP baseline scan (Docker)</span>
+$ docker run -t ghcr.io/zaproxy/zaproxy:stable zap-baseline.py \
+  -t https://your-app.com \
+  -g gen.conf \
+  -r zap-report.html
+
+<span class="cmt"># Full active scan (more thorough, use in staging only)</span>
+$ docker run -t ghcr.io/zaproxy/zaproxy:stable zap-full-scan.py \
+  -t https://staging.your-app.com \
+  -r zap-full-report.html</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="role-badge r-fe">Frontend Developer</span><span class="role-badge r-dso">DevOps</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🗓 Audit Schedule</div>
+        <div class="fv">
+          <ul class="cl">
+            <li><strong>Every commit</strong>: ESLint security rules in CI</li>
+            <li><strong>Every build</strong>: <code>npm audit --audit-level=high</code></li>
+            <li><strong>Weekly</strong>: Snyk dependency scan</li>
+            <li><strong>Monthly</strong>: OWASP ZAP baseline scan on staging</li>
+            <li><strong>Quarterly</strong>: Manual code review of auth &amp; data flows</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+# Run ESLint with security rules
+$ npx eslint src/ --ext .jsx,.js,.tsx,.ts
+→ 0 errors, 0 warnings (security rules)
+
+# Check no-secrets catches hardcoded keys
+$ echo 'const key = "AKIAIOSFODNN7EXAMPLE"' > test.js && npx eslint test.js
+→ Error: no-secrets/no-secrets: Found a string with entropy...
+
+# OWASP ZAP baseline — check for critical findings
+$ docker run ... zap-baseline.py -t https://your-app.com
+→ PASS: 0 CRITICAL alerts</div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt"><div class="vapt-ico">🔒</div><div class="vapt-txt"><div class="vapt-lbl">Audit Closure</div>Security-focused ESLint plugins (<em>eslint-plugin-security</em>, <em>eslint-plugin-no-secrets</em>) are integrated into the CI pipeline and run on every commit. Rules block <em>eval()</em>, <em>javascript:</em> URLs, <em>dangerouslySetInnerHTML</em> without sanitization, and high-entropy strings (hardcoded secrets). OWASP ZAP baseline scan reports 0 critical alerts on the production SPA. Monthly scans are scheduled and results tracked in the project security log.</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SUMMARY ═══════════════ -->
+<div style="margin-top:44px;background:var(--card);border:1.5px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-md)">
+  <!-- Colored top strip -->
+  <div style="height:4px;background:linear-gradient(90deg,var(--indigo),var(--coral) 35%,var(--teal) 65%,var(--amber))"></div>
+  <div style="padding:24px 28px;border-bottom:1.5px solid var(--border)">
+    <h2 style="font-family:'Fraunces',serif;font-size:22px;font-weight:800;color:var(--ink);letter-spacing:-.3px">⚛ React Security Controls Summary</h2>
+    <p style="color:var(--ink2);font-size:13px;margin-top:4px">Master VAPT remediation checklist — update status as each control is implemented and verified</p>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="who-tbl" style="width:100%">
+      <thead>
+        <tr><th>#</th><th>Control</th><th>Severity</th><th>Category</th><th>Key Tool / Package</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>XSS Prevention &amp; dangerouslySetInnerHTML</td><td><span class="badge b-critical">CRITICAL</span></td><td>XSS</td><td><span class="tag-p">DOMPurify</span></td><td>☐ Open</td></tr>
+        <tr><td>02</td><td>Input Validation (RHF + Zod)</td><td><span class="badge b-high">HIGH</span></td><td>XSS</td><td><span class="tag-p">react-hook-form</span> <span class="tag-p">zod</span></td><td>☐ Open</td></tr>
+        <tr><td>03</td><td>Secure Token Storage — httpOnly Cookie</td><td><span class="badge b-critical">CRITICAL</span></td><td>Auth</td><td><span class="tag-p">axios withCredentials</span></td><td>☐ Open</td></tr>
+        <tr><td>04</td><td>Protected Routes &amp; RBAC Guards</td><td><span class="badge b-high">HIGH</span></td><td>Auth</td><td><span class="tag-p">react-router-dom</span></td><td>☐ Open</td></tr>
+        <tr><td>05</td><td>Secure API Calls (Axios Interceptors)</td><td><span class="badge b-high">HIGH</span></td><td>Auth</td><td><span class="tag-p">axios interceptors</span></td><td>☐ Open</td></tr>
+        <tr><td>06</td><td>State Management Security</td><td><span class="badge b-medium">MEDIUM</span></td><td>Data</td><td><span class="tag-p">redux-persist whitelist</span></td><td>☐ Open</td></tr>
+        <tr><td>07</td><td>Environment Variables Safety</td><td><span class="badge b-critical">CRITICAL</span></td><td>Data</td><td><span class="tag-p">VITE_ prefix audit</span></td><td>☐ Open</td></tr>
+        <tr><td>08</td><td>Sensitive Data in DevTools / Console</td><td><span class="badge b-medium">MEDIUM</span></td><td>Data</td><td><span class="tag-p">Terser drop_console</span></td><td>☐ Open</td></tr>
+        <tr><td>09</td><td>Disable Source Maps in Production</td><td><span class="badge b-high">HIGH</span></td><td>Build</td><td><span class="tag-p">vite sourcemap:false</span></td><td>☐ Open</td></tr>
+        <tr><td>10</td><td>Vite / CRA Build Hardening</td><td><span class="badge b-high">HIGH</span></td><td>Build</td><td><span class="tag-p">terser</span> <span class="tag-p">hash chunks</span></td><td>☐ Open</td></tr>
+        <tr><td>11</td><td>Frontend Dependency Security</td><td><span class="badge b-high">HIGH</span></td><td>Build</td><td><span class="tag-p">npm audit</span> <span class="tag-p">snyk</span></td><td>☐ Open</td></tr>
+        <tr><td>12</td><td>Content Security Policy (SPA)</td><td><span class="badge b-high">HIGH</span></td><td>Network</td><td><span class="tag-p">nginx CSP header</span></td><td>☐ Open</td></tr>
+        <tr><td>13</td><td>Third-Party Script Security (SRI)</td><td><span class="badge b-high">HIGH</span></td><td>Network</td><td><span class="tag-p">integrity attribute</span></td><td>☐ Open</td></tr>
+        <tr><td>14</td><td>Clickjacking &amp; iframe Prevention</td><td><span class="badge b-medium">MEDIUM</span></td><td>Network</td><td><span class="tag-p">X-Frame-Options DENY</span></td><td>☐ Open</td></tr>
+        <tr><td>15</td><td>CORS from SPA Perspective</td><td><span class="badge b-medium">MEDIUM</span></td><td>Audit</td><td><span class="tag-p">vite proxy</span> <span class="tag-p">origin check</span></td><td>☐ Open</td></tr>
+        <tr><td>16</td><td>Security Audit &amp; ESLint Rules</td><td><span class="badge b-medium">MEDIUM</span></td><td>Audit</td><td><span class="tag-p">eslint-plugin-security</span></td><td>☐ Open</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:18px 28px;border-top:1.5px solid var(--border);display:flex;gap:20px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--coral);border-radius:2px;display:inline-block"></span><span style="font-size:12px;color:var(--ink2)">Critical: 3 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--indigo);border-radius:2px;display:inline-block"></span><span style="font-size:12px;color:var(--ink2)">High: 8 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--amber);border-radius:2px;display:inline-block"></span><span style="font-size:12px;color:var(--ink2)">Medium: 5 controls</span></div>
+    <div style="margin-left:auto;font-size:11px;color:var(--ink4);font-family:'JetBrains Mono',monospace">OWASP React Security Cheatsheet · April 2026</div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</main>
+
+<button id="goTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+function tog(id){document.getElementById(id).classList.toggle('open')}
+function jumpTo(id){
+  const el=document.getElementById(id);
+  if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'start'})}
+}
+function expandAll(){document.querySelectorAll('.section').forEach(s=>s.classList.add('open'))}
+function collapseAll(){document.querySelectorAll('.section').forEach(s=>s.classList.remove('open'))}
+function filterSecs(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.section').forEach(s=>{
+    const t=(s.textContent+' '+(s.dataset.tags||'')).toLowerCase();
+    s.classList.toggle('hidden',q.length>1&&!t.includes(q));
+  });
+}
+function filterSev(sev,btn){
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>{
+    s.classList.toggle('hidden',sev!=='all'&&s.dataset.severity!==sev);
+  });
+}
+function cp(btn){
+  const pre=btn.closest('.code-wrap').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ Copied';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2000);
+  });
+}
+window.addEventListener('scroll',()=>{
+  document.getElementById('goTop').style.display=window.scrollY>400?'flex':'none';
+});
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id=e.target.id;
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      const ni=document.querySelector(`.nav-item[onclick="jumpTo('${id}')"]`);
+      if(ni)ni.classList.add('active');
+    }
+  });
+},{threshold:.12});
+document.querySelectorAll('.section').forEach((s,i)=>{
+  s.style.animationDelay=(i*.03)+'s';
+  obs.observe(s);
+});
+</script>
+</body>
+</html>
