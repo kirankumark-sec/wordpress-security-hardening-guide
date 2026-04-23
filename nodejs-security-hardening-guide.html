@@ -5,60 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Node.js Security Hardening Guide · VAPT Remediation</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@400;500;600;700;800&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,400&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Sora:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:       #0a0800;
-  --bg2:      #100e00;
-  --bg3:      #161200;
-  --card:     #120f02;
-  --card2:    #181400;
-  --border:   #2a2200;
-  --border2:  #3a3000;
-  --amber:    #f5a623;
-  --amber2:   #e09010;
-  --amber3:   #ffc84a;
-  --green:    #39ff85;
-  --green2:   #00d060;
-  --red:      #ff5533;
-  --blue:     #38bfff;
-  --purple:   #cc88ff;
-  --text:     #f0e8d0;
-  --text2:    #a09070;
-  --text3:    #504030;
-  --glow-a:   0 0 24px rgba(245,166,35,0.3);
-  --glow-g:   0 0 18px rgba(57,255,133,0.2);
+  --bg:       #f5f7fa;
+  --bg2:      #ffffff;
+  --bg3:      #eef1f6;
+  --card:     #ffffff;
+  --card2:    #f8f9fc;
+  --border:   #e2e8f0;
+  --border2:  #cbd5e1;
+  --amber:    #d97706;
+  --amber2:   #b45309;
+  --amber3:   #f59e0b;
+  --green:    #059669;
+  --green2:   #047857;
+  --red:      #dc2626;
+  --blue:     #2563eb;
+  --purple:   #7c3aed;
+  --text:     #0f172a;
+  --text2:    #475569;
+  --text3:    #94a3b8;
+  --glow-a:   0 1px 3px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
+  --glow-g:   0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --accent:   #1e40af;
+  --accent-light: #eff6ff;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
 body{
   background:var(--bg);
   color:var(--text);
-  font-family:'IBM Plex Sans',sans-serif;
+  font-family:'DM Sans',sans-serif;
   font-size:14.5px;
   line-height:1.72;
   overflow-x:hidden;
 }
 
-/* ── SCANLINE TEXTURE ── */
+/* ── SUBTLE TEXTURE ── */
 body::before{
   content:'';
   position:fixed;inset:0;
-  background:repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(245,166,35,0.012) 2px,
-    rgba(245,166,35,0.012) 4px
-  );
+  background-image: radial-gradient(circle at 20% 20%, rgba(30,64,175,0.03) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(217,119,6,0.03) 0%, transparent 50%);
   pointer-events:none;z-index:0;
 }
-/* ── DOT GRID ── */
 body::after{
   content:'';
   position:fixed;inset:0;
-  background-image:radial-gradient(rgba(245,166,35,0.06) 1px, transparent 1px);
-  background-size:28px 28px;
+  background-image:radial-gradient(rgba(30,64,175,0.035) 1px, transparent 1px);
+  background-size:32px 32px;
   pointer-events:none;z-index:0;
 }
 
@@ -69,58 +67,62 @@ body::after{
   border-right:1px solid var(--border);
   overflow-y:auto;z-index:100;
   display:flex;flex-direction:column;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.06);
 }
-.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar{width:4px}
 .sidebar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.sidebar::-webkit-scrollbar-track{background:transparent}
 
 .sb-logo{
   padding:24px 20px 18px;
   border-bottom:1px solid var(--border);
+  background: linear-gradient(135deg, #eff6ff, #ffffff);
 }
 .sb-icon{
   width:44px;height:44px;
-  background:linear-gradient(135deg,var(--amber),#ff8c00);
+  background:linear-gradient(135deg,var(--accent),#1d4ed8);
   border-radius:10px;
   display:flex;align-items:center;justify-content:center;
   font-size:22px;margin-bottom:12px;
-  box-shadow:var(--glow-a);
+  box-shadow: 0 4px 12px rgba(30,64,175,0.25);
 }
 .sb-logo h2{
-  font-family:'Oxanium',sans-serif;
+  font-family:'Sora',sans-serif;
   font-size:13.5px;font-weight:700;
-  color:var(--text);letter-spacing:.5px;
+  color:var(--text);letter-spacing:.2px;
 }
-.sb-logo p{font-size:10.5px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1.2px}
+.sb-logo p{font-size:10.5px;color:#94a3b8;margin-top:3px;text-transform:uppercase;letter-spacing:1.2px}
 
 .sb-section-label{
   padding:14px 20px 5px;
   font-size:9.5px;font-weight:600;
-  color:var(--text3);text-transform:uppercase;letter-spacing:1.6px;
-  font-family:'Fira Code',monospace;
+  color:#94a3b8;text-transform:uppercase;letter-spacing:1.6px;
+  font-family:'JetBrains Mono',monospace;
 }
 .nav-item{
   display:flex;align-items:center;gap:9px;
   padding:8px 20px;
   color:var(--text2);font-size:12.5px;font-weight:400;
-  cursor:pointer;border-left:2px solid transparent;
-  transition:all .2s;
+  cursor:pointer;border-left:3px solid transparent;
+  transition:all .18s;
 }
 .nav-item:hover,.nav-item.active{
-  color:var(--amber3);background:rgba(245,166,35,0.05);
-  border-left-color:var(--amber);
+  color:var(--accent);background:var(--accent-light);
+  border-left-color:var(--accent);
 }
 .nav-num{
-  font-family:'Fira Code',monospace;font-size:10.5px;
-  color:var(--text3);min-width:22px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;
+  color:#94a3b8;min-width:22px;
 }
-.nav-item:hover .nav-num,.nav-item.active .nav-num{color:var(--amber2)}
+.nav-item:hover .nav-num,.nav-item.active .nav-num{color:var(--accent)}
 
 .sb-footer{
   margin-top:auto;padding:14px 20px;
   border-top:1px solid var(--border);
-  font-size:10.5px;color:var(--text3);
-  font-family:'Fira Code',monospace;
+  font-size:10.5px;color:#94a3b8;
+  font-family:'JetBrains Mono',monospace;
   line-height:1.8;
+  background:var(--card2);
 }
 
 /* ══════════ MAIN ══════════ */
@@ -130,19 +132,19 @@ body::after{
 .hero{
   position:relative;overflow:hidden;
   padding:60px 56px 52px;
-  background:linear-gradient(160deg,#150e00 0%,#0d0900 60%,#080500 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 40%, #1d4ed8 70%, #2563eb 100%);
   border-bottom:1px solid var(--border);
 }
 .hero-glow{
   position:absolute;right:-80px;top:-120px;
   width:480px;height:480px;
-  background:radial-gradient(circle,rgba(245,166,35,0.08) 0%,transparent 65%);
+  background:radial-gradient(circle,rgba(255,255,255,0.07) 0%,transparent 65%);
   pointer-events:none;
 }
 .hero-glow2{
   position:absolute;left:200px;bottom:-60px;
   width:300px;height:300px;
-  background:radial-gradient(circle,rgba(57,255,133,0.04) 0%,transparent 70%);
+  background:radial-gradient(circle,rgba(96,165,250,0.12) 0%,transparent 70%);
   pointer-events:none;
 }
 .hero-eyebrow{
@@ -150,30 +152,31 @@ body::after{
 }
 .eyebrow-tag{
   padding:3px 11px;border-radius:4px;
-  font-family:'Fira Code',monospace;font-size:10.5px;font-weight:500;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;font-weight:500;
   border:1px solid;letter-spacing:.4px;
 }
-.et-vapt{background:rgba(255,85,51,0.1);color:var(--red);border-color:rgba(255,85,51,0.3)}
-.et-owasp{background:rgba(245,166,35,0.08);color:var(--amber);border-color:rgba(245,166,35,0.3)}
-.et-node{background:rgba(57,255,133,0.07);color:var(--green);border-color:rgba(57,255,133,0.3)}
-.et-linux{background:rgba(56,191,255,0.08);color:var(--blue);border-color:rgba(56,191,255,0.3)}
+.et-vapt{background:rgba(239,68,68,0.2);color:#fca5a5;border-color:rgba(252,165,165,0.35)}
+.et-owasp{background:rgba(251,191,36,0.15);color:#fde68a;border-color:rgba(253,230,138,0.35)}
+.et-node{background:rgba(74,222,128,0.15);color:#86efac;border-color:rgba(134,239,172,0.35)}
+.et-linux{background:rgba(147,197,253,0.15);color:#bfdbfe;border-color:rgba(191,219,254,0.35)}
 
 .hero h1{
-  font-family:'Oxanium',sans-serif;
+  font-family:'Sora',sans-serif;
   font-size:44px;font-weight:800;
   line-height:1.08;margin-bottom:14px;
-  background:linear-gradient(135deg,#ffe8a0 20%,var(--amber) 65%,#ff8c00 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  color: #ffffff;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.2);
 }
-.hero-sub{color:var(--text2);font-size:15px;max-width:600px;margin-bottom:30px;line-height:1.65}
+.hero-sub{color:rgba(255,255,255,0.75);font-size:15px;max-width:600px;margin-bottom:30px;line-height:1.65}
 
 .hero-stats{display:flex;gap:36px;flex-wrap:wrap}
 .stat-item{position:relative}
 .stat-num{
-  font-family:'Oxanium',sans-serif;font-size:30px;font-weight:800;
-  color:var(--amber3);display:block;line-height:1;
+  font-family:'Sora',sans-serif;font-size:30px;font-weight:800;
+  color:#ffffff;display:block;line-height:1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
-.stat-label{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.stat-label{font-size:10.5px;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
 
 /* ── TOP BAR ── */
 .topbar{
@@ -181,62 +184,67 @@ body::after{
   padding:13px 56px;
   display:flex;align-items:center;gap:10px;
   position:sticky;top:0;z-index:50;
-  backdrop-filter:blur(10px);
+  backdrop-filter:blur(16px);
+  box-shadow: 0 1px 0 var(--border), 0 4px 16px rgba(0,0,0,0.05);
 }
 .search-wrap{position:relative;flex:1;max-width:460px}
-.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none}
+.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:13px;pointer-events:none}
 .search-input{
-  width:100%;background:var(--bg3);border:1px solid var(--border);
-  border-radius:6px;padding:9px 14px 9px 36px;
-  color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:13.5px;outline:none;
-  transition:border-color .2s;
+  width:100%;background:var(--bg3);border:1.5px solid var(--border);
+  border-radius:8px;padding:9px 14px 9px 36px;
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:13.5px;outline:none;
+  transition:border-color .2s, box-shadow .2s;
 }
-.search-input::placeholder{color:var(--text3)}
-.search-input:focus{border-color:var(--amber);box-shadow:0 0 0 3px rgba(245,166,35,0.08)}
+.search-input::placeholder{color:#94a3b8}
+.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,0.1);background:#fff}
 .filter-btns{display:flex;gap:5px}
 .fbtn{
-  padding:6px 13px;border-radius:5px;font-size:11.5px;font-weight:500;
-  cursor:pointer;border:1px solid var(--border);background:var(--bg3);
-  color:var(--text2);transition:all .2s;font-family:'IBM Plex Sans',sans-serif;
+  padding:6px 13px;border-radius:6px;font-size:11.5px;font-weight:500;
+  cursor:pointer;border:1.5px solid var(--border);background:var(--bg3);
+  color:var(--text2);transition:all .18s;font-family:'DM Sans',sans-serif;
 }
-.fbtn:hover,.fbtn.active{border-color:var(--amber);color:var(--amber);background:rgba(245,166,35,0.06)}
+.fbtn:hover{border-color:var(--border2);background:var(--bg2)}
+.fbtn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
 .ctrl-btn{
-  padding:6px 11px;border-radius:5px;font-size:11.5px;
-  cursor:pointer;border:1px solid var(--border);background:var(--bg3);
-  color:var(--text2);transition:all .2s;font-family:'IBM Plex Sans',sans-serif;
+  padding:6px 11px;border-radius:6px;font-size:11.5px;
+  cursor:pointer;border:1.5px solid var(--border);background:var(--bg3);
+  color:var(--text2);transition:all .18s;font-family:'DM Sans',sans-serif;
 }
-.ctrl-btn:hover{border-color:var(--border2);color:var(--text)}
+.ctrl-btn:hover{border-color:var(--border2);color:var(--text);background:var(--bg2)}
 
 /* ── CONTENT ── */
 .content{padding:36px 56px 80px}
 
 /* ── SECTION CARD ── */
 .section{
-  margin-bottom:44px;border:1px solid var(--border);
-  border-radius:14px;background:var(--card);
-  overflow:hidden;transition:border-color .25s;
+  margin-bottom:20px;border:1.5px solid var(--border);
+  border-radius:12px;background:var(--card);
+  overflow:hidden;transition:border-color .2s, box-shadow .2s;
   animation:slideUp .35s ease both;
+  box-shadow: var(--shadow-sm);
 }
-.section:hover{border-color:var(--border2)}
+.section:hover{border-color:var(--border2);box-shadow:var(--shadow-md)}
 @keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
 .sec-header{
-  padding:22px 26px;background:var(--card2);
-  border-bottom:1px solid var(--border);
+  padding:20px 24px;background:var(--card2);
+  border-bottom:1.5px solid var(--border);
   display:flex;align-items:flex-start;gap:14px;
   cursor:pointer;user-select:none;
+  transition: background .15s;
 }
+.sec-header:hover{background:#f1f5f9}
 .sec-num{
-  font-family:'Fira Code',monospace;font-size:11.5px;font-weight:600;
-  color:var(--amber);background:rgba(245,166,35,0.08);
-  border:1px solid rgba(245,166,35,0.2);
-  padding:4px 8px;border-radius:5px;
+  font-family:'JetBrains Mono',monospace;font-size:11.5px;font-weight:600;
+  color:var(--accent);background:var(--accent-light);
+  border:1.5px solid rgba(37,99,235,0.2);
+  padding:4px 8px;border-radius:6px;
   min-width:38px;text-align:center;margin-top:1px;
   flex-shrink:0;
 }
 .sec-title-group{flex:1}
 .sec-title{
-  font-family:'Oxanium',sans-serif;font-size:17px;font-weight:700;
+  font-family:'Sora',sans-serif;font-size:16px;font-weight:700;
   color:var(--text);margin-bottom:5px;
 }
 .sec-meta{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
@@ -244,21 +252,21 @@ body::after{
 .badge{
   padding:2px 9px;border-radius:20px;
   font-size:10.5px;font-weight:600;
-  font-family:'Fira Code',monospace;
+  font-family:'JetBrains Mono',monospace;
 }
-.b-critical{background:rgba(255,85,51,0.12);color:var(--red)}
-.b-high{background:rgba(245,166,35,0.12);color:var(--amber)}
-.b-medium{background:rgba(204,136,255,0.1);color:var(--purple)}
-.b-low{background:rgba(57,255,133,0.08);color:var(--green)}
+.b-critical{background:#fee2e2;color:#b91c1c;border:1px solid #fca5a5}
+.b-high{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.b-medium{background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd}
+.b-low{background:#d1fae5;color:#065f46;border:1px solid #6ee7b7}
 
 .tag-p{
   display:inline-block;padding:2px 8px;
-  background:var(--bg3);border:1px solid var(--border2);
-  border-radius:4px;font-family:'Fira Code',monospace;
-  font-size:10.5px;color:var(--text2);margin:2px 2px 2px 0;
+  background:#f1f5f9;border:1px solid var(--border2);
+  border-radius:4px;font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;color:#475569;margin:2px 2px 2px 0;
 }
 
-.chevron{color:var(--text3);font-size:17px;transition:transform .28s;margin-left:auto;padding-top:2px}
+.chevron{color:#94a3b8;font-size:17px;transition:transform .28s;margin-left:auto;padding-top:2px}
 .section.open .chevron{transform:rotate(180deg)}
 .sec-body{display:none}
 .section.open .sec-body{display:block}
@@ -268,23 +276,23 @@ body::after{
   display:grid;grid-template-columns:1fr 1fr;gap:0;
   border-bottom:1px solid var(--border);
 }
-.field{padding:18px 26px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
+.field{padding:18px 24px;border-right:1px solid var(--border);border-bottom:1px solid var(--border)}
 .field:nth-child(even){border-right:none}
-.ff{grid-column:1/-1;padding:18px 26px;border-bottom:1px solid var(--border)}
+.ff{grid-column:1/-1;padding:18px 24px;border-bottom:1px solid var(--border)}
 .ff:last-child,.field:last-child,.field:nth-last-child(2):nth-child(odd){border-bottom:none}
 
 .fl{
-  font-size:10.5px;font-weight:600;color:var(--text3);
+  font-size:10.5px;font-weight:600;color:#94a3b8;
   text-transform:uppercase;letter-spacing:1.3px;
   margin-bottom:7px;display:flex;align-items:center;gap:6px;
-  font-family:'Fira Code',monospace;
+  font-family:'JetBrains Mono',monospace;
 }
 .fv{color:var(--text);font-size:13.5px;line-height:1.65}
-.fv strong{color:var(--amber3);font-weight:500}
+.fv strong{color:var(--amber2);font-weight:600}
 .fv code{
-  font-family:'Fira Code',monospace;font-size:12px;
-  background:rgba(245,166,35,0.08);
-  padding:1px 5px;border-radius:3px;color:var(--amber3);
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  background:#fef9c3;border:1px solid #fde68a;
+  padding:1px 5px;border-radius:3px;color:#92400e;
 }
 
 /* ── RISK BOX ── */
@@ -292,119 +300,119 @@ body::after{
   padding:11px 15px;border-radius:7px;border-left:3px solid;
   font-size:13px;line-height:1.6;
 }
-.r-critical{background:rgba(255,85,51,0.07);border-color:var(--red);color:#ffb3a0}
-.r-high{background:rgba(245,166,35,0.07);border-color:var(--amber);color:#ffdd88}
-.r-medium{background:rgba(204,136,255,0.07);border-color:var(--purple);color:#ddb3ff}
-.r-low{background:rgba(57,255,133,0.06);border-color:var(--green);color:#80ffbb}
+.r-critical{background:#fff1f2;border-color:#ef4444;color:#991b1b}
+.r-high{background:#fffbeb;border-color:#f59e0b;color:#92400e}
+.r-medium{background:#faf5ff;border-color:#a855f7;color:#6b21a8}
+.r-low{background:#f0fdf4;border-color:#22c55e;color:#166534}
 
 /* ── CODE BLOCK ── */
 .code-wrap{position:relative;margin:10px 0 4px}
 .code-fn{
-  background:#1a1400;padding:5px 15px;
-  font-family:'Fira Code',monospace;font-size:10.5px;color:var(--amber2);
-  border:1px solid var(--border);border-bottom:none;
-  border-radius:6px 6px 0 0;
+  background:#f8fafc;padding:5px 15px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#64748b;
+  border:1.5px solid var(--border);border-bottom:none;
+  border-radius:8px 8px 0 0;
   display:flex;align-items:center;gap:8px;
 }
 .code-fn::before{
-  content:'';width:7px;height:7px;background:var(--amber);
-  border-radius:50%;box-shadow:var(--glow-a);
+  content:'';width:7px;height:7px;background:var(--accent);
+  border-radius:50%;box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
 }
 pre{
-  background:#060500;border:1px solid var(--border);
-  border-top:none;border-radius:0 0 7px 7px;
+  background:#0f172a;border:1.5px solid #1e293b;
+  border-top:none;border-radius:0 0 8px 8px;
   padding:16px 18px;overflow-x:auto;
-  font-family:'Fira Code',monospace;font-size:12px;line-height:1.75;
-  color:#d4c8a8;
+  font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.75;
+  color:#e2e8f0;
 }
-pre.rd{border-radius:7px;border-top:1px solid var(--border)}
+pre.rd{border-radius:8px;border-top:1.5px solid #1e293b}
 .copy-btn{
   position:absolute;right:9px;top:9px;
-  background:var(--bg3);border:1px solid var(--border2);
-  color:var(--text2);padding:4px 9px;border-radius:4px;
-  font-size:10.5px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;
-  transition:all .2s;
+  background:#ffffff;border:1.5px solid var(--border2);
+  color:var(--text2);padding:4px 9px;border-radius:5px;
+  font-size:10.5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;
+  transition:all .18s;
 }
-.copy-btn:hover{border-color:var(--amber);color:var(--amber)}
-.copy-btn.copied{border-color:var(--green);color:var(--green)}
+.copy-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.copy-btn.copied{border-color:var(--green);color:var(--green);background:#f0fdf4}
 
-/* syntax highlight */
-.kw{color:#f5a623}
-.str{color:#a5d6ff}
-.cmt{color:#6a5a40;font-style:italic}
-.fn{color:#cc88ff}
-.num{color:#39ff85}
-.tag{color:#7ee787}
-.op{color:#ff7b72}
-.cls{color:#ffd580}
-.req{color:#f5a623}
+/* syntax highlight — keeps on dark code background */
+.kw{color:#7dd3fc}
+.str{color:#86efac}
+.cmt{color:#64748b;font-style:italic}
+.fn{color:#c4b5fd}
+.num{color:#fde68a}
+.tag{color:#6ee7b7}
+.op{color:#fca5a5}
+.cls{color:#fde68a}
+.req{color:#7dd3fc}
 
 /* ── VERIFY ── */
 .vblock{
-  background:#040300;border:1px solid rgba(57,255,133,0.15);
-  border-left:3px solid var(--green);border-radius:0 7px 7px 0;
-  padding:13px 17px;font-family:'Fira Code',monospace;
-  font-size:11.5px;color:#80ffbb;line-height:1.85;
+  background:#f8fafc;border:1.5px solid #d1fae5;
+  border-left:3px solid var(--green);border-radius:0 8px 8px 0;
+  padding:13px 17px;font-family:'JetBrains Mono',monospace;
+  font-size:11.5px;color:#065f46;line-height:1.85;
 }
 
 /* ── VAPT CLOSURE ── */
 .vapt{
-  background:linear-gradient(135deg,rgba(245,166,35,0.05),rgba(57,255,133,0.03));
-  border:1px solid rgba(245,166,35,0.2);border-radius:8px;
+  background:linear-gradient(135deg,#eff6ff,#f0fdf4);
+  border:1.5px solid #bfdbfe;border-radius:8px;
   padding:15px 19px;display:flex;gap:12px;align-items:flex-start;
 }
 .vapt-ico{font-size:19px;flex-shrink:0;margin-top:1px}
-.vapt-txt{font-size:12.5px;color:var(--text2);line-height:1.65;font-style:italic}
+.vapt-txt{font-size:12.5px;color:#475569;line-height:1.65;font-style:italic}
 .vapt-lbl{
-  font-size:9.5px;font-weight:700;color:var(--amber);
+  font-size:9.5px;font-weight:700;color:var(--accent);
   text-transform:uppercase;letter-spacing:1.5px;
-  margin-bottom:4px;font-style:normal;font-family:'Fira Code',monospace;
+  margin-bottom:4px;font-style:normal;font-family:'JetBrains Mono',monospace;
 }
 
 /* ── WHO TABLE ── */
 .who-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .who-tbl th{
-  background:var(--bg3);padding:9px 13px;text-align:left;
-  font-size:10.5px;color:var(--text3);font-weight:600;
+  background:#f8fafc;padding:9px 13px;text-align:left;
+  font-size:10.5px;color:var(--text2);font-weight:600;
   text-transform:uppercase;letter-spacing:1px;
-  border:1px solid var(--border);font-family:'Fira Code',monospace;
+  border:1px solid var(--border);font-family:'JetBrains Mono',monospace;
 }
 .who-tbl td{padding:9px 13px;border:1px solid var(--border);color:var(--text);vertical-align:top}
-.who-tbl tr:hover td{background:rgba(255,255,255,0.015)}
+.who-tbl tr:hover td{background:#f8fafc}
 .role-badge{
   display:inline-block;padding:2px 7px;border-radius:3px;
-  font-size:10.5px;font-weight:500;font-family:'Fira Code',monospace;
+  font-size:10.5px;font-weight:500;font-family:'JetBrains Mono',monospace;
   margin:2px 2px 2px 0;
 }
-.r-sys{background:rgba(56,191,255,0.1);color:var(--blue)}
-.r-dev{background:rgba(57,255,133,0.08);color:var(--green2)}
-.r-web{background:rgba(245,166,35,0.08);color:var(--amber)}
-.r-any{background:rgba(204,136,255,0.1);color:var(--purple)}
+.r-sys{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.r-dev{background:#f0fdf4;color:#15803d;border:1px solid #86efac}
+.r-web{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.r-any{background:#faf5ff;color:#6d28d9;border:1px solid #ddd6fe}
 
 /* ── RESTART PILL ── */
 .rpill{
   display:inline-flex;align-items:center;gap:5px;
-  padding:3px 9px;background:rgba(245,166,35,0.07);
-  border:1px solid rgba(245,166,35,0.22);border-radius:20px;
-  font-size:11.5px;color:var(--amber);font-family:'Fira Code',monospace;
+  padding:3px 9px;background:#fffbeb;
+  border:1.5px solid #fde68a;border-radius:20px;
+  font-size:11.5px;color:#92400e;font-family:'JetBrains Mono',monospace;
   margin:3px 4px 3px 0;
 }
 
 /* ── CHECK LIST ── */
 ul.cl{list-style:none;padding:0}
 ul.cl li{padding:3px 0;display:flex;gap:7px;align-items:baseline;font-size:13px}
-ul.cl li::before{content:'▸';color:var(--amber);font-weight:700;flex-shrink:0}
+ul.cl li::before{content:'▸';color:var(--accent);font-weight:700;flex-shrink:0}
 
 /* ── SCROLL TOP ── */
 #goTop{
   position:fixed;bottom:28px;right:28px;
-  width:40px;height:40px;background:var(--amber);
-  border:none;border-radius:50%;color:var(--bg);
+  width:40px;height:40px;background:var(--accent);
+  border:none;border-radius:50%;color:#ffffff;
   font-size:17px;cursor:pointer;display:none;
   align-items:center;justify-content:center;z-index:200;
-  box-shadow:var(--glow-a);transition:transform .2s;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.35);transition:transform .2s, box-shadow .2s;
 }
-#goTop:hover{transform:scale(1.12)}
+#goTop:hover{transform:scale(1.12);box-shadow:0 6px 20px rgba(37,99,235,0.45)}
 
 .section.hidden{display:none}
 
@@ -427,7 +435,7 @@ ul.cl li::before{content:'▸';color:var(--amber);font-weight:700;flex-shrink:0}
   .fg{grid-template-columns:1fr}
 }
 
-a{color:var(--amber);text-decoration:none}
+a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 </style>
 </head>
@@ -504,9 +512,9 @@ a:hover{text-decoration:underline}
   </div>
   <div class="filter-btns">
     <button class="fbtn active" onclick="filterSev('all',this)">All</button>
-    <button class="fbtn" onclick="filterSev('critical',this)" style="color:var(--red)">Critical</button>
-    <button class="fbtn" onclick="filterSev('high',this)" style="color:var(--amber)">High</button>
-    <button class="fbtn" onclick="filterSev('medium',this)" style="color:var(--purple)">Medium</button>
+    <button class="fbtn" onclick="filterSev('critical',this)" style="color:#b91c1c">Critical</button>
+    <button class="fbtn" onclick="filterSev('high',this)" style="color:#92400e">High</button>
+    <button class="fbtn" onclick="filterSev('medium',this)" style="color:#5b21b6">Medium</button>
   </div>
   <button class="ctrl-btn" onclick="expandAll()">▼ All</button>
   <button class="ctrl-btn" onclick="collapseAll()">▲ All</button>
@@ -524,7 +532,7 @@ a:hover{text-decoration:underline}
       <div class="sec-title">Helmet.js — HTTP Security Headers</div>
       <div class="sec-meta">
         <span class="badge b-high">HIGH</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Middleware</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Middleware</span>
         <span class="tag-p">helmet</span><span class="tag-p">app.js</span><span class="tag-p">Express</span>
       </div>
     </div>
@@ -651,7 +659,7 @@ $ curl -s "https://securityheaders.com/?q=https://your-app.com" | grep grade
       <div class="sec-title">Rate Limiting &amp; DDoS Protection</div>
       <div class="sec-meta">
         <span class="badge b-critical">CRITICAL</span>
-        <span class="badge" style="background:rgba(56,191,255,0.08);color:var(--blue)">App + Server</span>
+        <span class="badge" style="background:#dbeafe;color:#1e40af">App + Server</span>
         <span class="tag-p">express-rate-limit</span><span class="tag-p">nginx.conf</span><span class="tag-p">slow-down</span>
       </div>
     </div>
@@ -810,7 +818,7 @@ $ curl -I https://your-app.com/api/health | grep -i ratelimit
       <div class="sec-title">CORS Configuration</div>
       <div class="sec-meta">
         <span class="badge b-high">HIGH</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Middleware</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Middleware</span>
         <span class="tag-p">cors</span><span class="tag-p">app.js</span>
       </div>
     </div>
@@ -915,7 +923,7 @@ $ curl -I https://your-app.com/api/ | grep 'access-control-allow-origin'
       <div class="sec-title">HTTPS / TLS &amp; Nginx Reverse Proxy Hardening</div>
       <div class="sec-meta">
         <span class="badge b-critical">CRITICAL</span>
-        <span class="badge" style="background:rgba(56,191,255,0.08);color:var(--blue)">Server Level</span>
+        <span class="badge" style="background:#dbeafe;color:#1e40af">Server Level</span>
         <span class="tag-p">nginx.conf</span><span class="tag-p">certbot</span><span class="tag-p">TLSv1.3</span>
       </div>
     </div>
@@ -1093,7 +1101,7 @@ $ openssl s_client -connect your-app.com:443 -tls1 2>&1 | grep "handshake failur
       <div class="sec-title">JWT Security Best Practices</div>
       <div class="sec-meta">
         <span class="badge b-critical">CRITICAL</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Layer</span>
         <span class="tag-p">jsonwebtoken</span><span class="tag-p">RS256</span><span class="tag-p">auth.js</span>
       </div>
     </div>
@@ -1230,7 +1238,7 @@ $ node -e "const jwt=require('jsonwebtoken'); try { jwt.verify('eyJhbGciOiJub25l
       <div class="sec-title">Session &amp; Cookie Security</div>
       <div class="sec-meta">
         <span class="badge b-high">HIGH</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Layer</span>
         <span class="tag-p">express-session</span><span class="tag-p">connect-redis</span>
       </div>
     </div>
@@ -1319,7 +1327,7 @@ $ curl -I -X POST https://your-app.com/api/auth/login -d '{"email":"test@test.co
       <div class="sec-title">CSRF Protection</div>
       <div class="sec-meta">
         <span class="badge b-high">HIGH</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Layer</span>
         <span class="tag-p">csrf-csrf</span><span class="tag-p">double-submit</span>
       </div>
     </div>
@@ -1414,7 +1422,7 @@ $ curl -s -X POST https://your-app.com/api/user/update -H "x-csrf-token: $TOKEN"
       <div class="sec-title">Input Validation &amp; Sanitization</div>
       <div class="sec-meta">
         <span class="badge b-critical">CRITICAL</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Layer</span>
         <span class="tag-p">express-validator</span><span class="tag-p">zod</span><span class="tag-p">hpp</span>
       </div>
     </div>
@@ -1538,7 +1546,7 @@ $ curl -s -X POST https://your-app.com/api/data -H "Content-Type: application/js
       <div class="sec-title">SQL &amp; NoSQL Injection Prevention</div>
       <div class="sec-meta">
         <span class="badge b-critical">CRITICAL</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Layer</span>
         <span class="tag-p">pg / mysql2</span><span class="tag-p">mongoose</span><span class="tag-p">express-mongo-sanitize</span>
       </div>
     </div>
@@ -1646,7 +1654,7 @@ $ curl -s -X POST https://your-app.com/api/auth/login -H "Content-Type: applicat
       <div class="sec-title">File Upload Security</div>
       <div class="sec-meta">
         <span class="badge b-high">HIGH</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Layer</span>
         <span class="tag-p">multer</span><span class="tag-p">file-type</span><span class="tag-p">uuid</span>
       </div>
     </div>
@@ -1764,7 +1772,7 @@ $ curl -I https://your-app.com/../var/uploads/
       <div class="sec-title">Environment Variables &amp; Secrets Management</div>
       <div class="sec-meta">
         <span class="badge b-critical">CRITICAL</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App + Server</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App + Server</span>
         <span class="tag-p">.env</span><span class="tag-p">dotenv-safe</span><span class="tag-p">.gitignore</span>
       </div>
     </div>
@@ -1890,7 +1898,7 @@ $ trufflehog filesystem /var/www/app/src/ --only-verified
       <div class="sec-title">Dependency Security &amp; Supply Chain</div>
       <div class="sec-meta">
         <span class="badge b-high">HIGH</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">DevSecOps</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">DevSecOps</span>
         <span class="tag-p">npm audit</span><span class="tag-p">snyk</span><span class="tag-p">package-lock.json</span>
       </div>
     </div>
@@ -2001,7 +2009,7 @@ $ git status package-lock.json
       <div class="sec-title">Error Handling &amp; Information Disclosure Prevention</div>
       <div class="sec-meta">
         <span class="badge b-medium">MEDIUM</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App Layer</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App Layer</span>
         <span class="tag-p">errorHandler.js</span><span class="tag-p">NODE_ENV</span>
       </div>
     </div>
@@ -2118,7 +2126,7 @@ $ tail -5 /var/log/app/error.log
       <div class="sec-title">Process Security &amp; PM2 Hardening</div>
       <div class="sec-meta">
         <span class="badge b-high">HIGH</span>
-        <span class="badge" style="background:rgba(56,191,255,0.08);color:var(--blue)">Server Level</span>
+        <span class="badge" style="background:#dbeafe;color:#1e40af">Server Level</span>
         <span class="tag-p">PM2</span><span class="tag-p">systemd</span><span class="tag-p">non-root</span>
       </div>
     </div>
@@ -2223,7 +2231,7 @@ $ kill -9 $(pgrep -f 'your-app' | head -1)
       <div class="sec-title">Structured Logging &amp; Security Monitoring</div>
       <div class="sec-meta">
         <span class="badge b-medium">MEDIUM</span>
-        <span class="badge" style="background:rgba(57,255,133,0.07);color:var(--green)">App + Server</span>
+        <span class="badge" style="background:#d1fae5;color:#065f46">App + Server</span>
         <span class="tag-p">winston</span><span class="tag-p">morgan</span><span class="tag-p">request-id</span>
       </div>
     </div>
@@ -2355,7 +2363,7 @@ $ curl -I https://your-app.com/api/health | grep -i x-request-id
       <div class="sec-title">Security Audit Schedule &amp; Backup Strategy</div>
       <div class="sec-meta">
         <span class="badge b-medium">MEDIUM</span>
-        <span class="badge" style="background:rgba(56,191,255,0.08);color:var(--blue)">Server + DevSecOps</span>
+        <span class="badge" style="background:#dbeafe;color:#1e40af">Server + DevSecOps</span>
         <span class="tag-p">cron</span><span class="tag-p">pg_dump</span><span class="tag-p">gpg</span>
       </div>
     </div>
@@ -2470,9 +2478,9 @@ $ curl -I https://your-app.com/../var/backups/
 <!-- ═══════════════════════════════════════
   SUMMARY TABLE
 ═══════════════════════════════════════ -->
-<div style="margin-top:44px;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden">
-  <div style="padding:22px 26px;background:var(--card2);border-bottom:1px solid var(--border)">
-    <h2 style="font-family:'Oxanium',sans-serif;font-size:19px;font-weight:700;color:var(--text)">⬡ Security Controls Master Checklist</h2>
+<div style="margin-top:44px;background:#ffffff;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden">
+  <div style="padding:22px 26px;background:#f8fafc;border-bottom:1px solid #e2e8f0">
+    <h2 style="font-family:'Oxanium',sans-serif;font-size:19px;font-weight:700;color:#0f172a">⬡ Security Controls Master Checklist</h2>
     <p style="color:var(--text2);font-size:12.5px;margin-top:4px">Track remediation status for VAPT report closure</p>
   </div>
   <div style="overflow-x:auto">
@@ -2503,10 +2511,10 @@ $ curl -I https://your-app.com/../var/backups/
     </table>
   </div>
   <div style="padding:18px 26px;border-top:1px solid var(--border);display:flex;gap:24px;flex-wrap:wrap;align-items:center">
-    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--red);border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:var(--text2)">Critical: 5 controls</span></div>
-    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--amber);border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:var(--text2)">High: 8 controls</span></div>
-    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--purple);border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:var(--text2)">Medium: 3 controls</span></div>
-    <div style="margin-left:auto;font-size:11px;color:var(--text3);font-family:'Fira Code',monospace">OWASP Node.js Security Cheatsheet · April 2026</div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:#475569">Critical: 5 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:#f59e0b;border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:#475569">High: 8 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:#a855f7;border-radius:2px;display:inline-block"></span><span style="font-size:11.5px;color:#475569">Medium: 3 controls</span></div>
+    <div style="margin-left:auto;font-size:11px;color:#94a3b8;font-family:'Fira Code',monospace">OWASP Node.js Security Cheatsheet · April 2026</div>
   </div>
 </div>
 
