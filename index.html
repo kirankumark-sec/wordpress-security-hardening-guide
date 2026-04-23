@@ -1,136 +1,672 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Security Hardening Guides</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <title>Security Hardening Guides</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #010810;
+      --surface: #040f1e;
+      --neon-cyan: #00f5ff;
+      --neon-blue: #0066ff;
+      --neon-green: #00ff88;
+      --neon-red: #ff003c;
+      --neon-purple: #b400ff;
+      --text: #c8e6ff;
+      --muted: #4a6a8a;
+      --grid: rgba(0,245,255,0.04);
+    }
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #0f172a;
-            color: #ffffff;
-        }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-        header {
-            padding: 30px;
-            text-align: center;
-            background-color: #020617;
-        }
+    html { scroll-behavior: smooth; }
 
-        header h1 {
-            margin: 0;
-        }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: none;
+    }
 
-        header p {
-            color: #94a3b8;
-            margin-top: 8px;
-        }
+    /* Custom cursor */
+    #cursor {
+      position: fixed;
+      width: 12px; height: 12px;
+      background: var(--neon-cyan);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.08s ease, background 0.2s;
+      box-shadow: 0 0 12px var(--neon-cyan), 0 0 30px rgba(0,245,255,0.4);
+      mix-blend-mode: screen;
+    }
+    #cursor-ring {
+      position: fixed;
+      width: 36px; height: 36px;
+      border: 1px solid rgba(0,245,255,0.5);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform 0.18s ease, width 0.2s, height 0.2s, border-color 0.2s;
+    }
 
-        .container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            padding: 40px;
-            max-width: 1000px;
-            margin: auto;
-        }
+    /* Animated grid background */
+    .grid-bg {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: 0;
+      animation: gridDrift 20s linear infinite;
+    }
+    @keyframes gridDrift {
+      0% { background-position: 0 0; }
+      100% { background-position: 60px 60px; }
+    }
 
-        .card {
-            background-color: #111827;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            transition: transform 0.2s ease;
-        }
+    /* Scanlines */
+    .scanlines {
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.08) 2px,
+        rgba(0,0,0,0.08) 4px
+      );
+      z-index: 1;
+      pointer-events: none;
+    }
 
-        .card:hover {
-            transform: translateY(-4px);
-        }
+    /* Ambient blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.12;
+      z-index: 0;
+      animation: blobPulse 8s ease-in-out infinite alternate;
+    }
+    .blob-1 { width: 500px; height: 500px; background: var(--neon-blue); top: -100px; left: -100px; animation-delay: 0s; }
+    .blob-2 { width: 400px; height: 400px; background: var(--neon-cyan); bottom: -80px; right: -80px; animation-delay: 3s; }
+    .blob-3 { width: 300px; height: 300px; background: var(--neon-purple); top: 40%; left: 50%; animation-delay: 6s; }
 
-        .card h2 {
-            margin-top: 0;
-        }
+    @keyframes blobPulse {
+      0% { transform: scale(1) translate(0,0); opacity: 0.10; }
+      100% { transform: scale(1.3) translate(20px, -20px); opacity: 0.18; }
+    }
 
-        .card p {
-            color: #9ca3af;
-            font-size: 14px;
-        }
+    /* Main layout */
+    .main-wrap {
+      position: relative;
+      z-index: 2;
+      min-height: 100vh;
+    }
 
-        .card a {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 10px 16px;
-            background-color: #2563eb;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 6px;
-            font-size: 14px;
-        }
+    /* ── HEADER ── */
+    header {
+      text-align: center;
+      padding: 80px 40px 60px;
+      position: relative;
+    }
 
-        .card a:hover {
-            background-color: #1d4ed8;
-        }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--neon-green);
+      letter-spacing: 3px;
+      border: 1px solid rgba(0,255,136,0.3);
+      padding: 6px 16px;
+      border-radius: 2px;
+      margin-bottom: 30px;
+      animation: fadeSlideDown 0.8s ease both;
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--neon-green);
+      border-radius: 50%;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse { 0%,100% { opacity:1; box-shadow: 0 0 6px var(--neon-green); } 50% { opacity:0.4; box-shadow: none; } }
 
-        footer {
-            text-align: center;
-            padding: 15px;
-            font-size: 12px;
-            color: #94a3b8;
-        }
-    </style>
+    .header-title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2rem, 6vw, 4.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      animation: fadeSlideDown 0.9s ease 0.1s both;
+    }
+    .title-secure {
+      color: #ffffff;
+      text-shadow: 0 0 30px rgba(255,255,255,0.3);
+    }
+    .title-accent {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 20px var(--neon-cyan), 0 0 60px rgba(0,245,255,0.3);
+      display: block;
+    }
+
+    .header-sub {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      margin-top: 18px;
+      animation: fadeSlideDown 1s ease 0.2s both;
+    }
+
+    /* Divider line */
+    .divider {
+      width: 200px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+      margin: 30px auto;
+      animation: fadeSlideDown 1s ease 0.3s both;
+    }
+
+    /* Stats row */
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      animation: fadeSlideDown 1s ease 0.4s both;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--neon-cyan);
+      text-shadow: 0 0 20px var(--neon-cyan);
+    }
+    .stat-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 2px;
+      margin-top: 4px;
+    }
+
+    @keyframes fadeSlideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── CARDS GRID ── */
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      padding: 20px 48px 80px;
+      max-width: 1100px;
+      margin: auto;
+    }
+
+    /* ── CARD ── */
+    .card {
+      position: relative;
+      background: linear-gradient(135deg, rgba(4,15,30,0.95), rgba(6,20,42,0.9));
+      border: 1px solid rgba(0,245,255,0.12);
+      border-radius: 4px;
+      padding: 32px 28px 28px;
+      overflow: hidden;
+      cursor: none;
+      transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+      animation: cardReveal 0.6s ease both;
+    }
+    .card:nth-child(1) { animation-delay: 0.5s; }
+    .card:nth-child(2) { animation-delay: 0.65s; }
+    .card:nth-child(3) { animation-delay: 0.80s; }
+    .card:nth-child(4) { animation-delay: 0.95s; }
+    .card:nth-child(5) { animation-delay: 1.10s; }
+
+    @keyframes cardReveal {
+      from { opacity: 0; transform: translateY(30px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .card:hover {
+      border-color: var(--card-color, var(--neon-cyan));
+      box-shadow: 0 0 0 1px var(--card-color, var(--neon-cyan)),
+                  0 0 30px rgba(0,245,255,0.08),
+                  inset 0 0 40px rgba(0,245,255,0.03);
+      transform: translateY(-6px);
+    }
+
+    /* Corner accents */
+    .card::before, .card::after {
+      content: '';
+      position: absolute;
+      width: 16px; height: 16px;
+      border-color: var(--card-color, var(--neon-cyan));
+      border-style: solid;
+      transition: width 0.3s, height 0.3s, opacity 0.3s;
+      opacity: 0.4;
+    }
+    .card::before { top: 0; left: 0; border-width: 1px 0 0 1px; }
+    .card::after  { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+    .card:hover::before, .card:hover::after { width: 28px; height: 28px; opacity: 1; }
+
+    /* Card glow sweep on hover */
+    .card-glow {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(0,245,255,0.06) 0%, transparent 60%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .card:hover .card-glow { opacity: 1; }
+
+    /* Card number tag */
+    .card-num {
+      position: absolute;
+      top: 16px; right: 20px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 2px;
+    }
+
+    /* Icon */
+    .card-icon {
+      font-size: 2.2rem;
+      margin-bottom: 14px;
+      display: block;
+      filter: drop-shadow(0 0 10px var(--card-color, var(--neon-cyan)));
+      transition: transform 0.3s, filter 0.3s;
+    }
+    .card:hover .card-icon {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 20px var(--card-color, var(--neon-cyan)));
+    }
+
+    /* Tags */
+    .card-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 1.5px;
+      padding: 3px 8px;
+      border: 1px solid rgba(0,245,255,0.2);
+      color: var(--card-color, var(--neon-cyan));
+      border-color: var(--card-color, var(--neon-cyan));
+      opacity: 0.6;
+      border-radius: 2px;
+    }
+
+    .card h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+
+    .card p {
+      font-size: 13px;
+      color: #6a8aaa;
+      line-height: 1.65;
+      font-weight: 300;
+      letter-spacing: 0.3px;
+    }
+
+    /* Progress bar */
+    .card-bar {
+      margin: 18px 0;
+      height: 2px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 1px;
+      overflow: hidden;
+    }
+    .card-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--card-color, var(--neon-cyan)), transparent);
+      border-radius: 1px;
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.8s cubic-bezier(0.4,0,0.2,1);
+    }
+    .card:hover .card-bar-fill { transform: scaleX(1); }
+
+    /* CTA Button */
+    .card-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 6px;
+      padding: 10px 20px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 2px;
+      color: var(--card-color, var(--neon-cyan));
+      text-decoration: none;
+      border: 1px solid var(--card-color, var(--neon-cyan));
+      border-radius: 2px;
+      background: transparent;
+      transition: background 0.25s, color 0.25s, box-shadow 0.25s, gap 0.25s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--card-color, var(--neon-cyan));
+      opacity: 0;
+      transition: opacity 0.25s;
+    }
+    .card-btn:hover::before { opacity: 0.12; }
+    .card-btn:hover {
+      box-shadow: 0 0 20px rgba(0,245,255,0.2);
+      gap: 16px;
+    }
+    .btn-arrow {
+      display: inline-block;
+      transition: transform 0.25s;
+    }
+    .card-btn:hover .btn-arrow { transform: translateX(4px); }
+    .btn-text { position: relative; z-index: 1; }
+
+    /* ── FOOTER ── */
+    footer {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 24px;
+      border-top: 1px solid rgba(0,245,255,0.06);
+    }
+    .footer-inner {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+      letter-spacing: 2px;
+    }
+    .footer-inner span {
+      color: var(--neon-cyan);
+      text-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    /* Terminal blink */
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0; } }
+    .blink { animation: blink 1s step-end infinite; }
+
+    /* Floating particles */
+    .particles { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+    .particle {
+      position: absolute;
+      width: 2px; height: 2px;
+      background: var(--neon-cyan);
+      border-radius: 50%;
+      opacity: 0;
+      animation: particleFly linear infinite;
+    }
+    @keyframes particleFly {
+      0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.3; }
+      100% { transform: translateY(-20px) translateX(var(--drift)); opacity: 0; }
+    }
+  </style>
 </head>
-
 <body>
 
-<header>
-    <h1>🔐 Security Hardening Guides</h1>
-    <p>Practical security best practices for applications and platforms</p>
-</header>
+<!-- Ambient -->
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+<div class="grid-bg"></div>
+<div class="scanlines"></div>
 
-<div class="container">
+<!-- Cursor -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- Particles -->
+<div class="particles" id="particles"></div>
+
+<div class="main-wrap">
+
+  <header>
+    <div class="header-badge">
+      <div class="badge-dot"></div>
+      SYSTEM ACTIVE &nbsp;|&nbsp; ALL GUIDES ONLINE
+    </div>
+
+    <h1 class="header-title">
+      <span class="title-secure">SECURITY</span>
+      <span class="title-accent">HARDENING GUIDES</span>
+    </h1>
+
+    <div class="divider"></div>
+
+    <div class="stats-row">
+      <div class="stat">
+        <div class="stat-num" id="cnt-guides">05</div>
+        <div class="stat-label">GUIDES</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">100<span style="font-size:1rem">%</span></div>
+        <div class="stat-label">FREE</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="cnt-year">—</div>
+        <div class="stat-label">UPDATED</div>
+      </div>
+    </div>
+
+    <p class="header-sub">// PRACTICAL SECURITY BEST PRACTICES FOR MODERN STACKS</p>
+  </header>
+
+  <div class="container">
 
     <!-- WordPress -->
-    <div class="card">
-        <h2>WordPress Security Hardening</h2>
-        <p>Best practices to secure WordPress installations, plugins, and admin access.</p>
-        <a href="wordpress-security-hardening-guide.html">View Guide</a>
+    <div class="card" style="--card-color:#f97316" data-color="#f97316">
+      <div class="card-glow"></div>
+      <span class="card-num">01 / 05</span>
+      <span class="card-icon">🟠</span>
+      <div class="card-tags">
+        <span class="tag">CMS</span>
+        <span class="tag">PHP</span>
+        <span class="tag">PLUGINS</span>
+      </div>
+      <h2>WordPress Security Hardening</h2>
+      <p>Best practices to secure WordPress installations, plugins, and admin access against common attack vectors.</p>
+      <div class="card-bar"><div class="card-bar-fill"></div></div>
+      <a class="card-btn" href="wordpress-security-hardening-guide.html">
+        <span class="btn-text">VIEW GUIDE</span>
+        <span class="btn-arrow">→</span>
+      </a>
     </div>
 
     <!-- Node.js -->
-    <div class="card">
-        <h2>Node.js Security Hardening</h2>
-        <p>Security recommendations for Node.js applications and runtime environments.</p>
-        <a href="nodejs-security-hardening-guide.html">View Guide</a>
+    <div class="card" style="--card-color:#22c55e" data-color="#22c55e">
+      <div class="card-glow"></div>
+      <span class="card-num">02 / 05</span>
+      <span class="card-icon">🟢</span>
+      <div class="card-tags">
+        <span class="tag">RUNTIME</span>
+        <span class="tag">NPM</span>
+        <span class="tag">API</span>
+      </div>
+      <h2>Node.js Security Hardening</h2>
+      <p>Security recommendations for Node.js applications and runtime environments including dependency management.</p>
+      <div class="card-bar"><div class="card-bar-fill"></div></div>
+      <a class="card-btn" href="nodejs-security-hardening-guide.html">
+        <span class="btn-text">VIEW GUIDE</span>
+        <span class="btn-arrow">→</span>
+      </a>
     </div>
 
     <!-- React -->
-    <div class="card">
-        <h2>React Security Hardening</h2>
-        <p>Security recommendations for React applications and frontend environments.</p>
-        <a href="react-security-hardening-guide.html">View Guide</a>
+    <div class="card" style="--card-color:#00f5ff" data-color="#00f5ff">
+      <div class="card-glow"></div>
+      <span class="card-num">03 / 05</span>
+      <span class="card-icon">⚛️</span>
+      <div class="card-tags">
+        <span class="tag">FRONTEND</span>
+        <span class="tag">XSS</span>
+        <span class="tag">CSP</span>
+      </div>
+      <h2>React Security Hardening</h2>
+      <p>Security recommendations for React applications and frontend environments with CSP and XSS mitigation strategies.</p>
+      <div class="card-bar"><div class="card-bar-fill"></div></div>
+      <a class="card-btn" href="react-security-hardening-guide.html">
+        <span class="btn-text">VIEW GUIDE</span>
+        <span class="btn-arrow">→</span>
+      </a>
     </div>
 
     <!-- Flutter -->
-    <div class="card">
-        <h2>Flutter Security Hardening</h2>
-        <p>Best practices to secure Flutter mobile and web applications.</p>
-        <a href="flutter-security-hardening-guide.html">View Guide</a>
+    <div class="card" style="--card-color:#818cf8" data-color="#818cf8">
+      <div class="card-glow"></div>
+      <span class="card-num">04 / 05</span>
+      <span class="card-icon">💙</span>
+      <div class="card-tags">
+        <span class="tag">MOBILE</span>
+        <span class="tag">DART</span>
+        <span class="tag">ANDROID</span>
+      </div>
+      <h2>Flutter Security Hardening</h2>
+      <p>Best practices to secure Flutter mobile and web applications, including certificate pinning and storage encryption.</p>
+      <div class="card-bar"><div class="card-bar-fill"></div></div>
+      <a class="card-btn" href="flutter-security-hardening-guide.html">
+        <span class="btn-text">VIEW GUIDE</span>
+        <span class="btn-arrow">→</span>
+      </a>
     </div>
 
     <!-- Linux -->
-    <div class="card">
-        <h2>Linux Server Security Hardening</h2>
-        <p>Best practices to secure Linux Servers by security Hardening.</p>
-        <a href="linux-server-security-hardening-guide.html">View Guide</a>
+    <div class="card" style="--card-color:#facc15" data-color="#facc15">
+      <div class="card-glow"></div>
+      <span class="card-num">05 / 05</span>
+      <span class="card-icon">🐧</span>
+      <div class="card-tags">
+        <span class="tag">SERVER</span>
+        <span class="tag">SSH</span>
+        <span class="tag">FIREWALL</span>
+      </div>
+      <h2>Linux Server Security Hardening</h2>
+      <p>Best practices to secure Linux servers through hardening, SSH configuration, firewall rules, and kernel tuning.</p>
+      <div class="card-bar"><div class="card-bar-fill"></div></div>
+      <a class="card-btn" href="linux-server-security-hardening-guide.html">
+        <span class="btn-text">VIEW GUIDE</span>
+        <span class="btn-arrow">→</span>
+      </a>
     </div>
+
+  </div>
+
+  <footer>
+    <div class="footer-inner">
+      MAINTAINED BY <span>KIRAN KUMAR K</span> &nbsp;|&nbsp; SECURITY HARDENING REPOSITORY &nbsp;|&nbsp; <span id="year"></span><span class="blink">_</span>
+    </div>
+  </footer>
 
 </div>
 
-<footer>
-    Maintained by Kiran Kumar K ｜ Security Hardening Repository
-</footer>
+<script>
+  // Year
+  document.getElementById('year').textContent = new Date().getFullYear();
+  document.getElementById('cnt-year').textContent = new Date().getFullYear();
 
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top  = my + 'px';
+  });
+
+  function animRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) *.12;
+    ring.style.left = rx + 'px';
+    ring.style.top  = ry + 'px';
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+
+  document.querySelectorAll('a, .card').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.transform = 'translate(-50%,-50%) scale(2)';
+      ring.style.width = '60px'; ring.style.height = '60px';
+      ring.style.borderColor = 'rgba(0,245,255,0.8)';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.transform = 'translate(-50%,-50%) scale(1)';
+      ring.style.width = '36px'; ring.style.height = '36px';
+      ring.style.borderColor = 'rgba(0,245,255,0.5)';
+    });
+  });
+
+  // Card mouse-glow tracking
+  document.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width  * 100).toFixed(1);
+      const y = ((e.clientY - r.top)  / r.height * 100).toFixed(1);
+      card.querySelector('.card-glow').style.setProperty('--mx', x + '%');
+      card.querySelector('.card-glow').style.setProperty('--my', y + '%');
+    });
+  });
+
+  // Floating particles
+  const pWrap = document.getElementById('particles');
+  for (let i = 0; i < 28; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const colors = ['#00f5ff','#0066ff','#00ff88','#b400ff','#facc15'];
+    p.style.cssText = `
+      left: ${Math.random()*100}%;
+      background: ${colors[Math.floor(Math.random()*colors.length)]};
+      --drift: ${(Math.random()-0.5)*200}px;
+      animation-duration: ${6 + Math.random()*14}s;
+      animation-delay: ${Math.random()*12}s;
+      width: ${1 + Math.random()*2}px;
+      height: ${1 + Math.random()*2}px;
+    `;
+    pWrap.appendChild(p);
+  }
+
+  // Animate counter
+  function animCount(el, target, suffix='') {
+    let cur = 0;
+    const step = () => {
+      cur++;
+      el.textContent = String(cur).padStart(2,'0') + suffix;
+      if (cur < target) setTimeout(step, 80);
+    };
+    setTimeout(step, 1200);
+  }
+  animCount(document.getElementById('cnt-guides'), 5);
+</script>
 </body>
 </html>
