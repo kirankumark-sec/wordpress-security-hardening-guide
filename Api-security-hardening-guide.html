@@ -1,0 +1,2924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Security Hardening Guide · VAPT Remediation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   DESIGN DIRECTION: Luxury editorial magazine
+   Warm ivory canvas + rose gold + deep plum + electric blue
+   Playfair Display headers — DM Sans body
+   Feels like an Economist / McKinsey report
+═══════════════════════════════════════════════ */
+:root {
+  /* Canvas */
+  --canvas:     #faf8f4;
+  --canvas2:    #ffffff;
+  --canvas3:    #f3f0ea;
+  --canvas4:    #ede9e0;
+
+  /* Borders */
+  --rule:       #e4ddd2;
+  --rule2:      #d4cabb;
+  --rule3:      #c4b8a8;
+
+  /* Ink */
+  --ink:        #1a1208;
+  --ink2:       #3d3020;
+  --ink3:       #7a6a50;
+  --ink4:       #b8a890;
+  --ink5:       #d4c8b4;
+
+  /* Rose Gold accent */
+  --rose:       #c0697a;
+  --rose2:      #a84f62;
+  --rose3:      #e8b4bc;
+  --rose-bg:    #fdf2f4;
+  --rose-bg2:   #f9e4e8;
+
+  /* Deep Plum */
+  --plum:       #4a2060;
+  --plum2:      #6b3488;
+  --plum3:      #9b6ab8;
+  --plum-bg:    #f5f0fa;
+  --plum-bg2:   #ede4f5;
+
+  /* Electric Blue */
+  --blue:       #1a6fcc;
+  --blue2:      #0f54a8;
+  --blue3:      #4a96ee;
+  --blue-bg:    #eef5fd;
+  --blue-bg2:   #ddeafb;
+
+  /* Gold */
+  --gold:       #b8860b;
+  --gold2:      #d4a520;
+  --gold3:      #e8cc6a;
+  --gold-bg:    #fdf8ec;
+  --gold-bg2:   #faf0d4;
+
+  /* Sage */
+  --sage:       #2d6b52;
+  --sage2:      #48a07c;
+  --sage-bg:    #eef8f3;
+  --sage-bg2:   #d8f0e4;
+
+  /* Coral */
+  --coral:      #c44a30;
+  --coral2:     #a83820;
+  --coral-bg:   #fdf2ef;
+
+  --shadow-xs:  0 1px 3px rgba(26,18,8,.06);
+  --shadow-sm:  0 2px 8px rgba(26,18,8,.08);
+  --shadow-md:  0 6px 24px rgba(26,18,8,.10);
+  --shadow-lg:  0 16px 48px rgba(26,18,8,.12);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--canvas);
+  color:var(--ink);
+  font-family:'DM Sans',sans-serif;
+  font-size:14.5px;
+  line-height:1.72;
+  overflow-x:hidden;
+}
+
+/* ── PAPER TEXTURE ── */
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity:.6;
+}
+
+/* ══════════════════════════════════════════
+   SIDEBAR — warm ivory with plum accent
+══════════════════════════════════════════ */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:286px;
+  background:var(--canvas2);
+  border-right:1px solid var(--rule);
+  overflow-y:auto;z-index:100;
+  display:flex;flex-direction:column;
+  box-shadow:var(--shadow-sm);
+}
+.sidebar::-webkit-scrollbar{width:3px}
+.sidebar::-webkit-scrollbar-thumb{background:var(--rule2);border-radius:2px}
+
+/* Gradient top accent */
+.sb-topbar{
+  height:5px;
+  background:linear-gradient(90deg,var(--plum) 0%,var(--rose) 35%,var(--gold2) 65%,var(--blue) 100%);
+}
+
+.sb-logo{padding:24px 22px 20px;border-bottom:1px solid var(--rule)}
+.sb-mark{
+  width:48px;height:48px;
+  background:linear-gradient(135deg,var(--plum),var(--rose));
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;margin-bottom:14px;
+  box-shadow:0 4px 16px rgba(74,32,96,.22);
+}
+.sb-logo h2{
+  font-family:'Playfair Display',serif;
+  font-size:16px;font-weight:700;
+  color:var(--ink);line-height:1.3;letter-spacing:-.3px;
+}
+.sb-logo p{font-size:10.5px;color:var(--ink4);margin-top:4px;text-transform:uppercase;letter-spacing:1.4px}
+
+/* OWASP API Top 10 badge */
+.sb-owasp{
+  margin:12px 22px 0;
+  padding:8px 12px;
+  background:linear-gradient(135deg,var(--plum-bg),var(--rose-bg));
+  border:1px solid var(--plum3);
+  border-radius:8px;
+  font-size:10.5px;color:var(--plum);
+  display:flex;align-items:center;gap:8px;
+}
+.sb-owasp-dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--rose);flex-shrink:0;
+  animation:pulsedot 2s ease-in-out infinite;
+}
+@keyframes pulsedot{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.3);opacity:.7}}
+
+.sb-group{padding:20px 22px 6px;font-size:9.5px;font-weight:700;color:var(--ink4);text-transform:uppercase;letter-spacing:1.8px}
+
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 22px;color:var(--ink3);font-size:12.5px;
+  cursor:pointer;transition:all .18s;
+  border-left:3px solid transparent;
+  position:relative;
+}
+.nav-item:hover,.nav-item.active{
+  background:var(--plum-bg);color:var(--plum);
+  border-left-color:var(--plum);
+}
+.nav-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink5);min-width:20px}
+.nav-item:hover .nav-num,.nav-item.active .nav-num{color:var(--plum3)}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* Severity quick-ref */
+.sb-legend{
+  margin-top:auto;padding:16px 22px;
+  border-top:1px solid var(--rule);
+}
+.sbl-title{font-size:9.5px;color:var(--ink4);text-transform:uppercase;letter-spacing:1.4px;margin-bottom:10px}
+.sbl-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11.5px;color:var(--ink3)}
+.sbl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+.sb-footer{padding:12px 22px 16px;font-size:10.5px;color:var(--ink4);border-top:1px solid var(--rule)}
+
+/* ══════════════════════════════════════════
+   MAIN CONTENT AREA
+══════════════════════════════════════════ */
+.main{margin-left:286px;position:relative;z-index:1}
+
+/* ── MASTHEAD / HERO ── */
+.hero{
+  padding:64px 64px 56px;
+  background:var(--canvas2);
+  border-bottom:1px solid var(--rule);
+  position:relative;overflow:hidden;
+}
+
+/* Large decorative letter */
+.hero-deco-letter{
+  position:absolute;right:-20px;bottom:-40px;
+  font-family:'Playfair Display',serif;
+  font-size:340px;font-weight:800;font-style:italic;
+  color:var(--plum);opacity:.03;
+  line-height:1;pointer-events:none;user-select:none;
+  letter-spacing:-10px;
+}
+
+/* Pill badges */
+.hero-pills{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+.hpill{
+  padding:4px 14px;border-radius:20px;
+  font-size:10.5px;font-weight:500;
+  border:1.5px solid;letter-spacing:.3px;
+}
+.hp-owasp{background:var(--plum-bg);color:var(--plum);border-color:rgba(74,32,96,.25)}
+.hp-rest{background:var(--blue-bg);color:var(--blue);border-color:rgba(26,111,204,.25)}
+.hp-gql{background:var(--rose-bg);color:var(--rose);border-color:rgba(192,105,122,.25)}
+.hp-grpc{background:var(--gold-bg);color:var(--gold);border-color:rgba(184,134,11,.25)}
+.hp-vapt{background:var(--coral-bg);color:var(--coral);border-color:rgba(196,74,48,.3)}
+
+/* Eyebrow line */
+.hero-eyebrow{
+  font-size:10.5px;color:var(--ink4);letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:12px;
+  display:flex;align-items:center;gap:10px;
+}
+.hero-eyebrow::before{content:'';width:28px;height:1px;background:var(--rose)}
+
+.hero h1{
+  font-family:'Playfair Display',serif;
+  font-size:50px;font-weight:800;
+  line-height:1.05;letter-spacing:-1.5px;
+  color:var(--ink);margin-bottom:18px;
+}
+.hero h1 em{
+  font-style:italic;font-weight:400;
+  color:var(--plum);
+}
+
+.hero-deck{
+  color:var(--ink3);font-size:15px;max-width:620px;
+  line-height:1.72;margin-bottom:32px;
+  font-weight:300;
+}
+
+/* Stats row — editorial pull-quote style */
+.hero-stats{
+  display:flex;gap:0;
+  border:1px solid var(--rule2);border-radius:10px;
+  overflow:hidden;max-width:580px;
+  background:var(--canvas2);
+}
+.stat-col{
+  flex:1;padding:18px 22px;
+  border-right:1px solid var(--rule2);text-align:center;
+}
+.stat-col:last-child{border-right:none}
+.stat-num{
+  font-family:'Playfair Display',serif;
+  font-size:32px;font-weight:800;
+  color:var(--plum);display:block;line-height:1;
+  letter-spacing:-1px;
+}
+.stat-lab{font-size:10px;color:var(--ink4);text-transform:uppercase;letter-spacing:1px;margin-top:4px;font-weight:500}
+
+/* ── STICKY TOPBAR ── */
+.topbar{
+  background:rgba(255,255,255,.96);
+  border-bottom:1px solid var(--rule);
+  padding:12px 64px;
+  display:flex;align-items:center;gap:12px;
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(12px);
+  box-shadow:var(--shadow-xs);
+}
+.srch-wrap{position:relative;flex:1;max-width:400px}
+.srch-ico{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink4);font-size:13px;pointer-events:none}
+.srch-inp{
+  width:100%;background:var(--canvas3);
+  border:1.5px solid var(--rule);border-radius:8px;
+  padding:8px 14px 8px 36px;color:var(--ink);
+  font-family:'DM Sans',sans-serif;font-size:13.5px;outline:none;
+  transition:all .18s;
+}
+.srch-inp::placeholder{color:var(--ink5)}
+.srch-inp:focus{border-color:var(--plum);box-shadow:0 0 0 3px rgba(74,32,96,.08)}
+
+.filt-btns{display:flex;gap:5px}
+.fbtn{
+  padding:6px 14px;border-radius:20px;font-size:11.5px;font-weight:500;
+  cursor:pointer;border:1.5px solid var(--rule);background:var(--canvas2);
+  color:var(--ink3);transition:all .18s;font-family:'DM Sans',sans-serif;
+}
+.fbtn:hover,.fbtn.on{border-color:var(--plum);color:var(--plum);background:var(--plum-bg)}
+.ctrl-btn{
+  padding:6px 12px;border-radius:6px;font-size:11.5px;font-weight:500;
+  cursor:pointer;border:1.5px solid var(--rule);background:var(--canvas2);
+  color:var(--ink3);transition:all .18s;
+}
+.ctrl-btn:hover{background:var(--canvas3);border-color:var(--rule2)}
+
+/* ── CONTENT ── */
+.content{padding:40px 64px 88px}
+
+/* ── CHAPTER MARKER ── */
+.chapter{
+  display:flex;align-items:center;gap:16px;
+  margin-bottom:22px;margin-top:8px;
+}
+.ch-num{
+  font-family:'Playfair Display',serif;
+  font-size:11px;font-weight:600;font-style:italic;
+  color:var(--plum);letter-spacing:.5px;flex-shrink:0;
+}
+.ch-title{
+  font-family:'Playfair Display',serif;
+  font-size:14px;font-weight:700;color:var(--ink2);letter-spacing:-.2px;
+}
+.ch-rule{flex:1;height:1px;background:linear-gradient(90deg,var(--rule2),transparent)}
+.ch-count{
+  font-size:10px;color:var(--ink4);padding:2px 8px;
+  background:var(--canvas3);border:1px solid var(--rule);border-radius:12px;
+}
+
+/* ── SECTION CARD ── */
+.section{
+  margin-bottom:28px;
+  border:1.5px solid var(--rule);
+  border-radius:16px;
+  background:var(--canvas2);
+  overflow:hidden;
+  transition:border-color .22s,box-shadow .22s,transform .22s;
+  animation:riseIn .36s ease both;
+  box-shadow:var(--shadow-xs);
+}
+.section:hover{
+  border-color:var(--rule2);
+  box-shadow:var(--shadow-md);
+  transform:translateY(-1px);
+}
+.section.open{border-color:var(--rule2)}
+@keyframes riseIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+/* Coloured top border per section */
+.sec-topband{height:4px;width:100%}
+
+/* Section header */
+.sec-hdr{
+  display:flex;align-items:flex-start;gap:14px;
+  padding:20px 24px;cursor:pointer;user-select:none;
+  background:var(--canvas2);border-bottom:1.5px solid transparent;
+  transition:background .18s,border-color .18s;
+}
+.sec-hdr:hover{background:var(--canvas)}
+.section.open .sec-hdr{border-bottom-color:var(--rule);background:var(--canvas)}
+
+/* Numbered pill */
+.sec-pill{
+  width:38px;height:38px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Playfair Display',serif;font-size:15px;font-weight:800;
+  flex-shrink:0;margin-top:1px;
+}
+
+.sec-title-group{flex:1}
+.sec-title{
+  font-family:'Playfair Display',serif;
+  font-size:18px;font-weight:700;letter-spacing:-.3px;
+  color:var(--ink);margin-bottom:6px;line-height:1.2;
+}
+.sec-meta{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+/* Severity badge */
+.badge{
+  padding:2px 10px;border-radius:20px;
+  font-size:10.5px;font-weight:700;letter-spacing:.2px;
+  font-family:'JetBrains Mono',monospace;
+}
+.b-crit{background:var(--coral-bg);color:var(--coral2)}
+.b-high{background:var(--rose-bg);color:var(--rose2)}
+.b-med{background:var(--gold-bg);color:var(--gold)}
+.b-low{background:var(--sage-bg);color:var(--sage)}
+
+.tag-p{
+  display:inline-block;padding:2px 9px;
+  background:var(--canvas3);border:1px solid var(--rule2);
+  border-radius:5px;font-family:'JetBrains Mono',monospace;
+  font-size:10.5px;color:var(--ink2);margin:2px 2px 2px 0;
+}
+
+.chevron{
+  color:var(--ink4);font-size:18px;transition:transform .28s;
+  flex-shrink:0;margin-top:4px;
+}
+.section.open .chevron{transform:rotate(180deg);color:var(--plum)}
+
+.sec-body{display:none}
+.section.open .sec-body{display:block}
+
+/* ── FIELD GRID ── */
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.field{padding:18px 24px;border-right:1.5px solid var(--rule);border-bottom:1.5px solid var(--rule)}
+.field:nth-child(even){border-right:none}
+.ff{grid-column:1/-1;padding:18px 24px;border-bottom:1.5px solid var(--rule)}
+.fg>:last-child,.fg>:nth-last-child(2):nth-child(odd){border-bottom:none}
+
+.fl{
+  font-size:9.5px;font-weight:700;color:var(--ink4);
+  text-transform:uppercase;letter-spacing:1.5px;
+  margin-bottom:7px;display:flex;align-items:center;gap:6px;
+  font-family:'DM Sans',sans-serif;
+}
+.fv{color:var(--ink);font-size:13.5px;line-height:1.68}
+.fv strong{color:var(--plum);font-weight:600}
+.fv em{color:var(--rose2);font-style:normal;font-weight:500}
+.fv code{
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  background:var(--plum-bg);padding:1px 6px;border-radius:4px;
+  color:var(--plum2);border:1px solid rgba(74,32,96,.12);
+}
+
+/* ── RISK BOX ── */
+.risk-box{
+  padding:12px 15px;border-radius:8px;border-left:3px solid;
+  font-size:13.5px;line-height:1.66;
+}
+.r-crit{background:var(--coral-bg);border-color:var(--coral);color:#7a2010}
+.r-high{background:var(--rose-bg2);border-color:var(--rose);color:#7a2838}
+.r-med{background:var(--gold-bg2);border-color:var(--gold);color:#6b4800}
+.r-low{background:var(--sage-bg2);border-color:var(--sage);color:#1a4a30}
+
+/* ── CODE BLOCK ── */
+.code-wrap{position:relative;margin:10px 0 4px}
+.code-fn{
+  background:var(--plum);
+  padding:7px 16px;
+  font-family:'JetBrains Mono',monospace;font-size:10.5px;color:#c8a8e8;
+  border-radius:8px 8px 0 0;
+  display:flex;align-items:center;gap:8px;
+}
+.code-fn-dot{
+  width:7px;height:7px;border-radius:50%;flex-shrink:0;
+}
+pre{
+  background:#1a0828;border-radius:0 0 8px 8px;
+  padding:18px 20px;overflow-x:auto;
+  font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.82;
+  color:#ddd8f0;
+}
+pre.ro{border-radius:8px}
+.copy-btn{
+  position:absolute;right:10px;top:8px;
+  background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);
+  color:#c8a8e8;padding:4px 10px;border-radius:5px;
+  font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;
+  transition:all .18s;
+}
+.copy-btn:hover{background:rgba(255,255,255,.2);color:#fff}
+.copy-btn.copied{border-color:#48a07c;color:#48a07c}
+
+/* Syntax colors — elegant */
+.kw{color:#d4aaff}
+.str{color:#a8d8a8}
+.cmt{color:#6a5878;font-style:italic}
+.fn{color:#88ccff}
+.num{color:#ffcc88}
+.tag{color:#ff9999}
+.attr{color:#ffcc66}
+.op{color:#ff8888}
+.cls{color:#ffddaa}
+.type{color:#d4aaff}
+.val{color:#a8f0c8}
+
+/* ── VERIFY BLOCK ── */
+.vblock{
+  background:linear-gradient(135deg,var(--sage-bg),#f0fdf8);
+  border:1.5px solid rgba(45,107,82,.2);
+  border-left:4px solid var(--sage);
+  border-radius:0 8px 8px 0;
+  padding:15px 18px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11.5px;color:#1a4a30;line-height:1.88;
+}
+.vblock .ok{color:var(--sage);font-weight:600}
+.vblock .warn{color:var(--gold)}
+.vblock .bad{color:var(--coral)}
+.vblock .cmd::before{content:'$ ';color:var(--sage2);opacity:.7}
+.vblock .exp::before{content:'→ ';color:var(--rule3)}
+
+/* ── VAPT CLOSURE ── */
+.vapt{
+  background:linear-gradient(135deg,var(--plum-bg),rgba(192,105,122,.05));
+  border:1.5px solid rgba(74,32,96,.18);
+  border-radius:10px;
+  padding:16px 20px;display:flex;gap:14px;align-items:flex-start;
+}
+.vapt-lock{
+  width:36px;height:36px;background:linear-gradient(135deg,var(--plum),var(--plum2));
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:16px;flex-shrink:0;
+  box-shadow:0 3px 10px rgba(74,32,96,.25);
+}
+.vapt-body{}
+.vapt-label{
+  font-size:9.5px;font-weight:700;color:var(--plum);
+  text-transform:uppercase;letter-spacing:1.8px;
+  margin-bottom:5px;font-family:'JetBrains Mono',monospace;
+}
+.vapt-text{font-size:12.5px;color:var(--ink3);line-height:1.68;font-style:italic}
+
+/* ── WHO TABLE ── */
+.who-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.who-tbl th{
+  background:var(--canvas3);padding:9px 14px;text-align:left;
+  font-size:9.5px;color:var(--ink4);font-weight:700;
+  text-transform:uppercase;letter-spacing:1.2px;
+  border:1.5px solid var(--rule);
+}
+.who-tbl td{padding:9px 14px;border:1.5px solid var(--rule);color:var(--ink);vertical-align:top}
+.who-tbl tr:hover td{background:var(--canvas)}
+.rbadge{
+  display:inline-block;padding:2px 9px;border-radius:4px;
+  font-size:10.5px;font-weight:600;margin:2px 2px 2px 0;
+}
+.rb-fe{background:var(--blue-bg);color:var(--blue2)}
+.rb-be{background:var(--plum-bg);color:var(--plum)}
+.rb-sec{background:var(--rose-bg);color:var(--rose2)}
+.rb-dso{background:var(--gold-bg);color:var(--gold)}
+.rb-any{background:var(--sage-bg);color:var(--sage)}
+
+/* ── RESTART PILL ── */
+.rpill{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:3px 10px;background:var(--gold-bg);
+  border:1px solid rgba(184,134,11,.25);border-radius:20px;
+  font-size:11px;color:var(--gold);font-family:'JetBrains Mono',monospace;
+  margin:3px 4px 3px 0;
+}
+
+/* ── CHECKLIST ── */
+ul.cl{list-style:none;padding:0}
+ul.cl li{padding:3px 0;display:flex;gap:9px;align-items:baseline;font-size:13.5px}
+ul.cl li::before{
+  content:'◆';font-size:7px;color:var(--plum3);flex-shrink:0;margin-top:5px;
+}
+
+/* ── COMPARISON TABLE ── */
+.cmp-tbl{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:8px}
+.cmp-tbl th{
+  background:var(--plum);color:#e8d8f8;padding:9px 14px;
+  text-align:left;font-size:10px;font-weight:600;
+  text-transform:uppercase;letter-spacing:1px;border:none;
+}
+.cmp-tbl td{
+  padding:9px 14px;border:1px solid var(--rule);color:var(--ink);vertical-align:top;
+}
+.cmp-tbl tr:nth-child(even) td{background:var(--canvas)}
+.cmp-tbl tr:hover td{background:var(--plum-bg)}
+.ok-cell{color:var(--sage);font-weight:600}
+.bad-cell{color:var(--coral);font-weight:600}
+.warn-cell{color:var(--gold);font-weight:600}
+
+/* ── SCROLL TOP ── */
+#goTop{
+  position:fixed;bottom:28px;right:28px;
+  width:44px;height:44px;
+  background:linear-gradient(135deg,var(--plum),var(--plum2));
+  border:none;border-radius:12px;color:#fff;
+  font-size:18px;cursor:pointer;display:none;
+  align-items:center;justify-content:center;z-index:200;
+  box-shadow:0 4px 16px rgba(74,32,96,.35);transition:transform .2s;
+}
+#goTop:hover{transform:scale(1.08) rotate(-5deg)}
+
+/* ── PRINT BUTTON ── */
+.print-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 16px;border-radius:8px;
+  background:var(--plum-bg);border:1.5px solid rgba(74,32,96,.2);
+  color:var(--plum);font-size:12px;font-weight:600;cursor:pointer;
+  transition:all .18s;
+}
+.print-btn:hover{background:var(--plum-bg2)}
+
+.section.hidden{display:none}
+
+@media print{
+  .sidebar,.topbar,#goTop,.print-btn{display:none!important}
+  .main{margin-left:0}
+  .sec-body{display:block!important}
+  .section{break-inside:avoid;box-shadow:none}
+  .hero{padding:24px}
+}
+@media(max-width:900px){
+  .sidebar{display:none}.main{margin-left:0}
+  .hero,.content,.topbar{padding-left:20px;padding-right:20px}
+  .hero h1{font-size:32px}.fg{grid-template-columns:1fr}
+}
+a{color:var(--plum);text-decoration:none}a:hover{text-decoration:underline}
+
+/* ── SEVERITY COLOR UTILITY ── */
+.band-crit{background:linear-gradient(90deg,var(--coral) 0%,#e8847a 100%)}
+.band-high{background:linear-gradient(90deg,var(--rose) 0%,var(--rose3) 100%)}
+.band-med{background:linear-gradient(90deg,var(--gold) 0%,var(--gold3) 100%)}
+.band-low{background:linear-gradient(90deg,var(--sage) 0%,var(--sage2) 100%)}
+
+.pill-crit{background:var(--coral-bg);color:var(--coral2);border:none}
+.pill-high{background:var(--rose-bg);color:var(--rose2)}
+.pill-med{background:var(--plum-bg);color:var(--plum)}
+.pill-low{background:var(--sage-bg);color:var(--sage)}
+.pill-blue{background:var(--blue-bg);color:var(--blue2)}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<nav class="sidebar">
+  <div class="sb-topbar"></div>
+  <div class="sb-logo">
+    <div class="sb-mark">🛡️</div>
+    <h2>API Security<br>Hardening Guide</h2>
+    <p>VAPT · OWASP API Top 10</p>
+  </div>
+  <div class="sb-owasp">
+    <div class="sb-owasp-dot"></div>
+    <span>Mapped to OWASP API Security<br>Top 10 — 2023 Edition</span>
+  </div>
+
+  <div class="sb-group">— Authentication</div>
+  <div class="nav-item" onclick="jumpTo('s01')"><span class="nav-num">01</span><span class="nav-dot" style="background:var(--coral)"></span>Broken Object Level Auth</div>
+  <div class="nav-item" onclick="jumpTo('s02')"><span class="nav-num">02</span><span class="nav-dot" style="background:var(--coral)"></span>Broken Authentication</div>
+  <div class="nav-item" onclick="jumpTo('s03')"><span class="nav-num">03</span><span class="nav-dot" style="background:var(--rose)"></span>JWT Security</div>
+  <div class="nav-item" onclick="jumpTo('s04')"><span class="nav-num">04</span><span class="nav-dot" style="background:var(--rose)"></span>OAuth 2.0 / API Keys</div>
+
+  <div class="sb-group">— Input & Injection</div>
+  <div class="nav-item" onclick="jumpTo('s05')"><span class="nav-num">05</span><span class="nav-dot" style="background:var(--coral)"></span>Injection Prevention</div>
+  <div class="nav-item" onclick="jumpTo('s06')"><span class="nav-num">06</span><span class="nav-dot" style="background:var(--rose)"></span>Mass Assignment</div>
+  <div class="nav-item" onclick="jumpTo('s07')"><span class="nav-num">07</span><span class="nav-dot" style="background:var(--rose)"></span>Schema Validation</div>
+
+  <div class="sb-group">— Rate & Access</div>
+  <div class="nav-item" onclick="jumpTo('s08')"><span class="nav-num">08</span><span class="nav-dot" style="background:var(--rose)"></span>Rate Limiting & Throttling</div>
+  <div class="nav-item" onclick="jumpTo('s09')"><span class="nav-num">09</span><span class="nav-dot" style="background:var(--gold)"></span>BFLA / Function Auth</div>
+  <div class="nav-item" onclick="jumpTo('s10')"><span class="nav-num">10</span><span class="nav-dot" style="background:var(--gold)"></span>Excessive Data Exposure</div>
+
+  <div class="sb-group">— Transport & Headers</div>
+  <div class="nav-item" onclick="jumpTo('s11')"><span class="nav-num">11</span><span class="nav-dot" style="background:var(--rose)"></span>HTTPS & TLS Security</div>
+  <div class="nav-item" onclick="jumpTo('s12')"><span class="nav-num">12</span><span class="nav-dot" style="background:var(--gold)"></span>API Security Headers</div>
+  <div class="nav-item" onclick="jumpTo('s13')"><span class="nav-num">13</span><span class="nav-dot" style="background:var(--gold)"></span>CORS Hardening</div>
+
+  <div class="sb-group">— GraphQL & Versioning</div>
+  <div class="nav-item" onclick="jumpTo('s14')"><span class="nav-num">14</span><span class="nav-dot" style="background:var(--gold)"></span>GraphQL Security</div>
+  <div class="nav-item" onclick="jumpTo('s15')"><span class="nav-num">15</span><span class="nav-dot" style="background:var(--sage)"></span>API Versioning & Deprecation</div>
+
+  <div class="sb-group">— Ops & Observability</div>
+  <div class="nav-item" onclick="jumpTo('s16')"><span class="nav-num">16</span><span class="nav-dot" style="background:var(--sage)"></span>API Logging & Monitoring</div>
+  <div class="nav-item" onclick="jumpTo('s17')"><span class="nav-num">17</span><span class="nav-dot" style="background:var(--sage)"></span>Error Handling & Disclosure</div>
+  <div class="nav-item" onclick="jumpTo('s18')"><span class="nav-num">18</span><span class="nav-dot" style="background:var(--sage)"></span>API Gateway Hardening</div>
+
+  <div class="sb-legend">
+    <div class="sbl-title">Severity Legend</div>
+    <div class="sbl-row"><div class="sbl-dot" style="background:var(--coral)"></div>Critical — Immediate</div>
+    <div class="sbl-row"><div class="sbl-dot" style="background:var(--rose)"></div>High — Within 48h</div>
+    <div class="sbl-row"><div class="sbl-dot" style="background:var(--gold)"></div>Medium — Within 2w</div>
+    <div class="sbl-row"><div class="sbl-dot" style="background:var(--sage)"></div>Low — Best Practice</div>
+  </div>
+  <div class="sb-footer">v2025.1 · OWASP API Top 10 2023<br>REST · GraphQL · gRPC · Nginx<br>Updated: April 2026</div>
+</nav>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<main class="main">
+
+<!-- HERO / MASTHEAD -->
+<div class="hero">
+  <div class="hero-deco-letter">API</div>
+  <div class="hero-eyebrow">Security Engineering</div>
+  <div class="hero-pills">
+    <span class="hpill hp-vapt">VAPT Remediation</span>
+    <span class="hpill hp-owasp">OWASP API Top 10</span>
+    <span class="hpill hp-rest">REST APIs</span>
+    <span class="hpill hp-gql">GraphQL</span>
+    <span class="hpill hp-grpc">gRPC</span>
+  </div>
+  <h1>API Security<br><em>Hardening Guide</em></h1>
+  <p class="hero-deck">A comprehensive, copy-paste-ready security baseline for REST, GraphQL, and gRPC APIs. Every control addresses the OWASP API Security Top 10 and includes curl-based verification commands and professional audit-closure statements for VAPT reports.</p>
+  <div class="hero-stats">
+    <div class="stat-col"><span class="stat-num">18</span><div class="stat-lab">Controls</div></div>
+    <div class="stat-col"><span class="stat-num">60+</span><div class="stat-lab">Code Snippets</div></div>
+    <div class="stat-col"><span class="stat-num">API10</span><div class="stat-lab">OWASP Mapped</div></div>
+    <div class="stat-col"><span class="stat-num">100%</span><div class="stat-lab">Free / OSS</div></div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="srch-wrap">
+    <span class="srch-ico">⌕</span>
+    <input class="srch-inp" id="searchInput" type="text" placeholder="Search endpoints, attacks, packages…" oninput="filterSecs()">
+  </div>
+  <div class="filt-btns">
+    <button class="fbtn on" onclick="filterSev('all',this)">All</button>
+    <button class="fbtn" onclick="filterSev('critical',this)" style="color:var(--coral)">Critical</button>
+    <button class="fbtn" onclick="filterSev('high',this)" style="color:var(--rose)">High</button>
+    <button class="fbtn" onclick="filterSev('medium',this)" style="color:var(--gold)">Medium</button>
+  </div>
+  <button class="ctrl-btn" onclick="expandAll()">Expand All</button>
+  <button class="ctrl-btn" onclick="collapseAll()">Collapse</button>
+  <button class="print-btn" onclick="window.print()">🖨 Print PDF</button>
+</div>
+
+<div class="content">
+
+<!-- ════════════════════════════════════════
+  CHAPTER 1 — AUTHENTICATION
+════════════════════════════════════════ -->
+<div class="chapter">
+  <span class="ch-num">Chapter I</span>
+  <div class="ch-rule"></div>
+  <span class="ch-title">Authentication &amp; Authorization</span>
+  <div class="ch-rule"></div>
+  <span class="ch-count">4 Controls</span>
+</div>
+
+<!-- ═══ 01 — BOLA / OBJECT LEVEL AUTH ═══ -->
+<div class="section open" id="s01" data-severity="critical" data-tags="BOLA broken object level authorization IDOR insecure direct object reference API1 ownership check user resource">
+  <div class="sec-topband band-crit"></div>
+  <div class="sec-hdr" onclick="tog('s01')">
+    <div class="sec-pill" style="background:var(--coral-bg);color:var(--coral2)">01</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Broken Object Level Authorization (BOLA / IDOR)</div>
+      <div class="sec-meta">
+        <span class="badge b-crit">CRITICAL</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API1:2023</span>
+        <span class="tag-p">Express</span><span class="tag-p">Middleware</span><span class="tag-p">All APIs</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">APIs expose endpoints that accept object IDs (user IDs, order IDs, document IDs) without verifying that the requesting user <strong>owns or has permission</strong> to access that specific object. Attackers simply increment or swap IDs to access other users' data.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-crit">Horizontal privilege escalation — any authenticated user can read, modify, or delete any other user's data by changing the object ID in the request URL or body. The most common critical API vulnerability.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📁 Files &amp; Paths</div>
+        <div class="fv">
+          <span class="tag-p">src/middleware/ownership.js</span>
+          <span class="tag-p">src/routes/api.js</span>
+          <span class="tag-p">src/models/*.js</span>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Ownership middleware (Express / Node.js)</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--coral)"></div>src/middleware/ownership.js — Reusable ownership check</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre><span class="cmt">/**
+ * Ownership Middleware — verify the requesting user owns the resource.
+ * Use on EVERY endpoint that accepts a resource ID parameter.
+ */</span>
+<span class="kw">const</span> <span class="cls">Order</span>    = <span class="fn">require</span>(<span class="str">'../models/Order'</span>);
+<span class="kw">const</span> <span class="cls">Document</span> = <span class="fn">require</span>(<span class="str">'../models/Document'</span>);
+
+<span class="cmt">// Generic ownership factory — pass the model + owner field</span>
+<span class="kw">const</span> <span class="fn">requireOwnership</span> = (Model, ownerField = <span class="str">'userId'</span>) => {
+  <span class="kw">return async</span> (req, res, next) => {
+    <span class="kw">const</span> resourceId = req.params.id || req.params.orderId || req.params.documentId;
+
+    <span class="kw">if</span> (!resourceId) <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ error: <span class="str">'Resource ID required'</span> });
+
+    <span class="kw">const</span> resource = <span class="kw">await</span> Model.<span class="fn">findById</span>(resourceId).<span class="fn">select</span>(ownerField).lean();
+
+    <span class="cmt">// ✗ NEVER: trust the client-supplied userId in the request body</span>
+    <span class="cmt">// ✓ ALWAYS: compare against authenticated user from the JWT/session</span>
+    <span class="kw">if</span> (!resource || resource[ownerField].<span class="fn">toString</span>() !== req.user.id) {
+      <span class="cmt">// Return 404 (not 403) — don't reveal the resource exists</span>
+      <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">404</span>).<span class="fn">json</span>({ error: <span class="str">'Resource not found'</span> });
+    }
+
+    req.resource = resource; <span class="cmt">// attach for downstream use</span>
+    <span class="fn">next</span>();
+  };
+};
+
+module.exports = { requireOwnership };
+
+<span class="cmt">// ─── Usage in routes ──────────────────────────────────────────</span>
+<span class="cmt">// router.get('/orders/:id',     authenticate, requireOwnership(Order),    getOrder);</span>
+<span class="cmt">// router.delete('/documents/:id', authenticate, requireOwnership(Document), deleteDocument);</span>
+<span class="cmt">// router.put('/invoices/:id',   authenticate, requireOwnership(Invoice),  updateInvoice);</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--coral)"></div>src/routes/api.js — Correct vs Wrong patterns</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ✗ VULNERABLE: No ownership check — any user can access any order</span>
+app.<span class="fn">get</span>(<span class="str">'/api/orders/:id'</span>, authenticate, <span class="kw">async</span> (req, res) => {
+  <span class="kw">const</span> order = <span class="kw">await</span> <span class="cls">Order</span>.<span class="fn">findById</span>(req.params.id);
+  res.<span class="fn">json</span>(order);
+});
+
+<span class="cmt">// ✓ SECURE: Ownership middleware validates user == resource owner</span>
+app.<span class="fn">get</span>(<span class="str">'/api/orders/:id'</span>,
+  authenticate,
+  <span class="fn">requireOwnership</span>(<span class="cls">Order</span>),
+  <span class="kw">async</span> (req, res) => {
+    <span class="kw">const</span> order = <span class="kw">await</span> <span class="cls">Order</span>.<span class="fn">findById</span>(req.params.id);
+    res.<span class="fn">json</span>(order);
+  }
+);
+
+<span class="cmt">// ✓ DB-Level: Filter by userId in EVERY query (defense-in-depth)</span>
+<span class="kw">const</span> order = <span class="kw">await</span> <span class="cls">Order</span>.<span class="fn">findOne</span>({
+  _id:    req.params.id,
+  userId: req.user.id    <span class="cmt">// ALWAYS add this filter</span>
+});
+
+<span class="cmt">// ✓ For UUIDs over sequential IDs (prevents enumeration)</span>
+<span class="cmt">// Use UUIDs: /api/orders/550e8400-e29b-41d4-a716-446655440000</span>
+<span class="cmt">// Not sequential: /api/orders/1001 (trivially predictable)</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span><span class="rbadge rb-sec">Security Review</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔑 OWASP Reference</div>
+        <div class="fv"><strong>API1:2023</strong> — Broken Object Level Authorization. The most prevalent and impactful API vulnerability. Affects every API that accepts resource IDs without ownership validation.</div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmd">curl -H "Authorization: Bearer USER_A_TOKEN" https://api.example.com/api/orders/USER_B_ORDER_ID</span>
+<span class="exp exp-ok ok">HTTP 404 Not Found  ←  Correct (not 200 or 403)</span>
+
+<span class="cmd">curl -H "Authorization: Bearer USER_A_TOKEN" https://api.example.com/api/orders/USER_A_ORDER_ID</span>
+<span class="exp ok">HTTP 200 OK  ←  Own resource accessible</span>
+
+<span class="cmt"># Automated test: swap IDs across 2 test accounts → all cross-user 404</span>
+<span class="cmd">for id in $(get-user-b-ids); do curl -sI -H "Auth: Bearer $USER_A" /api/orders/$id | head -1; done</span>
+<span class="exp ok">→ HTTP/2 404 (all responses)</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — API1:2023 BOLA</div>
+            <div class="vapt-text">All API endpoints accepting resource identifiers (order IDs, document IDs, user IDs) now enforce server-side ownership validation via a centralized <em>requireOwnership</em> middleware. Database queries include a mandatory <em>userId</em> filter as defense-in-depth. Object IDs have been migrated from sequential integers to UUIDs to prevent enumeration. Cross-user resource access returns HTTP 404 to avoid confirming resource existence. Verified through automated cross-account test suite — all unauthorized cross-user requests return 404.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 02 — BROKEN AUTHENTICATION ═══ -->
+<div class="section" id="s02" data-severity="critical" data-tags="broken authentication credential stuffing brute force login API keys secrets weak tokens session management API2">
+  <div class="sec-topband band-crit"></div>
+  <div class="sec-hdr" onclick="tog('s02')">
+    <div class="sec-pill" style="background:var(--coral-bg);color:var(--coral2)">02</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Broken Authentication — Endpoints &amp; Credential Security</div>
+      <div class="sec-meta">
+        <span class="badge b-crit">CRITICAL</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API2:2023</span>
+        <span class="tag-p">passport.js</span><span class="tag-p">bcrypt</span><span class="tag-p">express-rate-limit</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Authentication mechanisms are poorly implemented — weak password hashing (MD5/SHA1), no brute-force protection on login endpoints, weak credential recovery flows, missing authentication on sensitive endpoints, and API keys transmitted in URLs (logged in server logs).</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-crit">Account takeover at scale via credential stuffing, brute-force against unprotected auth endpoints, API key leakage via URL logging, and admin escalation via weak token validation.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Secure password hashing + authentication hardening</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--coral)"></div>src/services/auth.service.js — Hardened authentication</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> bcrypt  = <span class="fn">require</span>(<span class="str">'bcrypt'</span>);
+<span class="kw">const</span> crypto  = <span class="fn">require</span>(<span class="str">'crypto'</span>);
+
+<span class="cmt">// ─── Password hashing ─────────────────────────────────────────</span>
+<span class="kw">const</span> SALT_ROUNDS = <span class="num">14</span>;  <span class="cmt">// ≥12 in prod (12=~300ms, 14=~1.2s per hash)</span>
+
+<span class="kw">async function</span> <span class="fn">hashPassword</span>(plain) {
+  <span class="cmt">// ✗ NEVER: MD5, SHA1, SHA256 — not for passwords</span>
+  <span class="cmt">// ✓ ALWAYS: bcrypt (cost 12+) or Argon2id</span>
+  <span class="kw">return</span> bcrypt.<span class="fn">hash</span>(plain, SALT_ROUNDS);
+}
+
+<span class="kw">async function</span> <span class="fn">verifyPassword</span>(plain, hash) {
+  <span class="cmt">// Use timing-safe comparison (bcrypt.compare is already timing-safe)</span>
+  <span class="kw">return</span> bcrypt.<span class="fn">compare</span>(plain, hash);
+}
+
+<span class="cmt">// ─── API Key generation ───────────────────────────────────────</span>
+<span class="kw">function</span> <span class="fn">generateApiKey</span>() {
+  <span class="cmt">// Prefix for easy rotation detection + 32 random bytes</span>
+  <span class="kw">const</span> prefix = <span class="str">'sk_live_'</span>;
+  <span class="kw">const</span> secret = crypto.<span class="fn">randomBytes</span>(<span class="num">32</span>).<span class="fn">toString</span>(<span class="str">'hex'</span>);
+  <span class="kw">return</span> prefix + secret;
+}
+
+<span class="cmt">// Store only hash of API key — NEVER store plaintext</span>
+<span class="kw">async function</span> <span class="fn">storeApiKey</span>(rawKey) {
+  <span class="kw">const</span> keyHash = crypto.<span class="fn">createHash</span>(<span class="str">'sha256'</span>).<span class="fn">update</span>(rawKey).<span class="fn">digest</span>(<span class="str">'hex'</span>);
+  <span class="kw">return</span> keyHash; <span class="cmt">// save this to DB</span>
+}
+
+<span class="cmt">// ─── Timing-safe string comparison (prevents timing attacks) ─</span>
+<span class="kw">function</span> <span class="fn">safeCompare</span>(a, b) {
+  <span class="kw">if</span> (a.length !== b.length) <span class="kw">return false</span>;
+  <span class="kw">return</span> crypto.<span class="fn">timingSafeEqual</span>(Buffer.<span class="fn">from</span>(a), Buffer.<span class="fn">from</span>(b));
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--coral)"></div>src/middleware/apiKeyAuth.js — API key authentication</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ─── API Key transport: ALWAYS header, NEVER URL query param ─</span>
+<span class="kw">const</span> <span class="fn">apiKeyAuth</span> = <span class="kw">async</span> (req, res, next) => {
+  <span class="cmt">// ✓ Accept from Authorization header (Bearer) or X-API-Key header</span>
+  <span class="kw">const</span> rawKey =
+    req.headers[<span class="str">'x-api-key'</span>] ||
+    req.headers[<span class="str">'authorization'</span>]?.replace(<span class="str">'Bearer '</span>, <span class="str">''</span>);
+
+  <span class="cmt">// ✗ NEVER: const key = req.query.api_key — gets logged in access logs!</span>
+
+  <span class="kw">if</span> (!rawKey) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">401</span>).<span class="fn">json</span>({ error: <span class="str">'API key required'</span> });
+  }
+
+  <span class="kw">const</span> keyHash = crypto.<span class="fn">createHash</span>(<span class="str">'sha256'</span>).<span class="fn">update</span>(rawKey).<span class="fn">digest</span>(<span class="str">'hex'</span>);
+  <span class="kw">const</span> apiKey  = <span class="kw">await</span> <span class="cls">ApiKey</span>.<span class="fn">findOne</span>({ keyHash, active: <span class="kw">true</span> });
+
+  <span class="kw">if</span> (!apiKey) <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">401</span>).<span class="fn">json</span>({ error: <span class="str">'Invalid or revoked API key'</span> });
+
+  <span class="cmt">// Update last-used timestamp for audit trail</span>
+  apiKey.lastUsed = <span class="kw">new</span> <span class="cls">Date</span>();
+  apiKey.<span class="fn">save</span>();
+
+  req.apiKey = apiKey;
+  <span class="fn">next</span>();
+};</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="field">
+        <div class="fl">🔒 Authentication Checklist</div>
+        <div class="fv">
+          <ul class="cl">
+            <li>Use bcrypt (cost ≥12) or Argon2id for passwords</li>
+            <li>API keys transmitted in headers only (never URLs)</li>
+            <li>Store only SHA-256 hash of API keys in DB</li>
+            <li>Rate-limit auth endpoints (5 attempts / 15 min)</li>
+            <li>Never return same error for wrong user vs wrong password</li>
+            <li>Implement account lockout after repeated failures</li>
+            <li>Use timing-safe comparison for all credential checks</li>
+          </ul>
+        </div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmd">curl -X POST https://api.example.com/auth/login -d '{"email":"a","password":"b"}'</span>
+<span class="exp ok">→ HTTP 401 {"error":"Invalid credentials"}  ← same msg for wrong user/pass</span>
+
+<span class="cmd">for i in $(seq 1 10); do curl -s -X POST https://api.example.com/auth/login -d '{"email":"test@x.com","password":"wrong"}'; done</span>
+<span class="exp ok">→ After 5 attempts: HTTP 429 {"error":"Too many requests"}</span>
+
+<span class="cmt"># Verify API key never appears in server access logs</span>
+<span class="cmd">grep "sk_live_" /var/log/nginx/access.log</span>
+<span class="exp ok">→ (empty — keys are in headers, not URLs)</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — API2:2023 Broken Authentication</div>
+            <div class="vapt-text">Password hashing migrated to bcrypt with cost factor 14 (~1.2 seconds per hash). API keys are 256-bit cryptographically random values stored as SHA-256 hashes — plaintext keys are never persisted. All API key transport uses HTTP headers (never URL query parameters). Authentication endpoint rate limiting enforces a 5-attempt / 15-minute window returning HTTP 429. Timing-safe comparison prevents timing oracle attacks. Generic error messages prevent user enumeration.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 03 — JWT SECURITY ═══ -->
+<div class="section" id="s03" data-severity="high" data-tags="JWT json web token RS256 HS256 alg none algorithm confusion expiry refresh rotation secret key">
+  <div class="sec-topband band-high"></div>
+  <div class="sec-hdr" onclick="tog('s03')">
+    <div class="sec-pill" style="background:var(--rose-bg);color:var(--rose2)">03</div>
+    <div class="sec-title-group">
+      <div class="sec-title">JWT Security — Algorithm, Expiry &amp; Claims</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API2:2023</span>
+        <span class="tag-p">jsonwebtoken</span><span class="tag-p">RS256</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">JWT vulnerabilities: <code>alg:none</code> bypass (unauthenticated tokens), HS256 with weak secrets (brute-forceable in minutes), missing <code>exp</code> claim (tokens never expire), no algorithm whitelist in verification, and tokens stored in localStorage (XSS-vulnerable).</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Complete authentication bypass via <em>alg:none</em>, unlimited session via no expiry, token forgery via weak HS256 secret cracking with hashcat, and session theft via XSS from localStorage storage.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Secure JWT implementation</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>src/utils/jwt.js — Production-hardened JWT service</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> jwt    = <span class="fn">require</span>(<span class="str">'jsonwebtoken'</span>);
+<span class="kw">const</span> crypto = <span class="fn">require</span>(<span class="str">'crypto'</span>);
+
+<span class="cmt">// ─── Generate RSA keys (run once, store securely) ─────────────
+// $ openssl genrsa -out private.pem 4096
+// $ openssl rsa -in private.pem -pubout -out public.pem</span>
+<span class="kw">const</span> PRIVATE_KEY = process.env.JWT_PRIVATE_KEY;  <span class="cmt">// PEM format RSA private key</span>
+<span class="kw">const</span> PUBLIC_KEY  = process.env.JWT_PUBLIC_KEY;   <span class="cmt">// PEM format RSA public key</span>
+
+<span class="kw">const</span> ACCESS_TOKEN_TTL  = <span class="str">'15m'</span>;   <span class="cmt">// short-lived access token</span>
+<span class="kw">const</span> REFRESH_TOKEN_TTL = <span class="str">'7d'</span>;    <span class="cmt">// long-lived refresh token</span>
+
+<span class="kw">const</span> JWT_OPTIONS = {
+  algorithm: <span class="str">'RS256'</span>,        <span class="cmt">// NEVER HS256 with shared secrets</span>
+  issuer:    <span class="str">'api.your-app.com'</span>,
+  audience:  <span class="str">'your-app.com'</span>,
+};
+
+<span class="kw">function</span> <span class="fn">signAccessToken</span>(payload) {
+  <span class="cmt">// Include only necessary claims — NEVER include passwords or PII</span>
+  <span class="kw">const</span> claims = {
+    sub:  payload.userId,
+    role: payload.role,
+    jti:  crypto.<span class="fn">randomUUID</span>(),   <span class="cmt">// unique token ID for revocation</span>
+  };
+  <span class="kw">return</span> jwt.<span class="fn">sign</span>(claims, PRIVATE_KEY, { ...JWT_OPTIONS, expiresIn: ACCESS_TOKEN_TTL });
+}
+
+<span class="kw">function</span> <span class="fn">verifyToken</span>(token) {
+  <span class="kw">return</span> jwt.<span class="fn">verify</span>(token, PUBLIC_KEY, {
+    algorithms: [<span class="str">'RS256'</span>],    <span class="cmt">// WHITELIST — prevents alg:none and alg confusion</span>
+    issuer:     <span class="str">'api.your-app.com'</span>,
+    audience:   <span class="str">'your-app.com'</span>,
+    <span class="cmt">// clockTolerance: 30, // seconds of clock skew allowed</span>
+  });
+}
+
+<span class="cmt">// ─── Refresh token: stored in httpOnly cookie ─────────────────</span>
+<span class="kw">function</span> <span class="fn">signRefreshToken</span>(userId) {
+  <span class="kw">const</span> token = crypto.<span class="fn">randomBytes</span>(<span class="num">64</span>).<span class="fn">toString</span>(<span class="str">'hex'</span>);
+  <span class="cmt">// Store hash in DB with userId and expiry — NOT the raw token</span>
+  <span class="kw">const</span> hash = crypto.<span class="fn">createHash</span>(<span class="str">'sha256'</span>).<span class="fn">update</span>(token).<span class="fn">digest</span>(<span class="str">'hex'</span>);
+  <span class="kw">return</span> { token, hash };
+}
+
+module.exports = { signAccessToken, verifyToken, signRefreshToken };</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>src/routes/auth.js — Token delivery via httpOnly cookie</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// Set access token in httpOnly cookie — NOT in response body</span>
+res.<span class="fn">cookie</span>(<span class="str">'access_token'</span>, accessToken, {
+  httpOnly: <span class="kw">true</span>,       <span class="cmt">// JS cannot access — blocks XSS theft</span>
+  secure:   <span class="kw">true</span>,       <span class="cmt">// HTTPS only</span>
+  sameSite: <span class="str">'strict'</span>,  <span class="cmt">// CSRF protection</span>
+  maxAge:   <span class="num">15</span> * <span class="num">60</span> * <span class="num">1000</span>,  <span class="cmt">// 15 minutes</span>
+  path:     <span class="str">'/'</span>,
+});
+
+<span class="cmt">// If returning token in body (SPAs with interceptors), use short TTL</span>
+<span class="cmt">// NEVER store in localStorage on the client side</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmt"># Test alg:none bypass — must be rejected</span>
+<span class="cmd">node -e "const jwt=require('jsonwebtoken'); try { jwt.verify('eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjMifQ.', process.env.JWT_PUBLIC_KEY, {algorithms:['RS256']}); } catch(e) { console.log('BLOCKED:', e.message); }"</span>
+<span class="exp ok">→ BLOCKED: invalid algorithm</span>
+
+<span class="cmt"># Verify token expiry (decode without verify)</span>
+<span class="cmd">node -e "const [,p]=token.split('.'); console.log(JSON.parse(Buffer.from(p,'base64').toString()))"</span>
+<span class="exp ok">→ { sub: '...', exp: 1234567890, iat: 1234566990, jti: 'uuid...' }</span>
+<span class="exp ok">→ exp - iat = 900 seconds (15 minutes) ✓</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — JWT Security</div>
+            <div class="vapt-text">JWT implementation uses RS256 (4096-bit RSA asymmetric signing) with an explicit algorithm whitelist in <em>jwt.verify()</em> preventing <em>alg:none</em> and algorithm confusion attacks. Access tokens expire in 15 minutes with issuer and audience claim validation. The JWT unique identifier (<em>jti</em>) enables token revocation. Tokens are delivered via HttpOnly/Secure/SameSite=Strict cookies, inaccessible to JavaScript. Refresh tokens are opaque random values with only their SHA-256 hash stored in the database.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ 04 — OAUTH / API KEYS ═══ -->
+<div class="section" id="s04" data-severity="high" data-tags="OAuth 2.0 PKCE client credentials scopes API keys rotation revocation secret management">
+  <div class="sec-topband band-high"></div>
+  <div class="sec-hdr" onclick="tog('s04')">
+    <div class="sec-pill" style="background:var(--rose-bg);color:var(--rose2)">04</div>
+    <div class="sec-title-group">
+      <div class="sec-title">OAuth 2.0 Scope Enforcement &amp; API Key Lifecycle</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API2:2023</span>
+        <span class="tag-p">OAuth 2.0</span><span class="tag-p">PKCE</span><span class="tag-p">Scopes</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">OAuth scopes not enforced server-side (client claims any scope), API keys never expire or rotate, client secrets stored in source code, authorization codes reusable, and PKCE not implemented for public clients (mobile/SPA).</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Scope escalation — client requests admin scopes they were not granted, authorization code theft and replay, and indefinite access via leaked API keys that are never rotated or revoked.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Server-side scope validation + API key management</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>src/middleware/scopes.js — OAuth scope enforcement</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">/**
+ * Scope-based authorization middleware.
+ * Validates that the token's granted scopes include the required scope.
+ * Scopes must ALWAYS be validated server-side — never trust client claims.
+ */</span>
+<span class="kw">const</span> <span class="fn">requireScope</span> = (...requiredScopes) => (req, res, next) => {
+  <span class="kw">const</span> tokenScopes = req.auth?.scope?.split(<span class="str">' '</span>) || [];
+
+  <span class="kw">const</span> hasAllScopes = requiredScopes.<span class="fn">every</span>(s => tokenScopes.<span class="fn">includes</span>(s));
+
+  <span class="kw">if</span> (!hasAllScopes) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">403</span>).<span class="fn">json</span>({
+      error: <span class="str">'insufficient_scope'</span>,
+      error_description: `Required scopes: ${requiredScopes.join(', ')}`,
+      required: requiredScopes,
+      granted:  tokenScopes,
+    });
+  }
+  <span class="fn">next</span>();
+};
+
+<span class="cmt">// ─── Define granular scopes ───────────────────────────────────</span>
+<span class="kw">const</span> SCOPES = {
+  READ_ORDERS:   <span class="str">'orders:read'</span>,
+  WRITE_ORDERS:  <span class="str">'orders:write'</span>,
+  DELETE_ORDERS: <span class="str">'orders:delete'</span>,
+  READ_USERS:    <span class="str">'users:read'</span>,
+  ADMIN:         <span class="str">'admin'</span>,
+};
+
+<span class="cmt">// ─── Usage: apply scopes to routes ───────────────────────────</span>
+<span class="cmt">// router.get('/orders',        auth, requireScope('orders:read'), getOrders);</span>
+<span class="cmt">// router.delete('/orders/:id', auth, requireScope('orders:delete'), deleteOrder);</span>
+<span class="cmt">// router.get('/admin/users',   auth, requireScope('admin', 'users:read'), getUsers);</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>API Key lifecycle management</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ─── API Key model with security attributes ───────────────────</span>
+<span class="kw">const</span> ApiKeySchema = {
+  keyHash:   { type: <span class="cls">String</span>, required: <span class="kw">true</span>, unique: <span class="kw">true</span> },  <span class="cmt">// SHA-256 hash</span>
+  prefix:    { type: <span class="cls">String</span>, required: <span class="kw">true</span> },                 <span class="cmt">// first 8 chars for display</span>
+  userId:    { type: <span class="cls">ObjectId</span>, required: <span class="kw">true</span> },
+  scopes:    [<span class="cls">String</span>],                                          <span class="cmt">// ['orders:read', 'orders:write']</span>
+  active:    { type: <span class="cls">Boolean</span>, default: <span class="kw">true</span> },
+  expiresAt: { type: <span class="cls">Date</span>, required: <span class="kw">true</span> },                    <span class="cmt">// ALWAYS set expiry</span>
+  lastUsed:  { type: <span class="cls">Date</span> },
+  name:      { type: <span class="cls">String</span> },                                   <span class="cmt">// human-readable label</span>
+  ipAllowlist: [<span class="cls">String</span>],                                        <span class="cmt">// optional IP restriction</span>
+  createdAt: { type: <span class="cls">Date</span>, default: <span class="cls">Date</span>.now },
+};
+
+<span class="cmt">// Max API key validity: 90 days (force rotation)</span>
+<span class="kw">const</span> MAX_KEY_DAYS = <span class="num">90</span>;
+<span class="kw">const</span> expiresAt = <span class="kw">new</span> <span class="cls">Date</span>(Date.now() + MAX_KEY_DAYS * <span class="num">86400000</span>);</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span><span class="rbadge rb-sec">Security Review</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — OAuth Scopes &amp; API Keys</div>
+            <div class="vapt-text">OAuth scopes are validated server-side on every protected endpoint via the <em>requireScope</em> middleware — scope claims in tokens cannot be self-escalated by clients. API keys enforce a 90-day maximum validity with mandatory rotation. IP allowlisting is available for service-to-service keys. Only the SHA-256 hash of each API key is persisted — plaintext keys are shown exactly once at creation and never stored. Key activity is logged with timestamps for audit trail.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+  CHAPTER 2 — INPUT & INJECTION
+═══════════════════════════════ -->
+<div class="chapter">
+  <span class="ch-num">Chapter II</span>
+  <div class="ch-rule"></div>
+  <span class="ch-title">Input Security &amp; Injection Prevention</span>
+  <div class="ch-rule"></div>
+  <span class="ch-count">3 Controls</span>
+</div>
+
+<!-- 05 — INJECTION -->
+<div class="section" id="s05" data-severity="critical" data-tags="injection SQL NoSQL LDAP command OS injection parameterized queries input validation sanitization">
+  <div class="sec-topband band-crit"></div>
+  <div class="sec-hdr" onclick="tog('s05')">
+    <div class="sec-pill" style="background:var(--coral-bg);color:var(--coral2)">05</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Injection Prevention — SQL, NoSQL, Command &amp; LDAP</div>
+      <div class="sec-meta">
+        <span class="badge b-crit">CRITICAL</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API8:2023</span>
+        <span class="tag-p">parameterized queries</span><span class="tag-p">express-validator</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">API endpoints pass user-controlled data directly into database queries (SQL/NoSQL), OS commands, LDAP queries, or template engines without sanitization. A single unparameterized query can expose the entire database.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-crit">Complete database exfiltration via SQL injection (<em>' OR 1=1--</em>), authentication bypass, data destruction, remote code execution via OS command injection, and NoSQL operator injection bypassing query filters.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Parameterized queries + sanitization layers</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--coral)"></div>SQL / PostgreSQL — Always use parameterized queries</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ✗ VULNERABLE: string concatenation — DO NOT DO THIS</span>
+<span class="kw">const</span> query = <span class="str">`SELECT * FROM users WHERE email = '${req.body.email}'`</span>;
+<span class="cmt">// Payload: email = "' OR 1=1; DROP TABLE users;--"</span>
+
+<span class="cmt">// ✓ SECURE: Parameterized query (pg)</span>
+<span class="kw">const</span> { rows } = <span class="kw">await</span> pool.<span class="fn">query</span>(
+  <span class="str">'SELECT id, name, role FROM users WHERE email = $1 AND active = $2'</span>,
+  [req.body.email, <span class="kw">true</span>]   <span class="cmt">// parameters never interpolated into SQL string</span>
+);
+
+<span class="cmt">// ✓ SECURE: Prisma ORM (always parameterized internally)</span>
+<span class="kw">const</span> user = <span class="kw">await</span> prisma.user.<span class="fn">findUnique</span>({
+  where: { email: req.body.email, active: <span class="kw">true</span> },
+  select: { id: <span class="kw">true</span>, name: <span class="kw">true</span>, role: <span class="kw">true</span> }  <span class="cmt">// select only needed fields</span>
+});
+
+<span class="cmt">// ✓ SECURE: Knex query builder</span>
+<span class="kw">const</span> users = <span class="kw">await</span> knex(<span class="str">'users'</span>)
+  .<span class="fn">where</span>({ email: req.body.email, active: <span class="kw">true</span> })
+  .<span class="fn">select</span>(<span class="str">'id'</span>, <span class="str">'name'</span>, <span class="str">'role'</span>);</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--coral)"></div>NoSQL / MongoDB — Operator injection prevention</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> mongoSanitize = <span class="fn">require</span>(<span class="str">'express-mongo-sanitize'</span>);
+<span class="kw">const</span> hpp          = <span class="fn">require</span>(<span class="str">'hpp'</span>);
+
+<span class="cmt">// ─── Global middleware — strip MongoDB operators from ALL inputs ─</span>
+app.<span class="fn">use</span>(<span class="fn">mongoSanitize</span>({
+  replaceWith: <span class="str">'_'</span>,
+  onSanitize: ({ req, key }) => {
+    logger.<span class="fn">warn</span>(`NOSQL_INJECTION_ATTEMPT ip=${req.ip} key=${key}`);
+  }
+}));
+app.<span class="fn">use</span>(<span class="fn">hpp</span>());  <span class="cmt">// prevent HTTP parameter pollution</span>
+
+<span class="cmt">// ─── NEVER use $where in Mongoose ────────────────────────────</span>
+<span class="cmt">// ✗ User.<span class="fn">find</span>({ '$where': 'this.credits > 0' });  ← allows JS execution</span>
+<span class="cmt">// ✓ User.<span class="fn">find</span>({ credits: { $gt: 0 } });  ← operator from code, not user input</span>
+
+<span class="cmt">// ─── OS Command Injection ─────────────────────────────────────</span>
+<span class="cmt">// ✗ NEVER: exec(`convert ${userFilename} output.pdf`)  ← shell injection</span>
+<span class="cmt">// ✓ Use execFile with array args (no shell interpolation)</span>
+<span class="kw">const</span> { execFile } = <span class="fn">require</span>(<span class="str">'child_process'</span>);
+<span class="fn">execFile</span>(<span class="str">'convert'</span>, [sanitizedFilename, <span class="str">'output.pdf'</span>], callback);
+<span class="cmt">// ✓ Or use libraries (sharp, pdfkit) instead of shell commands</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmt"># Test SQL injection</span>
+<span class="cmd">curl -s -X POST https://api.example.com/users -d '{"email":"admin'\''--","password":"x"}'</span>
+<span class="exp ok">→ HTTP 422 {"error":"Validation failed","details":[{"msg":"Valid email required"}]}</span>
+
+<span class="cmt"># Test NoSQL operator injection</span>
+<span class="cmd">curl -s -X POST https://api.example.com/auth/login -H "Content-Type: application/json" -d '{"email":{"$gt":""},"password":{"$gt":""}}'</span>
+<span class="exp ok">→ HTTP 401 Unauthorized  ← operators stripped by mongoSanitize</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — Injection Prevention</div>
+            <div class="vapt-text">All database interactions use parameterized queries (pg library / Prisma ORM) — no string concatenation in SQL queries. NoSQL injection is mitigated via express-mongo-sanitize stripping MongoDB operators from all request inputs, logged with IP for forensics. OS command execution uses execFile with argument arrays (no shell). HTTP parameter pollution is blocked by the hpp middleware. Injection attempts are verified to return validation errors (HTTP 422) or authentication failures (HTTP 401), never 200 OK.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 06 — MASS ASSIGNMENT -->
+<div class="section" id="s06" data-severity="high" data-tags="mass assignment object binding role escalation admin flag unintended fields API3 allowlist denylist">
+  <div class="sec-topband band-high"></div>
+  <div class="sec-hdr" onclick="tog('s06')">
+    <div class="sec-pill" style="background:var(--rose-bg);color:var(--rose2)">06</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Mass Assignment &amp; Object Property Injection</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API3:2023</span>
+        <span class="tag-p">Joi</span><span class="tag-p">zod</span><span class="tag-p">object allowlist</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">APIs that directly bind request body to model objects (<code>User.update(req.body)</code>) allow attackers to inject hidden fields — setting <code>role: "admin"</code>, <code>balance: 999999</code>, or <code>isVerified: true</code> by including extra fields in their request.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Privilege escalation by self-assigning admin role, financial fraud via balance manipulation, and account verification bypass — all by adding extra JSON fields to a legitimate update request.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Explicit field allowlisting</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>src/routes/users.js — Safe profile update</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ✗ VULNERABLE: binds entire req.body to user model</span>
+<span class="kw">await</span> User.<span class="fn">findByIdAndUpdate</span>(req.user.id, req.body);
+<span class="cmt">// Attacker sends: { "name": "Alice", "role": "admin", "balance": 99999 }</span>
+
+<span class="cmt">// ✓ SECURE: explicit allowlist — only update permitted fields</span>
+<span class="kw">const</span> UPDATABLE_FIELDS = [<span class="str">'name'</span>, <span class="str">'bio'</span>, <span class="str">'avatar'</span>, <span class="str">'timezone'</span>];
+
+<span class="kw">const</span> <span class="fn">pickAllowed</span> = (body, allowed) => {
+  <span class="kw">return</span> allowed.<span class="fn">reduce</span>((acc, key) => {
+    <span class="kw">if</span> (key <span class="kw">in</span> body) acc[key] = body[key];
+    <span class="kw">return</span> acc;
+  }, {});
+};
+
+<span class="kw">const</span> safeUpdate = <span class="fn">pickAllowed</span>(req.body, UPDATABLE_FIELDS);
+<span class="kw">await</span> User.<span class="fn">findByIdAndUpdate</span>(req.user.id, safeUpdate, { new: <span class="kw">true</span>, runValidators: <span class="kw">true</span> });
+
+<span class="cmt">// ─── Zod schema approach (recommended) ────────────────────────</span>
+<span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+
+<span class="kw">const</span> updateProfileSchema = z.<span class="fn">object</span>({
+  name:     z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="num">1</span>).<span class="fn">max</span>(<span class="num">100</span>).<span class="fn">optional</span>(),
+  bio:      z.<span class="fn">string</span>().<span class="fn">max</span>(<span class="num">500</span>).<span class="fn">optional</span>(),
+  timezone: z.<span class="fn">string</span>().<span class="fn">optional</span>(),
+  <span class="cmt">// Fields NOT listed here are automatically stripped by Zod</span>
+  <span class="cmt">// role, isAdmin, balance, isVerified — all rejected</span>
+}).strict(); <span class="cmt">// .strict() = reject any extra keys</span>
+
+<span class="kw">const</span> validated = updateProfileSchema.<span class="fn">parse</span>(req.body);</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmd">curl -s -X PUT https://api.example.com/users/me -H "Authorization: Bearer $TOKEN" -d '{"name":"Alice","role":"admin","isAdmin":true}'</span>
+<span class="exp ok">→ HTTP 200 {"name":"Alice"}  ← only name updated, role/isAdmin stripped ✓</span>
+
+<span class="cmd">curl -s https://api.example.com/users/me -H "Authorization: Bearer $TOKEN"</span>
+<span class="exp ok">→ {"name":"Alice","role":"user"}  ← role unchanged ✓</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — Mass Assignment (API3:2023)</div>
+            <div class="vapt-text">All update endpoints use explicit field allowlists (or Zod <em>.strict()</em> schemas) to accept only declared, permitted fields. Sensitive fields (<em>role</em>, <em>isAdmin</em>, <em>balance</em>, <em>isVerified</em>) are never exposed in update routes. Mongoose <em>runValidators: true</em> ensures schema-level validation runs on updates. Verified: submitting <em>role: admin</em> in update request has no effect on the persisted user role.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 07 — SCHEMA VALIDATION -->
+<div class="section" id="s07" data-severity="high" data-tags="schema validation input validation Joi zod express-validator type checking format length request body">
+  <div class="sec-topband band-high"></div>
+  <div class="sec-hdr" onclick="tog('s07')">
+    <div class="sec-pill" style="background:var(--rose-bg);color:var(--rose2)">07</div>
+    <div class="sec-title-group">
+      <div class="sec-title">API Request Schema Validation</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API8:2023</span>
+        <span class="tag-p">zod</span><span class="tag-p">express-validator</span><span class="tag-p">OpenAPI</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">APIs accept malformed, oversized, or malicious input without validation — enabling DoS via huge payloads, injection via unchecked strings, and logic errors via unexpected data types (string where integer expected).</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Memory exhaustion via oversized JSON payloads, type coercion attacks (sending strings where numbers expected), business logic bypass via missing required fields, and injection via unvalidated string formats.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Comprehensive Zod schema validation</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>src/schemas/order.schema.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">import</span> { z } <span class="kw">from</span> <span class="str">'zod'</span>;
+
+<span class="kw">export const</span> createOrderSchema = z.<span class="fn">object</span>({
+  items: z.<span class="fn">array</span>(z.<span class="fn">object</span>({
+    productId: z.<span class="fn">string</span>().<span class="fn">uuid</span>(<span class="str">'Product ID must be a UUID'</span>),
+    quantity:  z.<span class="fn">number</span>().<span class="fn">int</span>().<span class="fn">min</span>(<span class="num">1</span>).<span class="fn">max</span>(<span class="num">100</span>),
+  })).<span class="fn">min</span>(<span class="num">1</span>).<span class="fn">max</span>(<span class="num">50</span>),
+
+  deliveryAddress: z.<span class="fn">object</span>({
+    street:  z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="num">1</span>).<span class="fn">max</span>(<span class="num">200</span>),
+    city:    z.<span class="fn">string</span>().<span class="fn">min</span>(<span class="num">1</span>).<span class="fn">max</span>(<span class="num">100</span>),
+    country: z.<span class="fn">string</span>().<span class="fn">length</span>(<span class="num">2</span>),        <span class="cmt">// ISO 3166-1 alpha-2</span>
+    zip:     z.<span class="fn">string</span>().<span class="fn">regex</span>(<span class="str">/^[\d\-A-Z]{3,10}$/</span>),
+  }),
+
+  couponCode: z.<span class="fn">string</span>()
+    .<span class="fn">regex</span>(<span class="str">/^[A-Z0-9\-]{4,20}$/</span>, <span class="str">'Invalid coupon format'</span>)
+    .<span class="fn">optional</span>(),
+
+  notes: z.<span class="fn">string</span>().<span class="fn">max</span>(<span class="num">500</span>).<span class="fn">optional</span>(),
+}).<span class="fn">strict</span>(); <span class="cmt">// reject any extra fields</span>
+
+<span class="cmt">// ─── Validation middleware factory ────────────────────────────</span>
+<span class="kw">const</span> <span class="fn">validate</span> = (schema) => (req, res, next) => {
+  <span class="kw">const</span> result = schema.<span class="fn">safeParse</span>(req.body);
+  <span class="kw">if</span> (!result.success) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">422</span>).<span class="fn">json</span>({
+      error: <span class="str">'Validation failed'</span>,
+      details: result.error.<span class="fn">flatten</span>().fieldErrors,
+    });
+  }
+  req.body = result.data; <span class="cmt">// replace with validated + stripped data</span>
+  <span class="fn">next</span>();
+};
+
+<span class="cmt">// ─── Body size limit (DoS prevention) ────────────────────────</span>
+app.<span class="fn">use</span>(express.<span class="fn">json</span>({ limit: <span class="str">'10kb'</span> }));      <span class="cmt">// reject > 10KB</span>
+app.<span class="fn">use</span>(express.<span class="fn">urlencoded</span>({ limit: <span class="str">'10kb'</span>, extended: <span class="kw">false</span> }));</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — Schema Validation</div>
+            <div class="vapt-text">All API endpoints enforce strict Zod schema validation with type checking, length limits, format validation (UUID, email, regex patterns), and field count limits. Request body size is capped at 10KB globally. Zod <em>.strict()</em> rejects undeclared fields. Validation errors return structured HTTP 422 responses with field-level details. The validated data object replaces the raw request body in the middleware pipeline — downstream handlers only receive clean, validated data.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+  CHAPTER 3 — RATE & ACCESS CONTROL
+═══════════════════════════════ -->
+<div class="chapter">
+  <span class="ch-num">Chapter III</span>
+  <div class="ch-rule"></div>
+  <span class="ch-title">Rate Limiting &amp; Access Control</span>
+  <div class="ch-rule"></div>
+  <span class="ch-count">3 Controls</span>
+</div>
+
+<!-- 08 — RATE LIMITING -->
+<div class="section" id="s08" data-severity="high" data-tags="rate limiting throttling DDoS abuse prevention express-rate-limit token bucket sliding window Nginx quota">
+  <div class="sec-topband band-high"></div>
+  <div class="sec-hdr" onclick="tog('s08')">
+    <div class="sec-pill" style="background:var(--rose-bg);color:var(--rose2)">08</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Rate Limiting, Throttling &amp; Quota Management</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API4:2023</span>
+        <span class="tag-p">express-rate-limit</span><span class="tag-p">Redis</span><span class="tag-p">Nginx</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">APIs without rate limiting are open to brute-force attacks, resource exhaustion, enumeration attacks (scraping all records), and abuse of expensive compute operations (ML endpoints, PDF generation, email sending).</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">API abuse at scale — complete data exfiltration via pagination enumeration, server resource exhaustion (CPU/memory DoS), financial abuse of metered operations, and credential brute-force at API speed.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Multi-layer rate limiting</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>src/middleware/rateLimits.js — Tiered rate limiting</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> rateLimit   = <span class="fn">require</span>(<span class="str">'express-rate-limit'</span>);
+<span class="kw">const</span> RedisStore  = <span class="fn">require</span>(<span class="str">'rate-limit-redis'</span>).default;
+<span class="kw">const</span> redis       = <span class="fn">require</span>(<span class="str">'ioredis'</span>);
+<span class="kw">const</span> slowDown    = <span class="fn">require</span>(<span class="str">'express-slow-down'</span>);
+
+<span class="kw">const</span> redisClient = <span class="kw">new</span> <span class="fn">redis</span>(process.env.REDIS_URL);
+
+<span class="cmt">// ─── Helper factory ───────────────────────────────────────────</span>
+<span class="kw">const</span> <span class="fn">makeLimit</span> = (windowMin, max, message) => <span class="fn">rateLimit</span>({
+  windowMs:       windowMin * <span class="num">60</span> * <span class="num">1000</span>,
+  max,
+  standardHeaders: <span class="kw">true</span>,
+  legacyHeaders:   <span class="kw">false</span>,
+  store:           <span class="kw">new</span> <span class="fn">RedisStore</span>({ sendCommand: (...a) => redisClient.<span class="fn">call</span>(...a) }),
+  message:         { error: message, retryAfter: <span class="str">'See Retry-After header'</span> },
+  skip:            (req) => req.ip === <span class="str">'127.0.0.1'</span>,  <span class="cmt">// skip localhost</span>
+});
+
+<span class="cmt">// ─── Tiered limits ────────────────────────────────────────────</span>
+<span class="kw">module.exports</span> = {
+  <span class="cmt">// Auth: very strict — 5 attempts per 15 min</span>
+  authLimit:    <span class="fn">makeLimit</span>(<span class="num">15</span>, <span class="num">5</span>,  <span class="str">'Too many auth attempts'</span>),
+
+  <span class="cmt">// API general: 100 req per 15 min per IP</span>
+  apiLimit:     <span class="fn">makeLimit</span>(<span class="num">15</span>, <span class="num">100</span>, <span class="str">'API rate limit exceeded'</span>),
+
+  <span class="cmt">// Expensive ops (AI, PDF, email): 10 req per hour</span>
+  heavyLimit:   <span class="fn">makeLimit</span>(<span class="num">60</span>, <span class="num">10</span>,  <span class="str">'Operation rate limit exceeded'</span>),
+
+  <span class="cmt">// Password reset: 3 per hour</span>
+  resetLimit:   <span class="fn">makeLimit</span>(<span class="num">60</span>, <span class="num">3</span>,   <span class="str">'Too many reset requests'</span>),
+
+  <span class="cmt">// Write operations: 60 per 10 min (prevent scraping via writes)</span>
+  writeLimit:   <span class="fn">makeLimit</span>(<span class="num">10</span>, <span class="num">60</span>,  <span class="str">'Write rate limit exceeded'</span>),
+
+  <span class="cmt">// Progressive slowdown (speed throttle before hard limit)</span>
+  speedLimiter: <span class="fn">slowDown</span>({
+    windowMs:   <span class="num">15</span> * <span class="num">60</span> * <span class="num">1000</span>,
+    delayAfter: <span class="num">50</span>,
+    delayMs:    (hits) => hits * <span class="num">100</span>,  <span class="cmt">// +100ms per hit above 50</span>
+  }),
+};
+
+<span class="cmt">// ─── Apply in routes ──────────────────────────────────────────</span>
+<span class="cmt">// app.use('/api/', apiLimit, speedLimiter);</span>
+<span class="cmt">// app.post('/auth/login', authLimit, loginController);</span>
+<span class="cmt">// app.post('/api/generate-pdf', authenticate, heavyLimit, generatePdf);</span></pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div">Nginx upstream rate limiting (server-level)</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># nginx.conf — Nginx rate limiting as first layer</span>
+limit_req_zone $binary_remote_addr zone=api:<span class="num">10</span>m rate=<span class="num">30r/s</span>;
+limit_req_zone $binary_remote_addr zone=auth:<span class="num">1</span>m  rate=<span class="num">3r/m</span>;
+
+server {
+  location /api/ {
+    limit_req zone=api burst=<span class="num">60</span> nodelay;
+    limit_req_status <span class="num">429</span>;
+    proxy_pass http://node_backend;
+  }
+  location /api/auth/ {
+    limit_req zone=auth burst=<span class="num">5</span> nodelay;
+    limit_req_status <span class="num">429</span>;
+    proxy_pass http://node_backend;
+  }
+}</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span><span class="rbadge rb-dso">DevOps/Nginx Admin</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmd">for i in $(seq 1 110); do curl -s -o /dev/null -w "%{http_code}\n" https://api.example.com/api/orders; done | sort | uniq -c</span>
+<span class="exp ok">→ 100 200  (first 100 requests)
+→  10 429  (requests 101-110 rate limited) ✓</span>
+
+<span class="cmd">curl -I https://api.example.com/api/orders 2>&1 | grep -i ratelimit</span>
+<span class="exp ok">→ ratelimit-limit: 100
+→ ratelimit-remaining: 97
+→ ratelimit-reset: 1714000000</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — Rate Limiting (API4:2023)</div>
+            <div class="vapt-text">Rate limiting is implemented at two layers: Nginx (30 req/s with burst; 3 req/min on auth) and Express application middleware (Redis-backed, distributed across instances). Tiered limits apply: auth endpoints (5/15min), general API (100/15min), expensive operations (10/hour). RateLimit standard headers are sent per RFC 6585. Progressive slowdown precedes hard limits. Verified: requests beyond threshold receive HTTP 429 with Retry-After header.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 09 — BFLA / FUNCTION LEVEL AUTH -->
+<div class="section" id="s09" data-severity="high" data-tags="BFLA broken function level authorization admin endpoints role check RBAC middleware privilege">
+  <div class="sec-topband band-high"></div>
+  <div class="sec-hdr" onclick="tog('s09')">
+    <div class="sec-pill" style="background:var(--rose-bg);color:var(--rose2)">09</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Broken Function Level Authorization (BFLA)</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API5:2023</span>
+        <span class="tag-p">RBAC</span><span class="tag-p">role middleware</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Admin or privileged API endpoints are accessible to regular users because the server doesn't check the caller's role — only whether they're authenticated. Hidden admin routes discovered via JS source analysis or API fuzzing.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Regular users accessing admin functions — deleting other users' accounts, viewing all users' PII, triggering system-level operations, modifying system configuration, or accessing analytics data.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Role-Based Access Control middleware</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>src/middleware/rbac.js — Flexible RBAC middleware</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">/**
+ * requireRole — enforce role-based access on routes.
+ * Supports multiple allowed roles and hierarchical check.
+ */</span>
+<span class="kw">const</span> <span class="fn">requireRole</span> = (...allowedRoles) => (req, res, next) => {
+  <span class="kw">if</span> (!req.user) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">401</span>).<span class="fn">json</span>({ error: <span class="str">'Authentication required'</span> });
+  }
+
+  <span class="kw">const</span> userRole = req.user.role;
+  <span class="kw">if</span> (!allowedRoles.<span class="fn">includes</span>(userRole)) {
+    <span class="cmt">// Log unauthorized function access attempt</span>
+    logger.<span class="fn">warn</span>({
+      event:    <span class="str">'UNAUTHORIZED_FUNCTION_ACCESS'</span>,
+      userId:   req.user.id,
+      role:     userRole,
+      required: allowedRoles,
+      path:     req.path,
+      ip:       req.ip,
+    });
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">403</span>).<span class="fn">json</span>({ error: <span class="str">'Insufficient privileges'</span> });
+  }
+  <span class="fn">next</span>();
+};
+
+<span class="cmt">// ─── Role hierarchy ───────────────────────────────────────────</span>
+<span class="kw">const</span> ROLES = {
+  USER:        <span class="str">'user'</span>,
+  MODERATOR:   <span class="str">'moderator'</span>,
+  ADMIN:       <span class="str">'admin'</span>,
+  SUPER_ADMIN: <span class="str">'super_admin'</span>,
+};
+
+<span class="cmt">// ─── Route examples ───────────────────────────────────────────</span>
+<span class="cmt">// User routes (any authenticated user)</span>
+<span class="cmt">// router.get('/me',           authenticate, getMyProfile);</span>
+
+<span class="cmt">// Moderator+ routes</span>
+<span class="cmt">// router.get('/reports',      authenticate, requireRole('moderator','admin'), getReports);</span>
+
+<span class="cmt">// Admin-only routes</span>
+<span class="cmt">// router.get('/admin/users',  authenticate, requireRole('admin'), getAllUsers);</span>
+<span class="cmt">// router.delete('/users/:id', authenticate, requireRole('admin'), deleteUser);</span>
+
+<span class="cmt">// Super admin only</span>
+<span class="cmt">// router.post('/system/config', authenticate, requireRole('super_admin'), updateConfig);</span>
+
+module.exports = { requireRole, ROLES };</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmt"># Access admin endpoint as regular user</span>
+<span class="cmd">curl -H "Authorization: Bearer $USER_TOKEN" https://api.example.com/admin/users</span>
+<span class="exp ok">→ HTTP 403 {"error":"Insufficient privileges"}</span>
+
+<span class="cmt"># Access admin endpoint as admin user</span>
+<span class="cmd">curl -H "Authorization: Bearer $ADMIN_TOKEN" https://api.example.com/admin/users</span>
+<span class="exp ok">→ HTTP 200 [{"id":"...","name":"..."}]</span>
+
+<span class="cmt"># Verify BFLA attempt is logged</span>
+<span class="cmd">grep "UNAUTHORIZED_FUNCTION_ACCESS" /var/log/app/combined.log | tail -3</span>
+<span class="exp ok">→ {"event":"UNAUTHORIZED_FUNCTION_ACCESS","userId":"abc","role":"user","required":["admin"],...}</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — BFLA (API5:2023)</div>
+            <div class="vapt-text">All admin and privileged API endpoints enforce role-based access control via the <em>requireRole</em> middleware applied at the route level. Regular user tokens receive HTTP 403 on admin endpoints regardless of authentication status. BFLA attempt events are logged with user ID, role, required roles, endpoint, and IP for forensic monitoring. An automated test suite verifies that each role tier cannot access endpoints above its privilege level.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 10 — EXCESSIVE DATA EXPOSURE -->
+<div class="section" id="s10" data-severity="medium" data-tags="excessive data exposure response filtering sensitive fields password hash SSN PII over-sharing API6">
+  <div class="sec-topband band-med"></div>
+  <div class="sec-hdr" onclick="tog('s10')">
+    <div class="sec-pill" style="background:var(--gold-bg);color:var(--gold)">10</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Excessive Data Exposure — Response Filtering</div>
+      <div class="sec-meta">
+        <span class="badge b-med">MEDIUM</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API6:2023</span>
+        <span class="tag-p">Response DTOs</span><span class="tag-p">select fields</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">APIs return the full database object to the client and rely on the frontend to hide sensitive fields. Password hashes, internal IDs, secret tokens, PII, and metadata are exposed in API responses even when not needed by the UI.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-med">Password hash leakage (offline cracking), internal system IDs (enumeration), PII exposure (GDPR violation), and security token disclosure — all visible in browser DevTools Network tab to any logged-in user.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Response DTOs and field selection</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--gold)"></div>src/dto/user.dto.js — Data Transfer Objects</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ─── User DTO: what the API returns vs what's in the DB ───────</span>
+<span class="kw">class</span> <span class="cls">UserPublicDto</span> {
+  <span class="fn">constructor</span>(user) {
+    <span class="cmt">// ✓ Safe to return — explicitly listed</span>
+    <span class="kw">this</span>.id         = user._id.toString();
+    <span class="kw">this</span>.name       = user.name;
+    <span class="kw">this</span>.avatarUrl  = user.avatarUrl;
+    <span class="kw">this</span>.joinedAt   = user.createdAt;
+
+    <span class="cmt">// Fields NOT included (never exposed):</span>
+    <span class="cmt">// password, passwordHash, salt, securityToken,</span>
+    <span class="cmt">// resetToken, apiKeys, internalNotes, ipHistory,</span>
+    <span class="cmt">// stripeCustomerId, lastLoginIp, failedLoginCount</span>
+  }
+}
+
+<span class="kw">class</span> <span class="cls">UserPrivateDto</span> {
+  <span class="fn">constructor</span>(user) {
+    <span class="cmt">// Returned only to the user for their own profile</span>
+    <span class="kw">this</span>.id         = user._id.toString();
+    <span class="kw">this</span>.name       = user.name;
+    <span class="kw">this</span>.email      = user.email;
+    <span class="kw">this</span>.avatarUrl  = user.avatarUrl;
+    <span class="kw">this</span>.role       = user.role;
+    <span class="kw">this</span>.joinedAt   = user.createdAt;
+    <span class="cmt">// Still NOT included: password, tokens, etc.</span>
+  }
+}
+
+<span class="cmt">// ─── Usage in controllers ─────────────────────────────────────</span>
+<span class="cmt">// res.json(new UserPublicDto(user));                ← public profile</span>
+<span class="cmt">// res.json(new UserPrivateDto(user));               ← own profile</span>
+<span class="cmt">// res.json(users.map(u => new UserPublicDto(u)));   ← list</span>
+
+<span class="cmt">// ─── MongoDB: always use .select() to limit DB fields ─────────</span>
+<span class="kw">const</span> user = <span class="kw">await</span> <span class="cls">User</span>
+  .<span class="fn">findById</span>(id)
+  .<span class="fn">select</span>(<span class="str">'-password -resetToken -apiKeys -securityToken'</span>)
+  .<span class="fn">lean</span>();
+
+<span class="cmt">// ─── Prisma: always use select ────────────────────────────────</span>
+<span class="kw">const</span> user = <span class="kw">await</span> prisma.user.<span class="fn">findUnique</span>({
+  where: { id },
+  select: { id: <span class="kw">true</span>, name: <span class="kw">true</span>, email: <span class="kw">true</span>, avatarUrl: <span class="kw">true</span> },
+  <span class="cmt">// password, tokens etc: NOT in select = not fetched</span>
+});</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmd">curl -s -H "Authorization: Bearer $TOKEN" https://api.example.com/users/me | python3 -m json.tool</span>
+<span class="exp ok">→ {"id":"...","name":"Alice","email":"alice@x.com","avatarUrl":"...","joinedAt":"..."}</span>
+<span class="cmt"># Must NOT contain: password, passwordHash, resetToken, apiKeys, internalNotes</span>
+
+<span class="cmd">curl -s -H "Authorization: Bearer $TOKEN" https://api.example.com/users/me | grep -iE 'password|hash|token|secret|key'</span>
+<span class="exp ok">→ (empty — no sensitive fields in response)</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — Excessive Data Exposure (API6:2023)</div>
+            <div class="vapt-text">All API responses use explicit Data Transfer Object (DTO) classes that whitelist only the fields appropriate for the consumer context. Database queries use <em>.select()</em> field exclusions to prevent over-fetching. Sensitive fields (password hashes, tokens, internal metadata, PII beyond display needs) are confirmed absent from API responses via automated response schema validation. MongoDB <em>-password -resetToken</em> projection prevents accidental leakage at the query level.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+  CHAPTER 4 — TRANSPORT & HEADERS
+═══════════════════════════════ -->
+<div class="chapter">
+  <span class="ch-num">Chapter IV</span>
+  <div class="ch-rule"></div>
+  <span class="ch-title">Transport Security &amp; HTTP Headers</span>
+  <div class="ch-rule"></div>
+  <span class="ch-count">3 Controls</span>
+</div>
+
+<!-- 11 — HTTPS & TLS -->
+<div class="section" id="s11" data-severity="high" data-tags="HTTPS TLS 1.3 certificate pinning HSTS cipher suite weak encryption API transport">
+  <div class="sec-topband band-high"></div>
+  <div class="sec-hdr" onclick="tog('s11')">
+    <div class="sec-pill" style="background:var(--rose-bg);color:var(--rose2)">11</div>
+    <div class="sec-title-group">
+      <div class="sec-title">HTTPS Enforcement &amp; TLS Hardening</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API10:2023</span>
+        <span class="tag-p">TLS 1.3</span><span class="tag-p">Nginx</span><span class="tag-p">HSTS</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">API communicating over HTTP, weak TLS versions (1.0/1.1), broken cipher suites (CBC, RC4, 3DES), missing HSTS headers allowing protocol downgrade, and self-signed certificates without verification in clients.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Token interception via MITM on HTTP or weak TLS connections, POODLE/BEAST/CRIME attacks on legacy cipher suites, and SSL stripping attacks without HSTS.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Nginx TLS hardening for API</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>/etc/nginx/sites-enabled/api.conf</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ─── Redirect all HTTP to HTTPS ──────────────────────────────</span>
+server {
+  listen 80; server_name api.example.com;
+  return 301 https://$host$request_uri;
+}
+
+server {
+  listen 443 ssl http2; server_name api.example.com;
+
+  ssl_certificate     /etc/letsencrypt/live/api.example.com/fullchain.pem;
+  ssl_certificate_key /etc/letsencrypt/live/api.example.com/privkey.pem;
+
+  <span class="cmt"># ─── TLS version: only 1.2 and 1.3 ──────────────────────────</span>
+  ssl_protocols TLSv1.2 TLSv1.3;
+
+  <span class="cmt"># ─── Strong ciphers: ECDHE + AEAD only ───────────────────────</span>
+  ssl_ciphers 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305';
+  ssl_prefer_server_ciphers off;
+
+  ssl_session_cache   shared:SSL:10m;
+  ssl_session_timeout 1d;
+  ssl_session_tickets off;
+
+  <span class="cmt"># ─── OCSP stapling ───────────────────────────────────────────</span>
+  ssl_stapling on; ssl_stapling_verify on;
+  resolver 1.1.1.1 8.8.8.8;
+
+  <span class="cmt"># ─── HSTS: 2 years + preload ─────────────────────────────────</span>
+  add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
+
+  <span class="cmt"># ─── Proxy to Node.js (bound to localhost only) ───────────────</span>
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host            $host;
+    proxy_set_header X-Real-IP       $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>Node.js — Trust proxy + enforce HTTPS</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// Trust Nginx reverse proxy</span>
+app.<span class="fn">set</span>(<span class="str">'trust proxy'</span>, <span class="num">1</span>);
+
+<span class="cmt">// Redirect HTTP → HTTPS at app level (backup)</span>
+app.<span class="fn">use</span>((req, res, next) => {
+  <span class="kw">if</span> (req.headers[<span class="str">'x-forwarded-proto'</span>] !== <span class="str">'https'</span>) {
+    <span class="kw">return</span> res.<span class="fn">redirect</span>(<span class="num">301</span>, <span class="str">`https://${req.headers.host}${req.url}`</span>);
+  }
+  <span class="fn">next</span>();
+});
+
+<span class="cmt">// HSTS header from Node.js (belt + suspenders)</span>
+app.<span class="fn">use</span>(<span class="fn">helmet</span>({
+  hsts: { maxAge: <span class="num">63072000</span>, includeSubDomains: <span class="kw">true</span>, preload: <span class="kw">true</span> }
+}));</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-dso">DevOps / Nginx Admin</span><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmt"># SSL Labs grade (expect A+)</span>
+<span class="cmd">curl -s "https://api.ssllabs.com/api/v3/analyze?host=api.example.com" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['endpoints'][0]['grade'])"</span>
+<span class="exp ok">→ A+</span>
+
+<span class="cmt"># HSTS header check</span>
+<span class="cmd">curl -I https://api.example.com/ | grep -i strict</span>
+<span class="exp ok">→ strict-transport-security: max-age=63072000; includeSubDomains; preload</span>
+
+<span class="cmt"># TLS 1.0/1.1 must be rejected</span>
+<span class="cmd">openssl s_client -connect api.example.com:443 -tls1 2>&1 | grep "handshake failure"</span>
+<span class="exp ok">→ handshake failure (TLS 1.0 rejected) ✓</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — HTTPS / TLS (API10:2023)</div>
+            <div class="vapt-text">API is served exclusively over HTTPS — HTTP requests receive HTTP 301 redirect. Nginx TLS configuration enforces TLSv1.2/1.3 only with ECDHE+AEAD cipher suites; legacy protocols (TLS 1.0, 1.1, SSLv3) and weak ciphers (CBC, RC4, 3DES) are disabled. HSTS header is set with 2-year max-age and preload directive. OCSP stapling is active. SSL Labs reports Grade A+. Node.js is bound to localhost and proxied through Nginx — no direct port exposure.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 12 — SECURITY HEADERS -->
+<div class="section" id="s12" data-severity="medium" data-tags="security headers Helmet.js CSP CORS X-Frame Content-Type-Options API response headers">
+  <div class="sec-topband band-med"></div>
+  <div class="sec-hdr" onclick="tog('s12')">
+    <div class="sec-pill" style="background:var(--gold-bg);color:var(--gold)">12</div>
+    <div class="sec-title-group">
+      <div class="sec-title">API-Specific Security Response Headers</div>
+      <div class="sec-meta">
+        <span class="badge b-med">MEDIUM</span>
+        <span class="tag-p">Helmet.js</span><span class="tag-p">Content-Type</span><span class="tag-p">Cache-Control</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">API responses missing security headers enable MIME sniffing attacks, expose framework information (<code>X-Powered-By: Express</code>), allow sensitive responses to be cached by intermediaries, and expose API internals via response timing headers.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-med">MIME confusion attacks on uploaded content, authentication tokens cached in proxy servers (leaked to subsequent users on shared machines), framework fingerprinting enabling targeted CVE exploitation.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Helmet.js + custom API headers</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--gold)"></div>src/app.js — Helmet + API security headers</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> helmet = <span class="fn">require</span>(<span class="str">'helmet'</span>);
+
+<span class="cmt">// ─── Remove Express fingerprint ───────────────────────────────</span>
+app.<span class="fn">disable</span>(<span class="str">'x-powered-by'</span>);
+
+<span class="cmt">// ─── Helmet: full suite of security headers ───────────────────</span>
+app.<span class="fn">use</span>(<span class="fn">helmet</span>({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:  [<span class="str">"'none'"</span>],     <span class="cmt">// API: block all browser rendering</span>
+      frameAncestors: [<span class="str">"'none'"</span>],  <span class="cmt">// prevent framing</span>
+    }
+  },
+  noSniff:         <span class="kw">true</span>,   <span class="cmt">// X-Content-Type-Options: nosniff</span>
+  xssFilter:       <span class="kw">true</span>,   <span class="cmt">// X-XSS-Protection</span>
+  frameguard:      { action: <span class="str">'deny'</span> },
+  referrerPolicy:  { policy: <span class="str">'no-referrer'</span> },   <span class="cmt">// API: no referrer leakage</span>
+  permittedCrossDomainPolicies: <span class="kw">false</span>,
+  hsts: { maxAge: <span class="num">63072000</span>, includeSubDomains: <span class="kw">true</span>, preload: <span class="kw">true</span> },
+}));
+
+<span class="cmt">// ─── API-specific headers ─────────────────────────────────────</span>
+app.<span class="fn">use</span>((req, res, next) => {
+  <span class="cmt">// Ensure responses are treated as JSON (not HTML)</span>
+  res.<span class="fn">setHeader</span>(<span class="str">'Content-Type'</span>, <span class="str">'application/json; charset=utf-8'</span>);
+
+  <span class="cmt">// No caching for API responses (especially auth responses)</span>
+  res.<span class="fn">setHeader</span>(<span class="str">'Cache-Control'</span>, <span class="str">'no-store, no-cache, must-revalidate'</span>);
+  res.<span class="fn">setHeader</span>(<span class="str">'Pragma'</span>, <span class="str">'no-cache'</span>);
+  res.<span class="fn">setHeader</span>(<span class="str">'Expires'</span>, <span class="str">'0'</span>);
+
+  <span class="cmt">// Correlation ID for request tracing</span>
+  <span class="kw">const</span> reqId = req.headers[<span class="str">'x-request-id'</span>] || <span class="fn">require</span>(<span class="str">'crypto'</span>).<span class="fn">randomUUID</span>();
+  res.<span class="fn">setHeader</span>(<span class="str">'X-Request-ID'</span>, reqId);
+  req.requestId = reqId;
+
+  <span class="fn">next</span>();
+});
+
+<span class="cmt">// ─── Allowed cache only for specific static/public content ────</span>
+app.<span class="fn">get</span>(<span class="str">'/api/v1/products'</span>, (req, res, next) => {
+  res.<span class="fn">setHeader</span>(<span class="str">'Cache-Control'</span>, <span class="str">'public, max-age=60, s-maxage=300'</span>); <span class="cmt">// 5 min CDN</span>
+  <span class="fn">next</span>();
+}, getProducts);</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmd">curl -I https://api.example.com/api/orders | grep -iE '(x-powered|x-content|cache|x-request|content-type)'</span>
+<span class="exp ok">→ x-content-type-options: nosniff
+→ cache-control: no-store, no-cache, must-revalidate
+→ x-request-id: 550e8400-e29b-41d4-a716-446655440000
+→ content-type: application/json; charset=utf-8
+→ (x-powered-by: NOT present) ✓</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — Security Headers</div>
+            <div class="vapt-text">Helmet.js middleware enforces X-Content-Type-Options (nosniff), X-Frame-Options (DENY), Referrer-Policy (no-referrer), and CSP (default-src: none for API). Framework disclosure (<em>X-Powered-By</em>) is suppressed. All API responses set Cache-Control: no-store to prevent credential caching at proxies. X-Request-ID correlation header enables full request tracing. Content-Type is explicitly set to application/json. Response header audit confirms all required headers present and no sensitive headers exposed.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 13 — CORS HARDENING -->
+<div class="section" id="s13" data-severity="high" data-tags="CORS cross origin resource sharing wildcard origin credentials Access-Control-Allow-Origin preflight">
+  <div class="sec-topband band-high"></div>
+  <div class="sec-hdr" onclick="tog('s13')">
+    <div class="sec-pill" style="background:var(--rose-bg);color:var(--rose2)">13</div>
+    <div class="sec-title-group">
+      <div class="sec-title">CORS — Cross-Origin Resource Sharing Hardening</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="tag-p">cors</span><span class="tag-p">origin whitelist</span><span class="tag-p">credentials</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Wildcard CORS (<code>Access-Control-Allow-Origin: *</code>) on credentialed APIs, reflecting arbitrary Origin headers without validation, and allowing all HTTP methods when only GET/POST are needed create cross-site data exfiltration risks.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Cross-origin attacks from malicious websites making authenticated requests to your API using the victim's cookies, reading private data, and triggering authenticated actions on their behalf.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Strict origin whitelist CORS</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--rose)"></div>src/middleware/cors.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> cors = <span class="fn">require</span>(<span class="str">'cors'</span>);
+
+<span class="kw">const</span> ALLOWED_ORIGINS = <span class="kw">new</span> <span class="cls">Set</span>([
+  <span class="str">'https://your-app.com'</span>,
+  <span class="str">'https://www.your-app.com'</span>,
+  <span class="str">'https://admin.your-app.com'</span>,
+  ...(process.env.NODE_ENV === <span class="str">'development'</span> ? [<span class="str">'http://localhost:3000'</span>] : []),
+]);
+
+<span class="kw">const</span> corsOptions = {
+  origin: (origin, callback) => {
+    <span class="cmt">// Allow server-to-server (no browser origin header)</span>
+    <span class="kw">if</span> (!origin) <span class="kw">return</span> <span class="fn">callback</span>(<span class="kw">null</span>, <span class="kw">true</span>);
+
+    <span class="cmt">// ✗ NEVER: Access-Control-Allow-Origin: *  with credentials</span>
+    <span class="kw">if</span> (ALLOWED_ORIGINS.<span class="fn">has</span>(origin)) {
+      <span class="kw">return</span> <span class="fn">callback</span>(<span class="kw">null</span>, <span class="kw">true</span>);
+    }
+    <span class="fn">callback</span>(<span class="kw">new</span> <span class="cls">Error</span>(<span class="str">`CORS blocked: ${origin}`</span>));
+  },
+
+  credentials:         <span class="kw">true</span>,
+  methods:             [<span class="str">'GET'</span>, <span class="str">'POST'</span>, <span class="str">'PUT'</span>, <span class="str">'PATCH'</span>, <span class="str">'DELETE'</span>, <span class="str">'OPTIONS'</span>],
+  allowedHeaders:      [<span class="str">'Content-Type'</span>, <span class="str">'Authorization'</span>, <span class="str">'X-Request-ID'</span>, <span class="str">'X-CSRF-Token'</span>],
+  exposedHeaders:      [<span class="str">'X-Request-ID'</span>, <span class="str">'RateLimit-Limit'</span>, <span class="str">'RateLimit-Remaining'</span>],
+  maxAge:              86400,  <span class="cmt">// cache preflight 24h</span>
+  optionsSuccessStatus: <span class="num">200</span>,
+};
+
+<span class="cmt">// Handle preflight before routes</span>
+app.<span class="fn">options</span>(<span class="str">'*'</span>, <span class="fn">cors</span>(corsOptions));
+app.<span class="fn">use</span>(<span class="fn">cors</span>(corsOptions));</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmt"># Allowed origin</span>
+<span class="cmd">curl -H "Origin: https://your-app.com" -I https://api.example.com/api/orders</span>
+<span class="exp ok">→ access-control-allow-origin: https://your-app.com</span>
+
+<span class="cmt"># Disallowed origin — must be blocked</span>
+<span class="cmd">curl -H "Origin: https://evil.com" -I https://api.example.com/api/orders</span>
+<span class="exp ok">→ (no access-control-allow-origin header) ✓</span>
+
+<span class="cmt"># Wildcard must NEVER appear with credentials</span>
+<span class="cmd">curl -I https://api.example.com/api/ | grep "access-control-allow-origin"</span>
+<span class="exp ok">→ must NOT be * (wildcard)</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — CORS Hardening</div>
+            <div class="vapt-text">CORS enforces an explicit domain whitelist — wildcard origin is not used. Unapproved origins receive no CORS headers (requests blocked by browser). Preflight responses are cached for 24 hours. Credentials mode requires exact origin match. Allowed headers are explicitly listed (no <em>Access-Control-Allow-Headers: *</em>). Development localhost origin is excluded from production configuration via <em>NODE_ENV</em> check. Verified: requests from <em>evil.com</em> origin receive no CORS headers.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+  CHAPTER 5 — GRAPHQL & VERSIONING
+═══════════════════════════════ -->
+<div class="chapter">
+  <span class="ch-num">Chapter V</span>
+  <div class="ch-rule"></div>
+  <span class="ch-title">GraphQL, Versioning &amp; Observability</span>
+  <div class="ch-rule"></div>
+  <span class="ch-count">5 Controls</span>
+</div>
+
+<!-- 14 — GRAPHQL SECURITY -->
+<div class="section" id="s14" data-severity="high" data-tags="GraphQL introspection depth limit complexity DoS query batching field suggestions disable production">
+  <div class="sec-topband band-med"></div>
+  <div class="sec-hdr" onclick="tog('s14')">
+    <div class="sec-pill" style="background:var(--gold-bg);color:var(--gold)">14</div>
+    <div class="sec-title-group">
+      <div class="sec-title">GraphQL Security Hardening</div>
+      <div class="sec-meta">
+        <span class="badge b-high">HIGH</span>
+        <span class="hpill hp-gql" style="font-size:10px;padding:2px 8px">GraphQL</span>
+        <span class="tag-p">graphql-depth-limit</span><span class="tag-p">graphql-query-complexity</span><span class="tag-p">introspection</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">GraphQL APIs expose: introspection (full schema disclosure to attackers), deeply nested queries causing exponential DB calls (DoS), batching attacks multiplying N requests into 1, field suggestion leaking schema to unauthorized users, and unlimited query complexity.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-high">Schema enumeration via introspection guides targeted attacks, deeply nested <em>{ user { friends { friends { friends { ... }}}}}</em> causes exponential N+1 query DoS, and query batching bypasses rate limiting (1 HTTP request = 1000 operations).</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — GraphQL security layer</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--gold)"></div>src/graphql/server.js — Hardened Apollo Server</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> { ApolloServer }       = <span class="fn">require</span>(<span class="str">'@apollo/server'</span>);
+<span class="kw">const</span> depthLimit              = <span class="fn">require</span>(<span class="str">'graphql-depth-limit'</span>);
+<span class="kw">const</span> { createComplexityLimit } = <span class="fn">require</span>(<span class="str">'graphql-validation-complexity'</span>);
+
+<span class="kw">const</span> server = <span class="kw">new</span> <span class="cls">ApolloServer</span>({
+  typeDefs,
+  resolvers,
+
+  <span class="cmt">// ─── Disable introspection in production ──────────────────────</span>
+  introspection: process.env.NODE_ENV !== <span class="str">'production'</span>,
+
+  validationRules: [
+    <span class="cmt">// Max query depth: 7 levels (prevents deeply nested DoS)</span>
+    <span class="fn">depthLimit</span>(<span class="num">7</span>),
+
+    <span class="cmt">// Max query complexity score (prevents expensive field combos)</span>
+    <span class="fn">createComplexityLimit</span>(<span class="num">1000</span>, {
+      scalarCost: <span class="num">1</span>,
+      objectCost: <span class="num">10</span>,
+      listFactor: <span class="num">10</span>,
+    }),
+  ],
+
+  <span class="cmt">// ─── Disable field suggestions (prevents schema leakage) ──────</span>
+  plugins: [
+    {
+      requestDidStart: () => ({
+        didEncounterErrors: ({ errors }) => {
+          <span class="cmt">// Replace "Did you mean X?" suggestions in error messages</span>
+          <span class="kw">if</span> (errors) {
+            errors.<span class="fn">forEach</span>(err => {
+              <span class="kw">if</span> (err.message.<span class="fn">includes</span>(<span class="str">'Did you mean'</span>)) {
+                err.message = err.message.<span class="fn">replace</span>(<span class="str">/Did you mean.*?\?/g</span>, <span class="str">''</span>);
+              }
+            });
+          }
+        },
+      }),
+    },
+  ],
+});
+
+<span class="cmt">// ─── Batch query limit ────────────────────────────────────────</span>
+app.<span class="fn">use</span>(<span class="str">'/graphql'</span>, (req, res, next) => {
+  <span class="cmt">// Reject arrays of operations (batching attack)</span>
+  <span class="kw">if</span> (<span class="cls">Array</span>.<span class="fn">isArray</span>(req.body)) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ error: <span class="str">'Batched queries not allowed'</span> });
+  }
+  <span class="cmt">// Max query string size</span>
+  <span class="kw">if</span> (req.body?.query?.length > <span class="num">2000</span>) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">400</span>).<span class="fn">json</span>({ error: <span class="str">'Query too long'</span> });
+  }
+  <span class="fn">next</span>();
+}, <span class="fn">expressMiddleware</span>(server));</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmt"># Test introspection disabled in production</span>
+<span class="cmd">curl -s -X POST https://api.example.com/graphql -d '{"query":"{__schema{types{name}}}"}' | python3 -c "import sys,json; d=json.load(sys.stdin); print('BLOCKED' if 'errors' in d else 'EXPOSED')"</span>
+<span class="exp ok">→ BLOCKED (introspection disabled in production)</span>
+
+<span class="cmt"># Test depth limit</span>
+<span class="cmd">curl -s -X POST https://api.example.com/graphql -d '{"query":"{user{friends{friends{friends{friends{friends{friends{friends{id}}}}}}}}}"}'</span>
+<span class="exp ok">→ {"errors":[{"message":"'user' exceeds maximum operation depth of 7"}]}</span>
+
+<span class="cmt"># Test batching blocked</span>
+<span class="cmd">curl -s -X POST https://api.example.com/graphql -d '[{"query":"{me{id}}"},{"query":"{users{id}}"}]'</span>
+<span class="exp ok">→ HTTP 400 {"error":"Batched queries not allowed"}</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — GraphQL Security</div>
+            <div class="vapt-text">GraphQL introspection is disabled in production (enabled only in development). Query depth is limited to 7 levels via graphql-depth-limit. Query complexity scoring (max 1000 units) prevents expensive query combinations. Batch query arrays are rejected at the middleware level (HTTP 400). Query string length is capped at 2000 characters. Field suggestion messages are stripped from errors to prevent schema inference. All restrictions verified via targeted test queries.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 15 — API VERSIONING -->
+<div class="section" id="s15" data-severity="low" data-tags="API versioning deprecation sunset header EOL URL versioning legacy versions security patch outdated">
+  <div class="sec-topband band-low"></div>
+  <div class="sec-hdr" onclick="tog('s15')">
+    <div class="sec-pill" style="background:var(--sage-bg);color:var(--sage)">15</div>
+    <div class="sec-title-group">
+      <div class="sec-title">API Versioning, Deprecation &amp; Security Lifecycle</div>
+      <div class="sec-meta">
+        <span class="badge b-low">LOW</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API9:2023</span>
+        <span class="tag-p">Sunset header</span><span class="tag-p">/v1 /v2</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Old API versions with known vulnerabilities remain active indefinitely. Clients using deprecated endpoints with weaker authentication or removed security controls. No versioning strategy means all clients must upgrade simultaneously — often impossible.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-low">Attackers target deprecated API versions with known CVEs, bypassing security controls added in newer versions. Long-lived API keys on v1 with weaker validation remain exploitable indefinitely.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — URL versioning + deprecation headers</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--sage)"></div>src/middleware/deprecation.js</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">// ─── Mark deprecated API versions ─────────────────────────────</span>
+<span class="kw">const</span> DEPRECATED_VERSIONS = {
+  <span class="str">'v1'</span>: { sunsetDate: <span class="str">'2026-12-31'</span>, successor: <span class="str">'/v2'</span> },
+  <span class="str">'v2'</span>: { sunsetDate: <span class="str">'2027-06-30'</span>, successor: <span class="str">'/v3'</span> },
+};
+
+<span class="kw">const</span> <span class="fn">deprecationHeaders</span> = (req, res, next) => {
+  <span class="kw">const</span> versionMatch = req.path.<span class="fn">match</span>(<span class="str">/\/(v\d+)\//</span>);
+  <span class="kw">const</span> version = versionMatch?.[<span class="num">1</span>];
+
+  <span class="kw">if</span> (version && DEPRECATED_VERSIONS[version]) {
+    <span class="kw">const</span> { sunsetDate, successor } = DEPRECATED_VERSIONS[version];
+    <span class="cmt">// RFC 8594 — Sunset header standard</span>
+    res.<span class="fn">setHeader</span>(<span class="str">'Sunset'</span>, <span class="kw">new</span> <span class="cls">Date</span>(sunsetDate).<span class="fn">toUTCString</span>());
+    res.<span class="fn">setHeader</span>(<span class="str">'Deprecation'</span>, <span class="str">'true'</span>);
+    res.<span class="fn">setHeader</span>(<span class="str">'Link'</span>, `<${successor}>; rel="successor-version"`);
+  }
+  <span class="fn">next</span>();
+};
+
+<span class="cmt">// ─── Hard block for end-of-life versions ──────────────────────</span>
+<span class="kw">const</span> EOL_VERSIONS = [<span class="str">'v0'</span>]; <span class="cmt">// versions that have been shut down</span>
+
+<span class="kw">const</span> <span class="fn">blockEolVersions</span> = (req, res, next) => {
+  <span class="kw">const</span> versionMatch = req.path.<span class="fn">match</span>(<span class="str">/\/(v\d+)\//</span>);
+  <span class="kw">const</span> version = versionMatch?.[<span class="num">1</span>];
+  <span class="kw">if</span> (EOL_VERSIONS.<span class="fn">includes</span>(version)) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(<span class="num">410</span>).<span class="fn">json</span>({
+      error:   <span class="str">'Gone'</span>,
+      message: `API ${version} has been retired. Please migrate to /v3.`,
+      docs:    <span class="str">'https://docs.example.com/migration'</span>,
+    });
+  }
+  <span class="fn">next</span>();
+};
+
+app.<span class="fn">use</span>(blockEolVersions, deprecationHeaders);</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span><span class="rbadge rb-dso">DevOps</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — API Versioning (API9:2023)</div>
+            <div class="vapt-text">API versioning follows URL path convention (<em>/v1/</em>, <em>/v2/</em>). Deprecated versions return <em>Sunset</em> and <em>Deprecation: true</em> headers per RFC 8594, informing clients of the retirement timeline. End-of-life versions return HTTP 410 (Gone) with migration instructions. Security controls (authentication, rate limiting, validation) are applied uniformly across all active versions — no security regression in older versions. A documented sunset process requires 90-day notice before retirement.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 16 — LOGGING & MONITORING -->
+<div class="section" id="s16" data-severity="medium" data-tags="API logging monitoring Winston Morgan request ID audit trail anomaly detection security events structured logs">
+  <div class="sec-topband band-med"></div>
+  <div class="sec-hdr" onclick="tog('s16')">
+    <div class="sec-pill" style="background:var(--gold-bg);color:var(--gold)">16</div>
+    <div class="sec-title-group">
+      <div class="sec-title">API Logging, Monitoring &amp; Anomaly Detection</div>
+      <div class="sec-meta">
+        <span class="badge b-med">MEDIUM</span>
+        <span class="hpill hp-owasp" style="font-size:10px;padding:2px 8px">API7:2023</span>
+        <span class="tag-p">Winston</span><span class="tag-p">Morgan</span><span class="tag-p">structured logs</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">APIs without structured logging make security events (failed auth, rate-limit hits, BOLA attempts) invisible. Logging sensitive data (passwords, tokens, PII) in access logs creates new data exposure. No monitoring means attacks run undetected for days.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-med">OWASP API7:2023 — Insufficient Logging &amp; Monitoring. Average breach detection time: 277 days. API attacks succeed silently without alerting. Compliance failures (PCI-DSS Req 10, GDPR Art 33) for failing to detect and report breaches.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Structured security event logging</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--gold)"></div>src/utils/securityLogger.js — Security event audit trail</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="kw">const</span> winston = <span class="fn">require</span>(<span class="str">'winston'</span>);
+
+<span class="kw">const</span> logger = winston.<span class="fn">createLogger</span>({
+  level:  <span class="str">'info'</span>,
+  format: winston.format.<span class="fn">combine</span>(
+    winston.format.<span class="fn">timestamp</span>(),
+    winston.format.<span class="fn">errors</span>({ stack: <span class="kw">true</span> }),
+    winston.format.<span class="fn">json</span>()    <span class="cmt">// machine-parseable JSON for SIEM</span>
+  ),
+  defaultMeta: { service: <span class="str">'api'</span>, version: process.env.API_VERSION },
+  transports: [
+    <span class="kw">new</span> winston.transports.<span class="cls">File</span>({ filename: <span class="str">'/var/log/api/error.log'</span>,    level: <span class="str">'error'</span> }),
+    <span class="kw">new</span> winston.transports.<span class="cls">File</span>({ filename: <span class="str">'/var/log/api/security.log'</span>, level: <span class="str">'warn'</span>  }),
+    <span class="kw">new</span> winston.transports.<span class="cls">File</span>({ filename: <span class="str">'/var/log/api/combined.log'</span>              }),
+  ],
+});
+
+<span class="cmt">// ─── Security event helper ────────────────────────────────────</span>
+<span class="kw">const</span> secEvent = (event, req, data = {}) => {
+  logger.<span class="fn">warn</span>({
+    event,
+    requestId: req.requestId,
+    ip:        req.ip,
+    userId:    req.user?.id || <span class="str">'anonymous'</span>,
+    userAgent: req.headers[<span class="str">'user-agent'</span>],
+    method:    req.method,
+    path:      req.path,
+    <span class="cmt">// NEVER log: passwords, tokens, full request body with PII</span>
+    ...data,
+  });
+};
+
+<span class="cmt">// ─── Structured HTTP access log ───────────────────────────────</span>
+<span class="kw">const</span> morgan = <span class="fn">require</span>(<span class="str">'morgan'</span>);
+app.<span class="fn">use</span>(<span class="fn">morgan</span>(<span class="kw">function</span>(tokens, req, res) {
+  <span class="kw">return</span> JSON.<span class="fn">stringify</span>({
+    method:     tokens.<span class="fn">method</span>(req, res),
+    url:        tokens.<span class="fn">url</span>(req, res),
+    status:     <span class="cls">Number</span>(tokens.<span class="fn">status</span>(req, res)),
+    duration:   <span class="cls">Number</span>(tokens[<span class="str">'response-time'</span>](req, res)),
+    requestId:  req.requestId,
+    ip:         tokens[<span class="str">'remote-addr'</span>](req, res),
+    <span class="cmt">// ✗ NEVER log Authorization header, cookies, or API keys</span>
+  });
+}, { stream: { write: msg => logger.<span class="fn">info</span>(JSON.<span class="fn">parse</span>(msg)) } }));
+
+<span class="cmt">// ─── Use secEvent for key security events ─────────────────────</span>
+<span class="cmt">// Login failure:          secEvent('LOGIN_FAILED',       req, { email: req.body.email })</span>
+<span class="cmt">// BOLA attempt:           secEvent('BOLA_ATTEMPT',       req, { resourceId })</span>
+<span class="cmt">// Rate limit hit:         secEvent('RATE_LIMITED',       req)</span>
+<span class="cmt">// Unauthorized function:  secEvent('BFLA_ATTEMPT',       req, { requiredRole })</span>
+<span class="cmt">// Injection attempt:      secEvent('INJECTION_ATTEMPT',  req, { field: 'email' })</span></pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span><span class="rbadge rb-sec">Security Team</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — Logging &amp; Monitoring (API7:2023)</div>
+            <div class="vapt-text">Structured JSON logging via Winston captures all security events (login failures, BOLA attempts, BFLA attempts, rate limit triggers, injection patterns) with requestId correlation, IP, user ID, and timestamp. Authorization headers, cookies, and API keys are excluded from all log entries. Log files are segregated (security.log, error.log, combined.log) with 90-day retention and forwarding to SIEM. Anomaly detection rules alert on >10 consecutive 401s from the same IP within 5 minutes.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 17 — ERROR HANDLING -->
+<div class="section" id="s17" data-severity="medium" data-tags="error handling information disclosure stack trace internal details production error messages sensitive data leakage">
+  <div class="sec-topband band-med"></div>
+  <div class="sec-hdr" onclick="tog('s17')">
+    <div class="sec-pill" style="background:var(--gold-bg);color:var(--gold)">17</div>
+    <div class="sec-title-group">
+      <div class="sec-title">Error Handling &amp; Information Disclosure</div>
+      <div class="sec-meta">
+        <span class="badge b-med">MEDIUM</span>
+        <span class="tag-p">errorHandler.js</span><span class="tag-p">RFC 7807</span><span class="tag-p">Problem Details</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">Production APIs returning stack traces, database error messages (revealing table names, column names), framework version strings, and internal file paths — all inadvertently shared with attackers in error responses.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-med">Stack traces reveal internal architecture, database schema from SQL error messages, file paths from Node.js errors aid targeted attacks, and library versions from error headers enable CVE-targeted exploitation.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — RFC 7807 Problem Details + safe error handler</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--gold)"></div>src/middleware/errorHandler.js — Production-safe error handler</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt">/**
+ * Centralized API error handler.
+ * RFC 7807 — Problem Details for HTTP APIs (application/problem+json)
+ * Strips internal details in production.
+ */</span>
+<span class="kw">const</span> { v4: uuid } = <span class="fn">require</span>(<span class="str">'uuid'</span>);
+
+<span class="cmt">// ─── Custom API error class ───────────────────────────────────</span>
+<span class="kw">class</span> <span class="cls">ApiError</span> <span class="kw">extends</span> <span class="cls">Error</span> {
+  <span class="fn">constructor</span>(status, type, title, detail, extra = {}) {
+    <span class="kw">super</span>(title);
+    <span class="kw">this</span>.status     = status;
+    <span class="kw">this</span>.type       = type;       <span class="cmt">// e.g., '/errors/validation-failed'</span>
+    <span class="kw">this</span>.title      = title;      <span class="cmt">// human-readable summary</span>
+    <span class="kw">this</span>.detail     = detail;     <span class="cmt">// safe detail for client</span>
+    <span class="kw">this</span>.extra      = extra;      <span class="cmt">// extra fields (errors, hints)</span>
+    <span class="kw">this</span>.isApiError = <span class="kw">true</span>;
+  }
+}
+
+<span class="cmt">// ─── Global error handler (MUST be last middleware) ───────────</span>
+<span class="kw">const</span> errorHandler = (err, req, res, next) => {
+  <span class="kw">const</span> isProd  = process.env.NODE_ENV === <span class="str">'production'</span>;
+  <span class="kw">const</span> errorId = uuid();
+
+  <span class="cmt">// Always log full error server-side</span>
+  logger.<span class="fn">error</span>({
+    errorId,
+    message:   err.message,
+    stack:     err.stack,
+    requestId: req.requestId,
+    path:      req.path,
+    userId:    req.user?.id,
+  });
+
+  <span class="cmt">// ─── Known API errors ─────────────────────────────────────────</span>
+  <span class="kw">if</span> (err.isApiError) {
+    <span class="kw">return</span> res.<span class="fn">status</span>(err.status)
+      .<span class="fn">type</span>(<span class="str">'application/problem+json'</span>)
+      .<span class="fn">json</span>({
+        type:      err.type,
+        title:     err.title,
+        status:    err.status,
+        detail:    err.detail,
+        instance:  req.path,
+        requestId: req.requestId,
+        ...err.extra,
+      });
+  }
+
+  <span class="cmt">// ─── Unknown errors: never expose internals in prod ───────────</span>
+  res.<span class="fn">status</span>(<span class="num">500</span>)
+    .<span class="fn">type</span>(<span class="str">'application/problem+json'</span>)
+    .<span class="fn">json</span>({
+      type:      <span class="str">'/errors/internal-error'</span>,
+      title:     <span class="str">'An unexpected error occurred'</span>,
+      status:    <span class="num">500</span>,
+      detail:    isProd ? <span class="str">'Please contact support'</span> : err.message,
+      requestId: req.requestId,
+      errorId,   <span class="cmt">// share error ID — NOT the stack trace</span>
+      <span class="cmt">// stack: isProd ? undefined : err.stack  ← never in prod</span>
+    });
+};
+
+module.exports = { ApiError, errorHandler };</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-be">Backend Developer</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">✅ Verification</div>
+        <div class="vblock">
+<span class="cmt"># Trigger a 500 error — production must NOT show stack trace</span>
+<span class="cmd">curl -s https://api.example.com/api/broken-endpoint | python3 -m json.tool</span>
+<span class="exp ok">→ {"type":"/errors/internal-error","title":"An unexpected error occurred","status":500,"requestId":"...","errorId":"..."}</span>
+<span class="cmt"># stack, message, filePath: NOT present in production response ✓</span>
+
+<span class="cmt"># Server logs MUST have full error details</span>
+<span class="cmd">grep "$errorId" /var/log/api/error.log</span>
+<span class="exp ok">→ {"errorId":"...","message":"Cannot read property...","stack":"Error: ...\n  at /var/www/...",...}</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — Error Handling &amp; Disclosure</div>
+            <div class="vapt-text">A centralized error handler strips all internal details (stack traces, file paths, library names, database messages) from production responses. Errors follow RFC 7807 Problem Details format, returning only a human-readable title, HTTP status, request ID, and an error correlation ID. Full error details are logged server-side for forensic investigation. Production responses are confirmed to contain zero stack traces, SQL queries, file paths, or framework version strings via automated response inspection.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 18 — API GATEWAY -->
+<div class="section" id="s18" data-severity="medium" data-tags="API gateway Kong AWS API Gateway WAF mTLS mutual TLS service mesh authentication proxy upstream">
+  <div class="sec-topband band-low"></div>
+  <div class="sec-hdr" onclick="tog('s18')">
+    <div class="sec-pill" style="background:var(--sage-bg);color:var(--sage)">18</div>
+    <div class="sec-title-group">
+      <div class="sec-title">API Gateway Hardening &amp; mTLS</div>
+      <div class="sec-meta">
+        <span class="badge b-low">LOW</span>
+        <span class="tag-p">Kong</span><span class="tag-p">Nginx</span><span class="tag-p">mTLS</span><span class="tag-p">WAF</span>
+      </div>
+    </div>
+    <div class="chevron">⌄</div>
+  </div>
+  <div class="sec-body">
+    <div class="fg">
+      <div class="field">
+        <div class="fl">⚠ Issue</div>
+        <div class="fv">APIs exposed directly without a gateway layer lack centralized authentication, rate limiting, WAF protection, and audit logging. Service-to-service communication over plain HTTP (no mTLS) allows lateral movement after a service is compromised.</div>
+      </div>
+      <div class="field">
+        <div class="fl">🔥 Risk</div>
+        <div class="fv"><div class="risk-box r-low">Internal service impersonation without mTLS, bypass of gateway-level WAF by targeting services directly, and lack of centralized API visibility for security monitoring across a microservices architecture.</div></div>
+      </div>
+      <div class="ff">
+        <div class="fl">🔧 Fix — Nginx as API gateway + mTLS for internal services</div>
+        <div class="fv">
+          <div class="code-wrap">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--sage)"></div>/etc/nginx/sites-enabled/api-gateway.conf — Gateway hardening</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ─── Nginx as API Gateway ─────────────────────────────────────</span>
+upstream api_backend {
+  server 127.0.0.1:3000;
+  keepalive 32;
+}
+
+server {
+  listen 443 ssl http2;
+  server_name api.example.com;
+
+  <span class="cmt"># ─── Global WAF-like rules ────────────────────────────────────</span>
+  <span class="cmt"># Block common attack patterns</span>
+  set $block_query 0;
+  if ($query_string ~* "union.*select.*\(")    { set $block_query 1; }
+  if ($query_string ~* "&lt;script")              { set $block_query 1; }
+  if ($query_string ~* "javascript:")          { set $block_query 1; }
+  if ($block_query = 1)                        { return 403; }
+
+  <span class="cmt"># Block scanner user agents</span>
+  if ($http_user_agent ~* "(nikto|sqlmap|nmap|masscan|dirbuster|gobuster)") {
+    return 403;
+  }
+
+  <span class="cmt"># Max request body size</span>
+  client_max_body_size 10m;
+
+  <span class="cmt"># ─── Proxy to backend ─────────────────────────────────────────</span>
+  location /api/ {
+    limit_req zone=api burst=60 nodelay;
+    limit_req_status 429;
+
+    proxy_pass         http://api_backend;
+    proxy_http_version 1.1;
+    proxy_set_header   Connection "";
+    proxy_set_header   Host $host;
+    proxy_set_header   X-Real-IP $remote_addr;
+    proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header   X-Forwarded-Proto $scheme;
+    proxy_set_header   X-Request-ID $request_id;
+
+    <span class="cmt"># Timeouts (prevent slow loris attacks)</span>
+    proxy_connect_timeout 10s;
+    proxy_read_timeout    30s;
+    proxy_send_timeout    10s;
+  }
+
+  <span class="cmt"># ─── Block direct access to internal paths ────────────────────</span>
+  location ~ ^/api/(internal|admin/system)/ {
+    allow 10.0.0.0/8;    <span class="cmt"># only internal network</span>
+    deny  all;
+    proxy_pass http://api_backend;
+  }
+}</pre>
+          </div>
+          <div class="code-wrap" style="margin-top:12px">
+            <div class="code-fn"><div class="code-fn-dot" style="background:var(--sage)"></div>mTLS — Service-to-service mutual TLS</div>
+            <button class="copy-btn" onclick="cp(this)">Copy</button>
+            <pre"><span class="cmt"># ─── Generate service certificates (internal CA) ──────────────</span>
+<span class="cmt"># 1. Create internal CA</span>
+$ openssl genrsa -out ca.key 4096
+$ openssl req -new -x509 -days 3650 -key ca.key -out ca.crt -subj "/CN=Internal-API-CA"
+
+<span class="cmt"># 2. Generate cert for each microservice</span>
+$ openssl genrsa -out order-service.key 2048
+$ openssl req -new -key order-service.key -out order-service.csr -subj "/CN=order-service"
+$ openssl x509 -req -days 365 -in order-service.csr -CA ca.crt -CAkey ca.key -out order-service.crt
+
+<span class="cmt"># ─── Node.js: require mTLS for internal API calls ─────────────</span>
+<span class="kw">const</span> https = <span class="fn">require</span>(<span class="str">'https'</span>);
+<span class="kw">const</span> fs    = <span class="fn">require</span>(<span class="str">'fs'</span>);
+
+<span class="kw">const</span> agent = <span class="kw">new</span> https.<span class="cls">Agent</span>({
+  cert: fs.<span class="fn">readFileSync</span>(<span class="str">'/certs/order-service.crt'</span>),
+  key:  fs.<span class="fn">readFileSync</span>(<span class="str">'/certs/order-service.key'</span>),
+  ca:   fs.<span class="fn">readFileSync</span>(<span class="str">'/certs/ca.crt'</span>),
+  rejectUnauthorized: <span class="kw">true</span>,   <span class="cmt">// ALWAYS verify peer certificate</span>
+});
+
+<span class="cmt">// All internal service calls use mTLS agent</span>
+<span class="kw">const</span> axios = <span class="fn">require</span>(<span class="str">'axios'</span>);
+<span class="kw">const</span> internalApi = axios.<span class="fn">create</span>({ httpsAgent: agent });</pre>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <div class="fl">👥 Responsible</div>
+        <div class="fv"><span class="rbadge rb-dso">DevOps</span><span class="rbadge rb-sec">Security Team</span></div>
+      </div>
+      <div class="ff">
+        <div class="fl">📋 VAPT Closure Statement</div>
+        <div class="vapt">
+          <div class="vapt-lock">🔒</div>
+          <div class="vapt-body">
+            <div class="vapt-label">Audit Closure — API Gateway &amp; mTLS</div>
+            <div class="vapt-text">Nginx serves as the API gateway with WAF-style rules blocking common injection patterns, vulnerability scanner user agents, and oversized payloads. Internal admin paths are restricted to the internal network (10.0.0.0/8). Request/response timeouts prevent slow loris attacks. Mutual TLS is implemented for service-to-service communication with certificate verification — unauthorized services cannot make calls to internal APIs. Client certificates are signed by an internal CA with 365-day validity and rotation policy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════ SUMMARY TABLE ═══════════════════ -->
+<div style="margin-top:48px;background:var(--canvas2);border:1.5px solid var(--rule2);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-md)">
+  <!-- Gradient top line -->
+  <div style="height:5px;background:linear-gradient(90deg,var(--plum) 0%,var(--rose) 35%,var(--gold2) 65%,var(--sage) 100%)"></div>
+  <div style="padding:26px 28px;border-bottom:1.5px solid var(--rule)">
+    <h2 style="font-family:'Playfair Display',serif;font-size:24px;font-weight:800;color:var(--ink);letter-spacing:-.4px">
+      API Security Controls Master Checklist
+    </h2>
+    <p style="color:var(--ink3);font-size:13px;margin-top:6px">Mapped to OWASP API Security Top 10 (2023) · Track remediation status for VAPT report closure</p>
+  </div>
+  <div style="overflow-x:auto">
+    <table class="who-tbl" style="width:100%">
+      <thead>
+        <tr>
+          <th>#</th><th>Control</th><th>Severity</th><th>OWASP ID</th><th>Key Tool / Pattern</th><th>Layer</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>Broken Object Level Authorization (BOLA)</td><td><span class="badge b-crit">CRITICAL</span></td><td>API1:2023</td><td><span class="tag-p">requireOwnership()</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>02</td><td>Broken Authentication &amp; Credential Security</td><td><span class="badge b-crit">CRITICAL</span></td><td>API2:2023</td><td><span class="tag-p">bcrypt salt=14</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>03</td><td>JWT — RS256, Algorithm Whitelist, Expiry</td><td><span class="badge b-high">HIGH</span></td><td>API2:2023</td><td><span class="tag-p">jsonwebtoken RS256</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>04</td><td>OAuth 2.0 Scopes &amp; API Key Lifecycle</td><td><span class="badge b-high">HIGH</span></td><td>API2:2023</td><td><span class="tag-p">requireScope()</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>05</td><td>Injection Prevention (SQL, NoSQL, Command)</td><td><span class="badge b-crit">CRITICAL</span></td><td>API8:2023</td><td><span class="tag-p">parameterized queries</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>06</td><td>Mass Assignment Prevention</td><td><span class="badge b-high">HIGH</span></td><td>API3:2023</td><td><span class="tag-p">zod .strict()</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>07</td><td>Request Schema Validation</td><td><span class="badge b-high">HIGH</span></td><td>API8:2023</td><td><span class="tag-p">zod / express-validator</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>08</td><td>Rate Limiting &amp; Throttling</td><td><span class="badge b-high">HIGH</span></td><td>API4:2023</td><td><span class="tag-p">express-rate-limit Redis</span></td><td>App + Nginx</td><td>☐ Open</td></tr>
+        <tr><td>09</td><td>Broken Function Level Authorization (BFLA)</td><td><span class="badge b-high">HIGH</span></td><td>API5:2023</td><td><span class="tag-p">requireRole()</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>10</td><td>Excessive Data Exposure / Response DTOs</td><td><span class="badge b-med">MEDIUM</span></td><td>API6:2023</td><td><span class="tag-p">DTO classes .select()</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>11</td><td>HTTPS Enforcement &amp; TLS Hardening</td><td><span class="badge b-high">HIGH</span></td><td>API10:2023</td><td><span class="tag-p">TLS 1.3 Nginx HSTS</span></td><td>Server</td><td>☐ Open</td></tr>
+        <tr><td>12</td><td>API Security Response Headers</td><td><span class="badge b-med">MEDIUM</span></td><td>—</td><td><span class="tag-p">helmet.js</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>13</td><td>CORS Origin Whitelist</td><td><span class="badge b-high">HIGH</span></td><td>—</td><td><span class="tag-p">cors allowlist</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>14</td><td>GraphQL Security (Introspection, Depth, DoS)</td><td><span class="badge b-high">HIGH</span></td><td>—</td><td><span class="tag-p">graphql-depth-limit</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>15</td><td>API Versioning &amp; Deprecation Lifecycle</td><td><span class="badge b-low">LOW</span></td><td>API9:2023</td><td><span class="tag-p">Sunset header /v1 /v2</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>16</td><td>Logging &amp; Security Event Monitoring</td><td><span class="badge b-med">MEDIUM</span></td><td>API7:2023</td><td><span class="tag-p">Winston + SIEM</span></td><td>App + Ops</td><td>☐ Open</td></tr>
+        <tr><td>17</td><td>Error Handling &amp; Information Disclosure</td><td><span class="badge b-med">MEDIUM</span></td><td>—</td><td><span class="tag-p">RFC 7807 Problem Details</span></td><td>App</td><td>☐ Open</td></tr>
+        <tr><td>18</td><td>API Gateway &amp; mTLS (Service-to-Service)</td><td><span class="badge b-low">LOW</span></td><td>—</td><td><span class="tag-p">Nginx gateway + mTLS</span></td><td>Infra</td><td>☐ Open</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="padding:18px 28px;border-top:1.5px solid var(--rule);display:flex;gap:24px;flex-wrap:wrap;align-items:center">
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--coral);border-radius:3px;display:inline-block"></span><span style="font-size:12px;color:var(--ink3)">Critical: 2 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--rose);border-radius:3px;display:inline-block"></span><span style="font-size:12px;color:var(--ink3)">High: 9 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--gold);border-radius:3px;display:inline-block"></span><span style="font-size:12px;color:var(--ink3)">Medium: 5 controls</span></div>
+    <div style="display:flex;align-items:center;gap:7px"><span style="width:10px;height:10px;background:var(--sage);border-radius:3px;display:inline-block"></span><span style="font-size:12px;color:var(--ink3)">Low: 2 controls</span></div>
+    <div style="margin-left:auto;font-size:11px;color:var(--ink4);font-family:'JetBrains Mono',monospace">OWASP API Security Top 10 2023 · REST · GraphQL · gRPC · April 2026</div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</main>
+
+<button id="goTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+function tog(id){const s=document.getElementById(id);s.classList.toggle('open')}
+function jumpTo(id){
+  const el=document.getElementById(id);
+  if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'start'})}
+}
+function expandAll(){document.querySelectorAll('.section').forEach(s=>s.classList.add('open'))}
+function collapseAll(){document.querySelectorAll('.section').forEach(s=>s.classList.remove('open'))}
+function filterSecs(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  document.querySelectorAll('.section').forEach(s=>{
+    const t=(s.textContent+' '+(s.dataset.tags||'')).toLowerCase();
+    s.classList.toggle('hidden',q.length>1&&!t.includes(q));
+  });
+}
+function filterSev(sev,btn){
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.section').forEach(s=>{
+    s.classList.toggle('hidden',sev!=='all'&&s.dataset.severity!==sev);
+  });
+}
+function cp(btn){
+  const pre=btn.closest('.code-wrap').querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent='✓ Copied';btn.classList.add('copied');
+    setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('copied')},2200);
+  });
+}
+window.addEventListener('scroll',()=>{
+  document.getElementById('goTop').style.display=window.scrollY>400?'flex':'none';
+});
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const id=e.target.id;
+      document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+      const ni=document.querySelector(`.nav-item[onclick="jumpTo('${id}')"]`);
+      if(ni)ni.classList.add('active');
+    }
+  });
+},{threshold:.12});
+document.querySelectorAll('.section').forEach((s,i)=>{
+  s.style.animationDelay=(i*.03)+'s';
+  obs.observe(s);
+});
+</script>
+</body>
+</html>
